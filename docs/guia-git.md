@@ -2,7 +2,7 @@
 
 ## Descripción
 
-Esta guía describe cómo usar **Git** en el proyecto **Sistema de Control de Acceso Físico (SCA-EMPX)** para STI S.A.S.: flujo de trabajo diario, ramas, commits, sincronización con el remoto y buenas prácticas.
+Esta guía describe cómo usar **Git** en el proyecto **Sistema de Control de Acceso Físico (SCA-EMPX)** para STI S.A.S.: flujo de trabajo diario, ramas, commits, sincronización con el remoto, **manejo de ambientes (dev, UAT, producción)** y buenas prácticas.
 
 **Audiencia**: Desarrolladores, líder de proyecto, cualquier persona que contribuya al repositorio.
 
@@ -61,7 +61,7 @@ git diff --staged
 
 ```bash
 # Un archivo concreto
-git add docs/12-guia-git.md
+git add docs/guia-git.md
 
 # Todos los archivos modificados
 git add .
@@ -168,7 +168,90 @@ Desde la rama que quieres integrar (por ejemplo `feature/mi-feature`):
 
 ---
 
-## 4. Deshacer cambios
+## 4. Manejo de ambientes (dev, UAT, producción)
+
+En el proyecto se distinguen tres ambientes. Cada uno suele asociarse a una rama (o a un despliegue automático desde esa rama):
+
+| Ambiente      | Rama típica | Uso                                                                                      |
+|---------------|-------------|------------------------------------------------------------------------------------------|
+| **Desarrollo**| `develop`   | Donde se integran las ramas `feature/` y `fix/`. Pruebas locales e integración continua. |
+| **UAT**       | `uat`       | Entorno de pruebas de aceptación (usuarios/QA). Estable antes de producción.             |
+| **Producción**| `main`      | Código en vivo. Solo lo que pasó UAT y está aprobado.                                    |
+
+### Flujo entre ambientes
+
+El código avanza en un solo sentido:
+
+```
+feature/xxx  →  develop  →  uat  →  main (producción)
+```
+
+1. **Desarrollo**: Las ramas `feature/` y `fix/` se fusionan en `develop` (vía PR o merge). El ambiente **dev** se despliega desde `develop`.
+2. **UAT**: Cuando `develop` está listo para pruebas de aceptación, se lleva a `uat` (merge o PR de `develop` → `uat`). El ambiente **UAT** se despliega desde `uat`.
+3. **Producción**: Cuando UAT está aprobado, se lleva a `main` (merge o PR de `uat` → `main`). El ambiente **producción** se despliega desde `main`.
+
+### Comandos útiles por ambiente
+
+**Actualizar tu rama local con el ambiente de desarrollo:**
+
+```bash
+git fetch origin
+git checkout develop
+git pull origin develop
+```
+
+**Preparar UAT (fusionar develop en uat):**
+
+```bash
+git checkout uat
+git pull origin uat
+git merge develop
+# Resolver conflictos si los hay
+git push origin uat
+```
+
+**Preparar producción (fusionar uat en main):**
+
+```bash
+git checkout main
+git pull origin main
+git merge uat
+# Resolver conflictos si los hay
+git push origin main
+```
+
+Quién ejecuta estos merges (desarrollador, líder, DevOps) y si se usa solo PR depende de cómo lo defina el equipo.
+
+### Crear las ramas de ambiente (solo una vez)
+
+Si el repositorio es nuevo y aún no existen `develop` ni `uat`:
+
+```bash
+# Crear develop desde main
+git checkout main
+git pull origin main
+git checkout -b develop
+git push -u origin develop
+
+# Crear uat desde main (o desde develop)
+git checkout main
+git checkout -b uat
+git push -u origin uat
+```
+
+A partir de ahí, `develop` y `uat` se actualizan según el flujo anterior.
+
+### Configuración por ambiente
+
+- **No** versionar archivos con secretos ni datos reales (`.env`, `appsettings.Production.json` con conexiones, etc.).
+- Usar `.env.example` o plantillas (por ejemplo `config.dev.json.example`) con variables sin valores sensibles.
+- Cada ambiente (dev, UAT, producción) tiene su propia configuración en el servidor o en variables de entorno (Azure, pipeline, etc.), no en el repo.
+
+Así se evita mezclar credenciales de producción con desarrollo y se mantiene el mismo código con distinta configuración por ambiente.
+
+---
+
+## 5. Deshacer cambios
 
 ### Descartar cambios en un archivo (sin commit)
 
@@ -204,7 +287,7 @@ git reset --hard HEAD~1
 
 ---
 
-## 5. Sincronización con el remoto
+## 6. Sincronización con el remoto
 
 ### Ver remotos
 
@@ -236,7 +319,7 @@ git push -u origin nombre-rama
 
 ---
 
-## 6. Historial y referencias
+## 7. Historial y referencias
 
 ### Ver historial de commits
 
@@ -259,7 +342,7 @@ git show <commit-hash>:ruta/al/archivo
 
 ---
 
-## 7. Archivos ignorados (.gitignore)
+## 8. Archivos ignorados (.gitignore)
 
 El proyecto usa un `.gitignore` para no versionar:
 
@@ -278,7 +361,7 @@ Añade ese archivo o patrón a `.gitignore` para que no vuelva a aparecer.
 
 ---
 
-## 8. Resumen de comandos frecuentes
+## 9. Resumen de comandos frecuentes
 
 | Acción              | Comando |
 |---------------------|--------|
@@ -292,10 +375,11 @@ Añade ese archivo o patrón a `.gitignore` para que no vuelva a aparecer.
 | Ver ramas           | `git branch -a` |
 | Ver historial       | `git log --oneline` |
 | Descartar cambios   | `git restore archivo` |
+| Ambientes           | `develop` → dev, `uat` → UAT, `main` → producción |
 
 ---
 
-## 9. Integración con Azure DevOps
+## 10. Integración con Azure DevOps
 
 Si el repositorio está en **Azure DevOps**:
 
@@ -307,7 +391,7 @@ Para más detalle sobre documentación y backlog en Azure DevOps, consultar la d
 
 ---
 
-## 10. Buenas prácticas en el proyecto
+## 11. Buenas prácticas en el proyecto
 
 1. **Commits atómicos**: Un commit = un cambio lógico (una corrección, una feature pequeña, una doc).
 2. **Mensajes claros**: Empezar con verbo en imperativo y, si se usa, prefijo (`docs:`, `fix:`, `feat:`).
