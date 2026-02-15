@@ -125,32 +125,29 @@ Este índice te ayudará a navegar por toda la documentación del **Sistema de C
 
 ---
 
-### 9. [Guía: documentación en Azure DevOps](./09-guia-azure-devops-documentacion.md)
-**Descripción**: Paso a paso para publicar esta documentación en Azure DevOps (solo documentación).
+### 9. [Tareas por HU](./09-tareas-por-hu.md)
+**Descripción**: Tareas de desarrollo desglosadas por Historia de Usuario (para desarrollo y Azure DevOps).
 
 **Contenido**:
-- Crear proyecto y repositorio para docs
-- Opción A: Wiki (recomendada)
-- Opción B: Repos (carpeta docs)
-- Subida de archivos (navegador o Git)
-- Estructura recomendada y permisos
+- Desglose de tareas por cada historia de usuario
+- Trazabilidad con requerimientos y cronograma
+- Uso en backlog y planificación de sprints
 
-**Audiencia**: Líder de proyecto, DevOps, quien administre la documentación.
+**Audiencia**: Desarrolladores, Product Owner, Scrum Master.
 
 ---
 
-### 10. [Guía: backlog y organización del proyecto en Azure DevOps](./10-guia-azure-devops-backlog-proyecto.md)
-**Descripción**: Cómo crear y organizar en Azure DevOps los requerimientos, épicas, historias de usuario y tareas del proyecto SCA-EMPX.
+### 10. [Guía de Uso de Git](./guia-git.md)
+**Descripción**: Cómo usar Git en el proyecto SCA-EMPX: flujo diario, ramas, commits, sincronización con el remoto y buenas prácticas.
 
 **Contenido**:
-- Jerarquía Epic → User Story → Task
-- Dónde crear épicas, historias y tareas (Boards, Backlogs)
-- Configurar iteraciones (Semanas 1–3, Post-MVP) y áreas
-- Crear las 5 épicas y las HU del doc 06
-- Desglose en tareas (cronograma doc 08) y trazabilidad a RF/RNF
-- Ordenar backlog y vistas útiles (Kanban, Sprint, Taskboard)
+- Configuración inicial y clonado
+- Flujo de trabajo (status, add, commit, push, pull)
+- Ramas (crear, cambiar, convenciones)
+- Deshacer cambios y sincronización con el remoto
+- Integración con Azure DevOps y buenas prácticas
 
-**Audiencia**: Product Owner, Scrum Master, líder de proyecto, equipo de desarrollo.
+**Audiencia**: Desarrolladores, líder de proyecto, cualquier persona que contribuya al repositorio.
 
 ---
 
@@ -209,12 +206,6 @@ Procesos BPMN
 
 ---
 
-## ✅ Validación de documentación
-
-La documentación ha sido validada frente a la [Definición del Proyecto (08)](./08-definicion-proyecto.md). Resumen de alineación y cambios: **[VALIDACION-DOCUMENTACION.md](./VALIDACION-DOCUMENTACION.md)**.
-
----
-
 ## 🔍 Búsqueda Rápida
 
 ### ¿Necesitas información sobre...?
@@ -227,10 +218,8 @@ La documentación ha sido validada frente a la [Definición del Proyecto (08)](.
 - **Estructura de la base de datos**: [Modelo de Datos](./05-modelo-datos.md)
 - **Qué desarrollar primero**: [Historias de Usuario](./06-historias-usuario.md)
 - **Cómo funciona el proceso**: [Procesos BPMN](./07-procesos-bpmn.md)
-- **Cómo publicar la documentación en Azure DevOps**: [Guía documentación](./09-guia-azure-devops-documentacion.md)
-- **Cómo organizar backlog, épicas, historias y tareas en Azure DevOps**: [Guía backlog](./10-guia-azure-devops-backlog-proyecto.md)
-- **Tareas de desarrollo por HU (para desarrollo y Azure DevOps)**: [Tareas por HU](./11-tareas-por-hu.md)
-- **Diagramas de flujo (Mermaid)**: [Diagramas de flujo](./diagramas-flujo.md)
+- **Tareas de desarrollo por HU (para desarrollo y Azure DevOps)**: [Tareas por HU](./09-tareas-por-hu.md)
+- **Uso de Git (ramas, commits, pull, push)**: [Guía de Uso de Git](./guia-git.md)
 
 ---
 

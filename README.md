@@ -28,13 +28,15 @@ La documentación completa del proyecto se encuentra en la carpeta [`docs/`](./d
 - **[🗄️ Modelo de Datos](./docs/05-modelo-datos.md)** - Esquema de base de datos y relaciones
 - **[👥 Historias de Usuario](./docs/06-historias-usuario.md)** - Backlog ágil con historias de usuario
 - **[🔄 Procesos BPMN](./docs/07-procesos-bpmn.md)** - Flujos de negocio de ingreso y salida
+- **[📋 Tareas por HU](./docs/09-tareas-por-hu.md)** - Tareas de desarrollo por historia de usuario
+- **[📘 Guía de Uso de Git](./docs/guia-git.md)** - Flujo de trabajo con Git (ramas, commits, sincronización)
 
 **💡 Recomendación**: Comienza por el [Índice de Documentación](./docs/00-indice.md) para una guía completa de lectura.
 
 ## 🏗️ Estructura del Proyecto
 
 ```
-EmpresaX/
+SCA-EMPX/
 ├── docs/                    # Documentación del proyecto
 │   ├── 00-indice.md         # Índice y guía de navegación
 │   ├── 01-contexto-empresarial.md
@@ -44,7 +46,9 @@ EmpresaX/
 │   ├── 05-modelo-datos.md
 │   ├── 06-historias-usuario.md
 │   ├── 07-procesos-bpmn.md
-│   └── 08-definicion-proyecto.md  # Definición del proyecto (objetivos, alcance, cronograma)
+│   ├── 08-definicion-proyecto.md  # Definición del proyecto (objetivos, alcance, cronograma)
+│   ├── 09-tareas-por-hu.md  # Tareas de desarrollo por HU
+│   └── guia-git.md          # Guía de uso de Git
 └── README.md
 ```
 
