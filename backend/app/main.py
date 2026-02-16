@@ -1,7 +1,10 @@
 """
 Punto de entrada de la API del Sistema de Control de Acceso (SCA-EMPX).
 """
+from pathlib import Path
+
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
 
 from backend.app.api.v1 import api_router
 
@@ -24,3 +27,10 @@ def root():
 def health():
     """Salud para despliegue."""
     return {"status": "healthy"}
+
+
+@app.get("/validate-access")
+def validate_access_page():
+    """Página de prueba para validar acceso por reconocimiento facial (HU-05)."""
+    path = Path(__file__).parent / "static" / "validate-access.html"
+    return FileResponse(path)

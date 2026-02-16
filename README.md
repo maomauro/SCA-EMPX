@@ -151,6 +151,8 @@ Flujo: **petición** → `api/` → `services/` → `db/` (SQLite) y/o `ml/` →
 
 7. **Login**: `POST /api/v1/usuarios/login` con body `{"username": "admin", "password": "admin"}`. Respuesta: `{"access_token": "...", "token_type": "bearer"}`. Usar el token en cabecera `Authorization: Bearer <token>` para rutas protegidas.
 
+8. **Validar acceso (HU-05)**: `POST /api/v1/access/validate` con imagen (form-data, campo `file`). O abrir en el navegador `http://localhost:8000/validate-access` para subir una foto. Reconocimiento facial usa **DeepFace (Facenet)**; al registrar personas (HU-01) debe usarse el mismo modelo para generar embeddings.
+
 ## 🚀 Estado del Proyecto
 
 **Fase actual**: Setup MVP implementado (estructura, SQLite, auth básica). Siguiente: feature HU-05 (validar acceso facial).
