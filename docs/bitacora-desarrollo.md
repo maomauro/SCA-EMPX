@@ -203,12 +203,12 @@ Documento para **registrar el avance** del desarrollo del proyecto: check de act
 
 Anotar aquí hitos, decisiones, bloqueos o cambios de orden con fecha.
 
-| Fecha | Entrada |
-|-------|---------|
-| | *Ejemplo: Estructura inicial creada. Rama main. Próximo: feature/setup-mvp.* |
-| | |
-| | |
-| | |
+| Fecha | Entrada                                                                       |
+|-------|-------------------------------------------------------------------------------|
+|       | *Ejemplo: Estructura inicial creada. Rama main. Próximo: feature/setup-mvp.*  |
+|       |                                                                               |
+|       |                                                                               |
+|       |                                                                               |
 
 ---
 
