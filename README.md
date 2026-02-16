@@ -36,10 +36,12 @@ La documentación completa del proyecto se encuentra en la carpeta [`docs/`](./d
 
 ## 🏗️ Estructura del Proyecto
 
+### Estructura actual (raíz del repositorio)
+
 ```
 SCA-EMPX/
-├── docs/                    # Documentación del proyecto
-│   ├── 00-indice.md         # Índice y guía de navegación
+├── docs/                              # Documentación del proyecto
+│   ├── 00-indice.md                   # Índice y guía de navegación
 │   ├── 01-contexto-empresarial.md
 │   ├── 02-caso-de-negocio.md
 │   ├── 03-requerimientos-srs.md
@@ -47,11 +49,46 @@ SCA-EMPX/
 │   ├── 05-modelo-datos.md
 │   ├── 06-historias-usuario.md
 │   ├── 07-procesos-bpmn.md
-│   ├── 08-definicion-proyecto.md  # Definición del proyecto (objetivos, alcance, cronograma)
-│   ├── 09-tareas-por-hu.md  # Tareas de desarrollo por HU
-│   └── guia-git.md          # Guía de uso de Git
+│   ├── 08-definicion-proyecto.md      # Objetivos, alcance, cronograma MVP
+│   ├── 09-tareas-por-hu.md            # Tareas de desarrollo por HU
+│   ├── orden-desarrollo-features.md   # Orden para desarrollar y registrar features
+│   └── guia-git.md                    # Guía de uso de Git y ambientes
+├── main.py                            # Punto de entrada de la aplicación (MVP)
+├── pyproject.toml                     # Configuración del proyecto Python (uv/pip)
+├── .python-version                    # Versión de Python del proyecto
+├── .gitignore
+├── uv.lock                            # Lockfile de dependencias (uv)
 └── README.md
 ```
+
+*El entorno virtual (`.venv/`) se genera localmente y no se versiona.*
+
+### Estructura prevista al avanzar el desarrollo (referencia: [04-arquitectura.md](./docs/04-arquitectura.md))
+
+Cuando se implemente el MVP según las [tareas por HU](./docs/09-tareas-por-hu.md), la estructura podría evolucionar así:
+
+```
+SCA-EMPX/
+├── docs/                    # (igual que arriba)
+├── backend/                 # API y lógica de negocio (FastAPI/Flask)
+│   ├── app/
+│   │   ├── api/             # Endpoints REST
+│   │   ├── core/            # Config, seguridad, BD
+│   │   ├── models/          # Modelos de datos
+│   │   ├── services/        # Lógica de negocio y reconocimiento facial
+│   │   └── main.py
+│   ├── tests/
+│   └── requirements.txt o pyproject.toml
+├── frontend/                 # Interfaz web (React o HTML/JS simple)
+│   ├── src/
+│   └── ...
+├── scripts/                  # Scripts de utilidad (ej. convertir docs a Word)
+├── main.py                   # Punto de entrada o redirección
+├── pyproject.toml
+└── README.md
+```
+
+La estructura definitiva se ajustará según las decisiones del equipo y el documento [Arquitectura del Sistema](./docs/04-arquitectura.md).
 
 ## 👥 Actores del Sistema
 
@@ -67,24 +104,6 @@ SCA-EMPX/
 **Fase Actual**: Documentación y diseño
 
 Este repositorio contiene la documentación completa del proyecto. La implementación técnica se desarrollará en fases posteriores.
-
-## 📄 Exportar a Word
-
-Para convertir los documentos Markdown a formato Word (.docx):
-
-1. **Instalar Pandoc** (si no lo tienes):
-   ```powershell
-   winget install JohnMacFarlane.Pandoc
-   ```
-
-2. **Ejecutar el script de conversión**:
-   ```powershell
-   .\scripts\convertir-a-word-simple.ps1
-   ```
-
-Los archivos Word se generarán en la carpeta `docs-word/`.
-
-**Ver más opciones**: [`scripts/README-conversion.md`](./scripts/README-conversion.md)
 
 ## 📝 Licencia
 
