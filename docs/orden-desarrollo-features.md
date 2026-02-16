@@ -45,7 +45,36 @@ El orden recomendado es el del **backlog priorizado** del doc 06 (Sprints 1, 2, 
 
 ## 2. Orden recomendado para registrar features
 
-Usa este orden tanto para **ramas Git** (`feature/hu-XX-nombre`) como para **User Stories / Tasks** en Azure DevOps. Cada fila es una feature que puedes registrar en secuencia.
+### Orden de ramas feature para desarrollar (lista en secuencia)
+
+Sigue **este orden** para crear y trabajar las ramas. Una vez integrada cada rama en `develop`, creas la siguiente desde `develop` actualizado.
+
+| Paso | Rama feature | HU |
+|------|----------------|-----|
+| 0 | `feature/setup-mvp` | — (transversal) |
+| 1 | `feature/hu-05-validar-acceso-facial` | HU-05 |
+| 2 | `feature/hu-01-registrar-empleado` | HU-01 |
+| 3 | `feature/hu-03-registrar-visitante` | HU-03 |
+| 4 | `feature/hu-04-autorizacion-visita` | HU-04 |
+| 5 | `feature/hu-06-registro-evento-entrada` | HU-06 |
+| 6 | `feature/hu-07-registro-evento-salida` | HU-07 |
+| 7 | `feature/hu-09-gestionar-usuarios` | HU-09 |
+| 8 | `feature/hu-02-desactivar-empleado` | HU-02 |
+| 9 | `feature/hu-08-historial-accesos` | HU-08 |
+| 10 | `feature/hu-10-actualizar-empleado` | HU-10 |
+| 11 | `feature/hu-11-dashboard-accesos` | HU-11 |
+| 12 | `feature/hu-13-revocar-autorizacion` | HU-13 |
+| 13 | `feature/hu-14-personas-dentro` | HU-14 |
+| 14 | `feature/hu-12-reporte-accesos` | HU-12 |
+
+**Lista en una línea (para referencia):**  
+`feature/setup-mvp` → `feature/hu-05-validar-acceso-facial` → `feature/hu-01-registrar-empleado` → `feature/hu-03-registrar-visitante` → `feature/hu-04-autorizacion-visita` → `feature/hu-06-registro-evento-entrada` → `feature/hu-07-registro-evento-salida` → `feature/hu-09-gestionar-usuarios` → `feature/hu-02-desactivar-empleado` → `feature/hu-08-historial-accesos` → `feature/hu-10-actualizar-empleado` → `feature/hu-11-dashboard-accesos` → `feature/hu-13-revocar-autorizacion` → `feature/hu-14-personas-dentro` → `feature/hu-12-reporte-accesos`
+
+---
+
+### Detalle por feature (tabla completa)
+
+Usa este orden tanto para **ramas Git** como para **User Stories / Tasks** en Azure DevOps. Cada fila es una feature que puedes registrar en secuencia.
 
 | # | HU   | Nombre sugerido rama / feature | Descripción breve |
 |---|------|---------------------------------|-------------------|
