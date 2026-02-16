@@ -32,7 +32,7 @@ Para desarrollar de forma alineada al proyecto hay que considerar **toda** esta 
 
 - **Backend**: Python (FastAPI o Flask).
 - **Reconocimiento facial**: Librería pre-entrenada (face_recognition, DeepFace o MediaPipe).
-- **Base de datos**: SQLite (desarrollo) o PostgreSQL (opcional).
+- **Base de datos**: SQLite (definido para este ejercicio).
 - **Frontend**: Interfaz web simple (React o HTML/CSS/JS).
 - **Autenticación**: Básica (JWT o sesión) para administración.
 
@@ -45,11 +45,40 @@ El orden recomendado es el del **backlog priorizado** del doc 06 (Sprints 1, 2, 
 
 ## 2. Orden recomendado para registrar features
 
-Usa este orden tanto para **ramas Git** (`feature/hu-XX-nombre`) como para **User Stories / Tasks** en Azure DevOps. Cada fila es una feature que puedes registrar en secuencia.
+### Orden de ramas feature para desarrollar (lista en secuencia)
+
+Sigue **este orden** para crear y trabajar las ramas. Una vez integrada cada rama en `develop`, creas la siguiente desde `develop` actualizado.
+
+| Paso | Rama feature | HU |
+|------|----------------|-----|
+| 0 | `feature/setup-mvp` | — (transversal) |
+| 1 | `feature/hu-05-validar-acceso-facial` | HU-05 |
+| 2 | `feature/hu-01-registrar-empleado` | HU-01 |
+| 3 | `feature/hu-03-registrar-visitante` | HU-03 |
+| 4 | `feature/hu-04-autorizacion-visita` | HU-04 |
+| 5 | `feature/hu-06-registro-evento-entrada` | HU-06 |
+| 6 | `feature/hu-07-registro-evento-salida` | HU-07 |
+| 7 | `feature/hu-09-gestionar-usuarios` | HU-09 |
+| 8 | `feature/hu-02-desactivar-empleado` | HU-02 |
+| 9 | `feature/hu-08-historial-accesos` | HU-08 |
+| 10 | `feature/hu-10-actualizar-empleado` | HU-10 |
+| 11 | `feature/hu-11-dashboard-accesos` | HU-11 |
+| 12 | `feature/hu-13-revocar-autorizacion` | HU-13 |
+| 13 | `feature/hu-14-personas-dentro` | HU-14 |
+| 14 | `feature/hu-12-reporte-accesos` | HU-12 |
+
+**Lista en una línea (para referencia):**  
+`feature/setup-mvp` → `feature/hu-05-validar-acceso-facial` → `feature/hu-01-registrar-empleado` → `feature/hu-03-registrar-visitante` → `feature/hu-04-autorizacion-visita` → `feature/hu-06-registro-evento-entrada` → `feature/hu-07-registro-evento-salida` → `feature/hu-09-gestionar-usuarios` → `feature/hu-02-desactivar-empleado` → `feature/hu-08-historial-accesos` → `feature/hu-10-actualizar-empleado` → `feature/hu-11-dashboard-accesos` → `feature/hu-13-revocar-autorizacion` → `feature/hu-14-personas-dentro` → `feature/hu-12-reporte-accesos`
+
+---
+
+### Detalle por feature (tabla completa)
+
+Usa este orden tanto para **ramas Git** como para **User Stories / Tasks** en Azure DevOps. Cada fila es una feature que puedes registrar en secuencia.
 
 | # | HU   | Nombre sugerido rama / feature | Descripción breve |
 |---|------|---------------------------------|-------------------|
-| 0 | —    | `feature/setup-mvp`            | Tareas transversales: proyecto backend (FastAPI/Flask), venv, dependencias, BD (SQLite), migraciones, auth básica. *Hacer primero.* |
+| 0 | —    | `feature/setup-mvp`            | Tareas transversales: proyecto backend (FastAPI/Flask), venv, dependencias, BD SQLite, migraciones, auth básica. *Hacer primero.* |
 | 1 | HU-05| `feature/hu-05-validar-acceso-facial` | Validar acceso por reconocimiento facial (método principal). POST /api/validate-access, detección rostro, embedding, comparación, respuesta permitido/denegado. |
 | 2 | HU-01| `feature/hu-01-registrar-empleado`    | Registrar empleado: esquema persona + reconocimiento_facial, POST /api/personas con foto, embedding, pantalla de registro. |
 | 3 | HU-03| `feature/hu-03-registrar-visitante`    | Registrar visitante: extender persona (empresa, motivo, empleado visitado), mismo flujo foto/embedding, pantalla registro visitante. |
@@ -71,9 +100,15 @@ Usa este orden tanto para **ramas Git** (`feature/hu-XX-nombre`) como para **Use
 
 ### En Git
 
-1. Crear y trabajar una rama por feature en el orden de la tabla (salvo que el equipo decida otro orden para una HU concreta).
-2. Integrar en `develop` cuando la HU esté terminada (según [Guía de Git](./guia-git.md): `feature/xxx` → `develop` → `uat` → `main`).
-3. Nombre de rama sugerido: `feature/hu-XX-nombre-corto` (ej. `feature/hu-01-registrar-empleado`).
+**Importante:** No se crean todas las ramas feature al inicio desde `main`. Se trabaja **una rama a la vez**:
+
+1. Crear **solo una** rama feature (ej. `feature/setup-mvp` o `feature/hu-05-validar-acceso-facial`) desde `develop` (o desde `main` si es la primera).
+2. Trabajar en esa rama hasta terminar la HU; hacer commit y push.
+3. Integrar en `develop` (merge o PR). Actualizar `develop` local con `git pull origin develop`.
+4. Crear la **siguiente** rama feature **desde** el `develop` ya actualizado (ej. `feature/hu-01-registrar-empleado`). Así la nueva rama ya trae los cambios del feature anterior.
+5. Repetir: una feature → integrar → siguiente rama desde `develop`. Detalle en [Guía de Git](./guia-git.md) (sección *¿Se crean todas las ramas feature al mismo tiempo?*).
+
+Nombre de rama sugerido: `feature/hu-XX-nombre-corto` (ej. `feature/hu-01-registrar-empleado`).
 
 ### En Azure DevOps
 

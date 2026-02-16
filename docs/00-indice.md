@@ -233,6 +233,7 @@ Procesos BPMN
 - **Cómo funciona el proceso**: [Procesos BPMN](./07-procesos-bpmn.md)
 - **Tareas de desarrollo por HU (para desarrollo y Azure DevOps)**: [Tareas por HU](./09-tareas-por-hu.md)
 - **Orden para desarrollar y registrar features (ramas Git / backlog)**: [Orden desarrollo y features](./orden-desarrollo-features.md)
+- **Bitácora de desarrollo (check de actividades, orden, avance)**: [Bitácora de desarrollo](./bitacora-desarrollo.md)
 - **Uso de Git (ramas, commits, ambientes, pull, push)**: [Guía de Uso de Git](./guia-git.md)
 
 ---

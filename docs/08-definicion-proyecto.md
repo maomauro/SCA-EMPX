@@ -113,7 +113,7 @@ Desarrollar un prototipo funcional de sistema de control de acceso basado en rec
 1. **Arquitectura Simple**
    - Aplicación monolítica o de 2 capas (backend + frontend)
    - API REST básica
-   - Base de datos simple (SQLite o PostgreSQL básico)
+   - Base de datos: SQLite (definido para este ejercicio)
    - Sin requerimientos de alta disponibilidad
 
 2. **Seguridad Básica**
@@ -129,7 +129,7 @@ Desarrollar un prototipo funcional de sistema de control de acceso basado en rec
 4. **Tecnologías Simplificadas**
    - Python (FastAPI o Flask) para backend
    - React o HTML simple para frontend
-   - SQLite o PostgreSQL básico
+   - SQLite
    - Librería de reconocimiento facial pre-entrenada (face_recognition, DeepFace, etc.)
 
 ### 2.3. Alcance del MVP
@@ -197,7 +197,7 @@ Desarrollar un prototipo funcional de sistema de control de acceso basado en rec
 **Tecnologías Simplificadas:**
 - **Backend**: Python (FastAPI o Flask)
 - **IA/ML**: Librería pre-entrenada (face_recognition, DeepFace, o MediaPipe)
-- **Base de Datos**: SQLite (desarrollo) o PostgreSQL (producción simple)
+- **Base de Datos**: SQLite (para este ejercicio)
 - **Frontend**: React simple o HTML/CSS/JavaScript básico
 - **Autenticación**: JWT básico o sesiones simples
 - **Infraestructura**: Servidor único, sin Docker/Kubernetes (opcional)
@@ -278,7 +278,7 @@ El proyecto se divide en **3 fases principales** con una duración total de **3 
 - **Tarea 2.2**: Creación de base de datos y tablas
   - **Duración**: 0.5 día
   - **Responsable**: Desarrollador Backend
-  - **Entregables**: Base de datos SQLite/PostgreSQL creada
+  - **Entregables**: Base de datos SQLite creada
 
 **Día 2-3: Desarrollo de API REST Básica**
 - **Tarea 2.3**: Configuración de FastAPI/Flask
@@ -469,7 +469,7 @@ Semanas: 1 (Días 1-5)    2 (Días 6-10)    3 (Días 11-15)
 #### Infraestructura y Herramientas Mínimas
 
 - **Servidor de Desarrollo**: 1 computadora personal o servidor básico
-- **Base de Datos**: SQLite (desarrollo) o PostgreSQL (producción simple)
+- **Base de Datos**: SQLite (para este ejercicio)
 - **Herramientas de Desarrollo**: 
   - Python 3.8+
   - FastAPI o Flask
