@@ -120,11 +120,42 @@ Flujo: **petición** → `api/` → `services/` → `db/` (SQLite) y/o `ml/` →
 - **RRHH**: Gestiona altas/bajas de empleados
 - **Sistema de Torniquetes/Control Físico**: Dispositivo que valida acceso
 
+## 🚀 Instalación y ejecución
+
+1. **Requisitos**: Python 3.13+, [uv](https://docs.astral.sh/uv/) (o `pip`).
+
+2. **Clonar y entrar al proyecto**:
+   ```bash
+   cd SCA-EMPX
+   ```
+
+3. **Instalar dependencias**:
+   ```bash
+   uv sync
+   ```
+   (o `pip install -e .` si no usas uv.)
+
+4. **Variables de entorno** (opcional): copiar `.env.example` a `.env` y ajustar. Por defecto la BD es `sqlite:///./backend/app/db/sqlite.db`.
+
+5. **Inicializar la base de datos** (crear tablas y usuario admin):
+   ```bash
+   uv run python scripts/init_db.py
+   ```
+   Se crean las tablas y un usuario **admin** con contraseña **admin** (cambiar en producción).
+
+6. **Arrancar la API**:
+   ```bash
+   uv run python main.py
+   ```
+   La API queda en `http://0.0.0.0:8000`. Documentación interactiva: `http://localhost:8000/docs`.
+
+7. **Login**: `POST /api/v1/usuarios/login` con body `{"username": "admin", "password": "admin"}`. Respuesta: `{"access_token": "...", "token_type": "bearer"}`. Usar el token en cabecera `Authorization: Bearer <token>` para rutas protegidas.
+
+8. **Validar acceso (HU-05)**: `POST /api/v1/access/validate` con imagen (form-data, campo `file`). O abrir en el navegador `http://localhost:8000/validate-access` para subir una foto. Reconocimiento facial usa **DeepFace (Facenet)**; al registrar personas (HU-01) debe usarse el mismo modelo para generar embeddings.
+
 ## 🚀 Estado del Proyecto
 
-**Fase Actual**: Documentación y diseño
-
-Este repositorio contiene la documentación completa del proyecto. La implementación técnica se desarrollará en fases posteriores.
+**Fase actual**: Setup MVP implementado (estructura, SQLite, auth básica). Siguiente: feature HU-05 (validar acceso facial).
 
 ## 📝 Licencia
 

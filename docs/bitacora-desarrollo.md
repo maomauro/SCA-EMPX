@@ -17,8 +17,8 @@ Documento para **registrar el avance** del desarrollo del proyecto: check de act
 
 | Paso | Rama / feature              | HU    | Estado      | Fecha (última actualización) |
 |------|-----------------------------|-------|-------------|------------------------------|
-| 0    | feature/setup-mvp           | —     | En curso    | —                            |
-| 1    | feature/hu-05-validar-acceso-facial | HU-05 | Pendiente   | —                            |
+| 0    | feature/setup-mvp           | —     | Hecho       | —                            |
+| 1    | feature/hu-05-validar-acceso-facial | HU-05 | Hecho       | —                            |
 | 2    | feature/hu-01-registrar-empleado    | HU-01 | Pendiente   | —                            |
 | 3    | feature/hu-03-registrar-visitante   | HU-03 | Pendiente   | —                            |
 | 4    | feature/hu-04-autorizacion-visita    | HU-04 | Pendiente   | —                            |
@@ -46,9 +46,9 @@ Documento para **registrar el avance** del desarrollo del proyecto: check de act
 |---|-----------|--------|-------|
 | 1 | Configurar proyecto backend (FastAPI), venv, pyproject.toml, dependencias | [x] | Estructura creada |
 | 2 | Estructura de carpetas (api, core, db, schemas, services, ml) | [x] | |
-| 3 | Configurar BD SQLite; scripts o migraciones de creación de tablas | [ ] | |
-| 4 | Autenticación básica (login) y protección de rutas (para HU-09) | [ ] | |
-| 5 | README / documentación de instalación y ejecución | [ ] | |
+| 3 | Configurar BD SQLite; scripts o migraciones de creación de tablas | [x] | init_db.py + SQLAlchemy + modelos |
+| 4 | Autenticación básica (login) y protección de rutas (para HU-09) | [x] | JWT, login, get_current_user |
+| 5 | README / documentación de instalación y ejecución | [x] | Sección Instalación y ejecución |
 
 **Fecha inicio:** ___________  
 **Fecha fin:** ___________  
@@ -62,13 +62,13 @@ Documento para **registrar el avance** del desarrollo del proyecto: check de act
 
 | # | Actividad | Check | Notas |
 |---|-----------|--------|-------|
-| 1 | POST /api/validate-access (o /api/v1/access/validate): body con imagen | [ ] | |
-| 2 | Detectar rostro y generar embedding (misma librería que registro) | [ ] | |
-| 3 | Comparar embedding con activos en BD; umbral configurable | [ ] | |
-| 4 | Si coincidencia: verificar persona activa; retornar allowed, person_id, similarity | [ ] | |
-| 5 | Si no coincidencia o inactivo: retornar allowed=false y reason | [ ] | |
-| 6 | Invocar registro de evento de entrada cuando allowed=true (HU-06) | [ ] | |
-| 7 | Página de prueba: subir foto/webcam → POST validate-access → resultado | [ ] | |
+| 1 | POST /api/validate-access (o /api/v1/access/validate): body con imagen | [x] | File upload en /api/v1/access/validate |
+| 2 | Detectar rostro y generar embedding (misma librería que registro) | [x] | DeepFace Facenet en ml/inference.py |
+| 3 | Comparar embedding con activos en BD; umbral configurable | [x] | SIMILARITY_THRESHOLD, FACE_DISTANCE_THRESHOLD |
+| 4 | Si coincidencia: verificar persona activa; retornar allowed, person_id, similarity | [x] | access_service + response |
+| 5 | Si no coincidencia o inactivo: retornar allowed=false y reason | [x] | reason: rostro_no_detectado, persona_no_identificada, etc. |
+| 6 | Invocar registro de evento de entrada cuando allowed=true (HU-06) | [x] | _register_entrada en access_service |
+| 7 | Página de prueba: subir foto/webcam → POST validate-access → resultado | [x] | GET /validate-access (HTML) |
 
 **Fecha inicio:** ___________  
 **Fecha fin:** ___________  
@@ -203,12 +203,12 @@ Documento para **registrar el avance** del desarrollo del proyecto: check de act
 
 Anotar aquí hitos, decisiones, bloqueos o cambios de orden con fecha.
 
-| Fecha | Entrada |
-|-------|---------|
-| | *Ejemplo: Estructura inicial creada. Rama main. Próximo: feature/setup-mvp.* |
-| | |
-| | |
-| | |
+| Fecha | Entrada                                                                       |
+|-------|-------------------------------------------------------------------------------|
+|       | *Ejemplo: Estructura inicial creada. Rama main. Próximo: feature/setup-mvp.*  |
+|       |                                                                               |
+|       |                                                                               |
+|       |                                                                               |
 
 ---
 
