@@ -32,7 +32,7 @@ Para desarrollar de forma alineada al proyecto hay que considerar **toda** esta 
 
 - **Backend**: Python (FastAPI o Flask).
 - **Reconocimiento facial**: Librería pre-entrenada (face_recognition, DeepFace o MediaPipe).
-- **Base de datos**: SQLite (desarrollo) o PostgreSQL (opcional).
+- **Base de datos**: SQLite (definido para este ejercicio).
 - **Frontend**: Interfaz web simple (React o HTML/CSS/JS).
 - **Autenticación**: Básica (JWT o sesión) para administración.
 
@@ -78,7 +78,7 @@ Usa este orden tanto para **ramas Git** como para **User Stories / Tasks** en Az
 
 | # | HU   | Nombre sugerido rama / feature | Descripción breve |
 |---|------|---------------------------------|-------------------|
-| 0 | —    | `feature/setup-mvp`            | Tareas transversales: proyecto backend (FastAPI/Flask), venv, dependencias, BD (SQLite), migraciones, auth básica. *Hacer primero.* |
+| 0 | —    | `feature/setup-mvp`            | Tareas transversales: proyecto backend (FastAPI/Flask), venv, dependencias, BD SQLite, migraciones, auth básica. *Hacer primero.* |
 | 1 | HU-05| `feature/hu-05-validar-acceso-facial` | Validar acceso por reconocimiento facial (método principal). POST /api/validate-access, detección rostro, embedding, comparación, respuesta permitido/denegado. |
 | 2 | HU-01| `feature/hu-01-registrar-empleado`    | Registrar empleado: esquema persona + reconocimiento_facial, POST /api/personas con foto, embedding, pantalla de registro. |
 | 3 | HU-03| `feature/hu-03-registrar-visitante`    | Registrar visitante: extender persona (empresa, motivo, empleado visitado), mismo flujo foto/embedding, pantalla registro visitante. |

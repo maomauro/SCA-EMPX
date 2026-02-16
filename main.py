@@ -1,5 +1,16 @@
+"""
+Punto de entrada del proyecto SCA-EMPX. Arranca la API backend.
+"""
+import uvicorn
+
+
 def main():
-    print("Hello from sca-empx!")
+    uvicorn.run(
+        "backend.app.main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True,
+    )
 
 
 if __name__ == "__main__":

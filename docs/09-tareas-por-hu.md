@@ -2,7 +2,7 @@
 
 Tareas puntuales y objetivas asociadas a cada HU, para desarrollo del software y carga en Azure DevOps (como ítems Task bajo cada User Story).
 
-**Alcance:** MVP (reconocimiento facial con librería pre-entrenada, FastAPI/Flask, SQLite/PostgreSQL, frontend simple). Referencia: [08-definicion-proyecto.md](./08-definicion-proyecto.md).
+**Alcance:** MVP (reconocimiento facial con librería pre-entrenada, FastAPI/Flask, **SQLite** como base de datos, frontend simple). Referencia: [08-definicion-proyecto.md](./08-definicion-proyecto.md).
 
 ---
 
@@ -165,7 +165,7 @@ Tareas puntuales y objetivas asociadas a cada HU, para desarrollo del software y
 | # | Tarea | Nota |
 |---|--------|------|
 | 1 | Configurar proyecto backend (FastAPI o Flask), venv, dependencias (incl. librería reconocimiento facial) | Semana 1 |
-| 2 | Configurar BD (SQLite dev / PostgreSQL opcional); migraciones o scripts de creación de tablas | Semana 2 |
+| 2 | Configurar BD SQLite; migraciones o scripts de creación de tablas | Semana 2 |
 | 3 | Autenticación básica (login) y protección de rutas de administración | Para HU-09 y uso del frontend |
 | 4 | README: instalación, variables de entorno, cómo ejecutar backend y frontend | Cierre MVP |
 

@@ -34,14 +34,53 @@ La documentación completa del proyecto se encuentra en la carpeta [`docs/`](./d
 
 **💡 Recomendación**: Comienza por el [Índice de Documentación](./docs/00-indice.md) para una guía completa de lectura.
 
+## 🗄️ Base de datos para este ejercicio
+
+**Para este ejercicio se utiliza SQLite** como base de datos. Queda así establecido para todo el desarrollo del MVP (backend, migraciones, scripts y documentación de implementación). Otras opciones (PostgreSQL, etc.) no se consideran en el alcance actual.
+
 ## 🏗️ Estructura del Proyecto
 
 ### Estructura actual (raíz del repositorio)
 
+Organización en capas tipo **MVC**: Controller (`api/`), Service (`services/`), Model (`db/` + `schemas/`), **SQLite** en `db/`, y módulo **ML** para reconocimiento facial.
+
+| Capa | Carpeta | Rol |
+|------|---------|-----|
+| **Controller** | `backend/app/api/` | Endpoints REST; valida con schemas y llama a services. |
+| **Service** | `backend/app/services/` | Lógica de aplicación; orquesta db y ml. |
+| **Model** | `backend/app/db/` + `schemas/` | SQLite, ORM, migraciones; Pydantic request/response. |
+| **ML** | `backend/app/ml/` | Reconocimiento facial: inferencia, preprocessing. |
+| **Core** | `backend/app/core/` | Config, seguridad, logging. |
+
 ```
 SCA-EMPX/
-├── docs/                              # Documentación del proyecto
-│   ├── 00-indice.md                   # Índice y guía de navegación
+├── backend/
+│   ├── app/
+│   │   ├── api/                     # Controller: endpoints REST
+│   │   │   └── v1/
+│   │   │       └── routes/
+│   │   │           ├── personas.py
+│   │   │           ├── access.py
+│   │   │           ├── events.py
+│   │   │           ├── autorizaciones.py
+│   │   │           └── usuarios.py
+│   │   ├── core/                    # Config, seguridad, logging
+│   │   │   ├── config.py
+│   │   │   ├── security.py
+│   │   │   └── logging.py
+│   │   ├── db/                      # Model: SQLite, ORM, migraciones
+│   │   │   ├── database.py
+│   │   │   ├── models.py
+│   │   │   └── migrations/
+│   │   ├── schemas/                 # Pydantic request/response
+│   │   ├── services/                # Lógica de aplicación
+│   │   ├── ml/                      # Reconocimiento facial
+│   │   │   ├── inference.py
+│   │   │   └── preprocessing/
+│   │   └── main.py
+│   └── tests/
+├── docs/
+│   ├── 00-indice.md
 │   ├── 01-contexto-empresarial.md
 │   ├── 02-caso-de-negocio.md
 │   ├── 03-requerimientos-srs.md
@@ -49,46 +88,28 @@ SCA-EMPX/
 │   ├── 05-modelo-datos.md
 │   ├── 06-historias-usuario.md
 │   ├── 07-procesos-bpmn.md
-│   ├── 08-definicion-proyecto.md      # Objetivos, alcance, cronograma MVP
-│   ├── 09-tareas-por-hu.md            # Tareas de desarrollo por HU
-│   ├── orden-desarrollo-features.md   # Orden para desarrollar y registrar features
-│   └── guia-git.md                    # Guía de uso de Git y ambientes
-├── main.py                            # Punto de entrada de la aplicación (MVP)
-├── pyproject.toml                     # Configuración del proyecto Python (uv/pip)
-├── .python-version                    # Versión de Python del proyecto
-├── .gitignore
-├── uv.lock                            # Lockfile de dependencias (uv)
-└── README.md
-```
-
-*El entorno virtual (`.venv/`) se genera localmente y no se versiona.*
-
-### Estructura prevista al avanzar el desarrollo (referencia: [04-arquitectura.md](./docs/04-arquitectura.md))
-
-Cuando se implemente el MVP según las [tareas por HU](./docs/09-tareas-por-hu.md), la estructura podría evolucionar así:
-
-```
-SCA-EMPX/
-├── docs/                    # (igual que arriba)
-├── backend/                 # API y lógica de negocio (FastAPI/Flask)
-│   ├── app/
-│   │   ├── api/             # Endpoints REST
-│   │   ├── core/            # Config, seguridad, BD
-│   │   ├── models/          # Modelos de datos
-│   │   ├── services/        # Lógica de negocio y reconocimiento facial
-│   │   └── main.py
-│   ├── tests/
-│   └── requirements.txt o pyproject.toml
-├── frontend/                 # Interfaz web (React o HTML/JS simple)
-│   ├── src/
-│   └── ...
-├── scripts/                  # Scripts de utilidad (ej. convertir docs a Word)
-├── main.py                   # Punto de entrada o redirección
+│   ├── 08-definicion-proyecto.md
+│   ├── 09-tareas-por-hu.md
+│   ├── orden-desarrollo-features.md
+│   └── guia-git.md
+├── frontend/
+│   └── src/
+│       └── index.html
+├── scripts/
+│   ├── init_db.py
+│   └── README.md
+├── tests/
+├── main.py                          # Punto de entrada (arranca API)
 ├── pyproject.toml
+├── .python-version
+├── .gitignore
+├── uv.lock
 └── README.md
 ```
 
-La estructura definitiva se ajustará según las decisiones del equipo y el documento [Arquitectura del Sistema](./docs/04-arquitectura.md).
+Flujo: **petición** → `api/` → `services/` → `db/` (SQLite) y/o `ml/` → **respuesta**.
+
+*`.venv/` y `.env` no se versionan. Archivos `*.db` están en `.gitignore`.*
 
 ## 👥 Actores del Sistema
 
