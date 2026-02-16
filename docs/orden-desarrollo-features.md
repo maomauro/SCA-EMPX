@@ -71,9 +71,15 @@ Usa este orden tanto para **ramas Git** (`feature/hu-XX-nombre`) como para **Use
 
 ### En Git
 
-1. Crear y trabajar una rama por feature en el orden de la tabla (salvo que el equipo decida otro orden para una HU concreta).
-2. Integrar en `develop` cuando la HU esté terminada (según [Guía de Git](./guia-git.md): `feature/xxx` → `develop` → `uat` → `main`).
-3. Nombre de rama sugerido: `feature/hu-XX-nombre-corto` (ej. `feature/hu-01-registrar-empleado`).
+**Importante:** No se crean todas las ramas feature al inicio desde `main`. Se trabaja **una rama a la vez**:
+
+1. Crear **solo una** rama feature (ej. `feature/setup-mvp` o `feature/hu-05-validar-acceso-facial`) desde `develop` (o desde `main` si es la primera).
+2. Trabajar en esa rama hasta terminar la HU; hacer commit y push.
+3. Integrar en `develop` (merge o PR). Actualizar `develop` local con `git pull origin develop`.
+4. Crear la **siguiente** rama feature **desde** el `develop` ya actualizado (ej. `feature/hu-01-registrar-empleado`). Así la nueva rama ya trae los cambios del feature anterior.
+5. Repetir: una feature → integrar → siguiente rama desde `develop`. Detalle en [Guía de Git](./guia-git.md) (sección *¿Se crean todas las ramas feature al mismo tiempo?*).
+
+Nombre de rama sugerido: `feature/hu-XX-nombre-corto` (ej. `feature/hu-01-registrar-empleado`).
 
 ### En Azure DevOps
 

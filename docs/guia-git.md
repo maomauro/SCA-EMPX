@@ -166,6 +166,17 @@ Desde la rama que quieres integrar (por ejemplo `feature/mi-feature`):
    ```
 3. Subir la rama y, si el equipo lo usa, abrir un **Pull Request** o **Merge Request** hacia `main` en Azure DevOps / GitHub / GitLab.
 
+### ¿Se crean todas las ramas feature al mismo tiempo desde main?
+
+**No.** No se crean todas las ramas feature de una vez como copia de `main`. El flujo correcto es:
+
+1. **Una rama feature a la vez**: Creas solo la rama de la feature en la que vas a trabajar (por ejemplo `feature/hu-05-validar-acceso-facial`).
+2. **Trabajas** en esa rama (commits, pruebas).
+3. **Integras** cuando terminas: fusionas esa rama en `develop` (o en `main` si no usas `develop`) y subes los cambios.
+4. **Siguiente feature**: Te pasas a `develop`, actualizas (`git pull origin develop`), y **entonces** creas la **nueva** rama desde ese `develop` ya actualizado (por ejemplo `feature/hu-01-registrar-empleado`). Así la nueva rama ya incluye el código del feature anterior.
+
+Resumen: **una feature → integrar en develop → crear la siguiente rama desde develop**. Así cada nueva rama parte del último estado del proyecto con todos los features ya integrados.
+
 ---
 
 ## 4. Manejo de ambientes (dev, UAT, producción)
