@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Validar acceso - SCA-EMPX</title>
+  <style>
+    body { font-family: sans-serif; max-width: 500px; margin: 2rem auto; padding: 0 1rem; }
+    h1 { font-size: 1.25rem; }
+    input[type="file"] { margin: 0.5rem 0; }
+    button { padding: 0.5rem 1rem; cursor: pointer; }
+    #result { margin-top: 1rem; padding: 1rem; border-radius: 8px; }
+    .ok { background: #d4edda; color: #155724; }
+    .deny { background: #f8d7da; color: #721c24; }
+    .error { background: #fff3cd; color: #856404; }
+  </style>
+</head>
+<body>
+  <h1>Validar acceso por reconocimiento facial</h1>
+  <p>Sube una imagen con un rostro (JPEG/PNG). Se comparará con las personas registradas.</p>
+  <form id="form">
+    <input type="file" id="file" accept="image/*" required />
+    <br />
+    <button type="submit">Validar acceso</button>
+  </form>
+  <div id="result"></div>
+  <script>
+    document.getElementById("form").onsubmit = async (e) => {
+      e.preventDefault();
+      const fileInput = document.getElementById("file");
+      const resultDiv = document.getElementById("result");
+      if (!fileInput.files.length) return;
+      const formData = new FormData();
+      formData.append("file", fileInput.files[0]);
+      resultDiv.textContent = "Validando...";
+      resultDiv.className = "";
+      try {
+        const r = await fetch("/api/v1/access/validate", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await r.json();
+        if (data.allowed) {
+          resultDiv.className = "ok";
+          resultDiv.textContent = "Acceso permitido. Persona ID: " + data.person_id + ", similitud: " + (data.similarity != null ? data.similarity : "-");
+        } else {
+          resultDiv.className = "deny";
+          resultDiv.textContent = "Acceso denegado. Motivo: " + (data.reason || "persona no identificada");
+        }
+      } catch (err) {
+        resultDiv.className = "error";
+        resultDiv.textContent = "Error: " + err.message;
+      }
+    };
+  </script>
+</body>
+</html>
