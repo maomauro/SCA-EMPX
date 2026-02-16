@@ -29,7 +29,8 @@ La documentación completa del proyecto se encuentra en la carpeta [`docs/`](./d
 - **[👥 Historias de Usuario](./docs/06-historias-usuario.md)** - Backlog ágil con historias de usuario
 - **[🔄 Procesos BPMN](./docs/07-procesos-bpmn.md)** - Flujos de negocio de ingreso y salida
 - **[📋 Tareas por HU](./docs/09-tareas-por-hu.md)** - Tareas de desarrollo por historia de usuario
-- **[📘 Guía de Uso de Git](./docs/guia-git.md)** - Flujo de trabajo con Git (ramas, commits, sincronización)
+- **[📌 Orden desarrollo y features](./docs/orden-desarrollo-features.md)** - Orden para desarrollar y registrar features (Git / backlog)
+- **[📘 Guía de Uso de Git](./docs/guia-git.md)** - Flujo de trabajo con Git (ramas, ambientes, commits, sincronización)
 
 **💡 Recomendación**: Comienza por el [Índice de Documentación](./docs/00-indice.md) para una guía completa de lectura.
 

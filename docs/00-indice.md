@@ -151,6 +151,19 @@ Este índice te ayudará a navegar por toda la documentación del **Sistema de C
 
 ---
 
+### 11. [Orden de desarrollo y registro de features](./orden-desarrollo-features.md)
+**Descripción**: Confirmación del contexto según la documentación y orden recomendado para iniciar el desarrollo paso a paso y registrar features (ramas Git y backlog) de forma ordenada.
+
+**Contenido**:
+- Contexto del proyecto y MVP según docs 06, 08 y 09
+- Tabla ordenada de features (HU + nombre de rama sugerido)
+- Cómo usar el orden en Git y en Azure DevOps
+- Prioridad MVP estricto
+
+**Audiencia**: Desarrolladores, Product Owner, Scrum Master.
+
+---
+
 ## 🗺️ Guía de Lectura Recomendada
 
 ### Para Nuevos Miembros del Equipo
@@ -219,7 +232,8 @@ Procesos BPMN
 - **Qué desarrollar primero**: [Historias de Usuario](./06-historias-usuario.md)
 - **Cómo funciona el proceso**: [Procesos BPMN](./07-procesos-bpmn.md)
 - **Tareas de desarrollo por HU (para desarrollo y Azure DevOps)**: [Tareas por HU](./09-tareas-por-hu.md)
-- **Uso de Git (ramas, commits, pull, push)**: [Guía de Uso de Git](./guia-git.md)
+- **Orden para desarrollar y registrar features (ramas Git / backlog)**: [Orden desarrollo y features](./orden-desarrollo-features.md)
+- **Uso de Git (ramas, commits, ambientes, pull, push)**: [Guía de Uso de Git](./guia-git.md)
 
 ---
 
