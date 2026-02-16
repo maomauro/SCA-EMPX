@@ -17,7 +17,7 @@ Documento para **registrar el avance** del desarrollo del proyecto: check de act
 
 | Paso | Rama / feature              | HU    | Estado      | Fecha (última actualización) |
 |------|-----------------------------|-------|-------------|------------------------------|
-| 0    | feature/setup-mvp           | —     | En curso    | —                            |
+| 0    | feature/setup-mvp           | —     | Hecho       | —                            |
 | 1    | feature/hu-05-validar-acceso-facial | HU-05 | Pendiente   | —                            |
 | 2    | feature/hu-01-registrar-empleado    | HU-01 | Pendiente   | —                            |
 | 3    | feature/hu-03-registrar-visitante   | HU-03 | Pendiente   | —                            |
@@ -46,9 +46,9 @@ Documento para **registrar el avance** del desarrollo del proyecto: check de act
 |---|-----------|--------|-------|
 | 1 | Configurar proyecto backend (FastAPI), venv, pyproject.toml, dependencias | [x] | Estructura creada |
 | 2 | Estructura de carpetas (api, core, db, schemas, services, ml) | [x] | |
-| 3 | Configurar BD SQLite; scripts o migraciones de creación de tablas | [ ] | |
-| 4 | Autenticación básica (login) y protección de rutas (para HU-09) | [ ] | |
-| 5 | README / documentación de instalación y ejecución | [ ] | |
+| 3 | Configurar BD SQLite; scripts o migraciones de creación de tablas | [x] | init_db.py + SQLAlchemy + modelos |
+| 4 | Autenticación básica (login) y protección de rutas (para HU-09) | [x] | JWT, login, get_current_user |
+| 5 | README / documentación de instalación y ejecución | [x] | Sección Instalación y ejecución |
 
 **Fecha inicio:** ___________  
 **Fecha fin:** ___________  
