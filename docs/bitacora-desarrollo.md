@@ -1,0 +1,218 @@
+# Bitácora de desarrollo - SCA-EMPX
+
+Documento para **registrar el avance** del desarrollo del proyecto: check de actividades, orden de implementación y contexto. Referencia: [Orden de desarrollo y features](./orden-desarrollo-features.md), [Tareas por HU](./09-tareas-por-hu.md).
+
+---
+
+## Cómo usar esta bitácora
+
+- **Check (✓)**: Marcar cuando la actividad o tarea esté hecha (reemplazar `[ ]` por `[x]` o anotar ✓).
+- **Fecha**: Anotar fecha de inicio/fin o de check cuando lo uses.
+- **Notas**: Línea breve de observaciones, bloqueos o decisiones (opcional).
+- **Orden**: Respetar el orden de pasos (0 → 1 → 2 …) según [orden-desarrollo-features.md](./orden-desarrollo-features.md).
+
+---
+
+## Resumen de estado
+
+| Paso | Rama / feature              | HU    | Estado      | Fecha (última actualización) |
+|------|-----------------------------|-------|-------------|------------------------------|
+| 0    | feature/setup-mvp           | —     | En curso    | —                            |
+| 1    | feature/hu-05-validar-acceso-facial | HU-05 | Pendiente   | —                            |
+| 2    | feature/hu-01-registrar-empleado    | HU-01 | Pendiente   | —                            |
+| 3    | feature/hu-03-registrar-visitante   | HU-03 | Pendiente   | —                            |
+| 4    | feature/hu-04-autorizacion-visita    | HU-04 | Pendiente   | —                            |
+| 5    | feature/hu-06-registro-evento-entrada| HU-06 | Pendiente   | —                            |
+| 6    | feature/hu-07-registro-evento-salida | HU-07 | Pendiente   | —                            |
+| 7    | feature/hu-09-gestionar-usuarios     | HU-09 | Pendiente   | —                            |
+| 8    | feature/hu-02-desactivar-empleado   | HU-02 | Pendiente   | —                            |
+| 9    | feature/hu-08-historial-accesos      | HU-08 | Pendiente   | —                            |
+| 10   | feature/hu-10-actualizar-empleado    | HU-10 | Pendiente   | —                            |
+| 11   | feature/hu-11-dashboard-accesos      | HU-11 | Pendiente   | —                            |
+| 12   | feature/hu-13-revocar-autorizacion   | HU-13 | Pendiente   | —                            |
+| 13   | feature/hu-14-personas-dentro        | HU-14 | Pendiente   | —                            |
+| 14   | feature/hu-12-reporte-accesos       | HU-12 | Pendiente   | —                            |
+
+*Actualizar "Estado" (Pendiente / En curso / Hecho) y "Fecha" al avanzar.*
+
+---
+
+## Paso 0 – Setup MVP (transversal)
+
+**Rama:** `feature/setup-mvp`  
+**Objetivo:** Proyecto backend listo, BD SQLite, dependencias, estructura base.
+
+| # | Actividad | Check | Notas |
+|---|-----------|--------|-------|
+| 1 | Configurar proyecto backend (FastAPI), venv, pyproject.toml, dependencias | [x] | Estructura creada |
+| 2 | Estructura de carpetas (api, core, db, schemas, services, ml) | [x] | |
+| 3 | Configurar BD SQLite; scripts o migraciones de creación de tablas | [ ] | |
+| 4 | Autenticación básica (login) y protección de rutas (para HU-09) | [ ] | |
+| 5 | README / documentación de instalación y ejecución | [ ] | |
+
+**Fecha inicio:** ___________  
+**Fecha fin:** ___________  
+**Notas:** ___________________________________________
+
+---
+
+## Paso 1 – HU-05: Validar acceso por reconocimiento facial
+
+**Rama:** `feature/hu-05-validar-acceso-facial`
+
+| # | Actividad | Check | Notas |
+|---|-----------|--------|-------|
+| 1 | POST /api/validate-access (o /api/v1/access/validate): body con imagen | [ ] | |
+| 2 | Detectar rostro y generar embedding (misma librería que registro) | [ ] | |
+| 3 | Comparar embedding con activos en BD; umbral configurable | [ ] | |
+| 4 | Si coincidencia: verificar persona activa; retornar allowed, person_id, similarity | [ ] | |
+| 5 | Si no coincidencia o inactivo: retornar allowed=false y reason | [ ] | |
+| 6 | Invocar registro de evento de entrada cuando allowed=true (HU-06) | [ ] | |
+| 7 | Página de prueba: subir foto/webcam → POST validate-access → resultado | [ ] | |
+
+**Fecha inicio:** ___________  
+**Fecha fin:** ___________  
+**Notas:** ___________________________________________
+
+---
+
+## Paso 2 – HU-01: Registrar empleado
+
+**Rama:** `feature/hu-01-registrar-empleado`
+
+| # | Actividad | Check | Notas |
+|---|-----------|--------|-------|
+| 1 | Esquema BD: tabla persona (id, nombre_completo, documento, cargo, área, tipo_persona, estado, fecha_registro) | [ ] | |
+| 2 | Tabla reconocimiento_facial (id_persona, embedding, modelo_version, estado) | [ ] | |
+| 3 | POST /api/personas: JSON + foto (multipart/base64) | [ ] | |
+| 4 | Integrar librería reconocimiento facial: detección rostro + embedding | [ ] | |
+| 5 | Validar documento único; 409 si existe | [ ] | |
+| 6 | Persistir persona + embedding; retornar id, estado, score (opcional) | [ ] | |
+| 7 | Pantalla registro: formulario + captura/carga de foto | [ ] | |
+| 8 | Conectar formulario a POST /api/personas; confirmación o error | [ ] | |
+
+**Fecha inicio:** ___________  
+**Fecha fin:** ___________  
+**Notas:** ___________________________________________
+
+---
+
+## Paso 3 – HU-03: Registrar visitante
+
+**Rama:** `feature/hu-03-registrar-visitante`
+
+| # | Actividad | Check | Notas |
+|---|-----------|--------|-------|
+| 1 | Extender modelo persona: empresa, motivo_visita; opcional id_empleado_visitado | [ ] | |
+| 2 | Reutilizar POST /api/personas tipo visitante; mismo flujo foto/embedding | [ ] | |
+| 3 | (Opcional) GET /api/personas?tipo=empleado para selector “a quien visita” | [ ] | |
+| 4 | Pantalla registro visitante: formulario + foto → POST /api/personas | [ ] | |
+
+**Fecha inicio:** ___________  
+**Fecha fin:** ___________  
+**Notas:** ___________________________________________
+
+---
+
+## Paso 4 – HU-04: Generar autorización de visita
+
+**Rama:** `feature/hu-04-autorizacion-visita`  
+*Puede posponerse en MVP estricto.*
+
+| # | Actividad | Check | Notas |
+|---|-----------|--------|-------|
+| 1 | Tabla autorizacion (id_persona, fecha_inicio, fecha_fin, estado) | [ ] | |
+| 2 | POST /api/autorizaciones para crear autorización vigente | [ ] | |
+| 3 | Pantalla: selector visitante + fechas → POST /api/autorizaciones | [ ] | |
+
+**Fecha inicio:** ___________  
+**Fecha fin:** ___________  
+**Notas:** ___________________________________________
+
+---
+
+## Paso 5 – HU-06: Registrar evento de entrada
+
+**Rama:** `feature/hu-06-registro-evento-entrada`
+
+| # | Actividad | Check | Notas |
+|---|-----------|--------|-------|
+| 1 | Tabla registro_acceso (id_persona, fecha_hora, tipo_movimiento, resultado, similarity_score, metodo) | [ ] | |
+| 2 | Servicio/función que inserta registro (persona, entrada, permitido, score) | [ ] | |
+| 3 | Invocar desde POST validate-access cuando acceso permitido | [ ] | |
+| 4 | (Opcional) GET /api/eventos con eventos tipo entrada | [ ] | |
+
+**Fecha inicio:** ___________  
+**Fecha fin:** ___________  
+**Notas:** ___________________________________________
+
+---
+
+## Paso 6 – HU-07: Registrar evento de salida
+
+**Rama:** `feature/hu-07-registro-evento-salida`
+
+| # | Actividad | Check | Notas |
+|---|-----------|--------|-------|
+| 1 | POST /api/register-exit o tipo “salida”: imagen → identifica persona → registra salida | [ ] | |
+| 2 | Insertar en registro_acceso tipo_movimiento=salida, resultado=permitido | [ ] | |
+| 3 | (Opcional) Pantalla/botón “Registrar salida” | [ ] | |
+
+**Fecha inicio:** ___________  
+**Fecha fin:** ___________  
+**Notas:** ___________________________________________
+
+---
+
+## Paso 7 – HU-09: Gestionar usuarios del sistema
+
+**Rama:** `feature/hu-09-gestionar-usuarios`
+
+| # | Actividad | Check | Notas |
+|---|-----------|--------|-------|
+| 1 | Tabla usuario_sistema (username, password_hash, rol, estado) | [ ] | |
+| 2 | Registro/login básico (JWT o sesión); middleware auth para rutas protegidas | [ ] | |
+| 3 | POST /api/usuarios crear; GET /api/usuarios listar | [ ] | |
+| 4 | Pantalla administración: listado, alta, activar/desactivar | [ ] | |
+
+*MVP: puede limitarse a un usuario administrador y login simple.*
+
+**Fecha inicio:** ___________  
+**Fecha fin:** ___________  
+**Notas:** ___________________________________________
+
+---
+
+## Pasos 8 a 14 – Resumen de check
+
+| Paso | HU / feature | Actividades principales | Check global |
+|------|--------------|-------------------------|--------------|
+| 8 | HU-02 Desactivar empleado | PATCH personas/{id} inactivo; validación rechace inactivos; pantalla listado + Desactivar | [ ] |
+| 9 | HU-08 Historial accesos | GET /api/eventos filtros + paginación; export CSV; pantalla consulta | [ ] |
+| 10 | HU-10 Actualizar empleado | PATCH personas/{id}; pantalla detalle/edición | [ ] |
+| 11 | HU-11 Dashboard accesos | GET eventos recientes + estadísticas; pantalla métricas + actualización periódica | [ ] |
+| 12 | HU-13 Revocar autorización | PATCH autorizaciones/{id} revocada; pantalla listar activas + revocar | [ ] |
+| 13 | HU-14 Personas dentro | GET /api/personas/dentro; pantalla lista “actualmente dentro” | [ ] |
+| 14 | HU-12 Reporte accesos | GET reportes + filtros; export PDF/CSV; pantalla selector + descarga | [ ] |
+
+*Desarrollar cada paso en su rama; integrar en `develop`; luego siguiente rama desde `develop`.*
+
+---
+
+## Registro de avance (entradas libres)
+
+Anotar aquí hitos, decisiones, bloqueos o cambios de orden con fecha.
+
+| Fecha | Entrada |
+|-------|---------|
+| | *Ejemplo: Estructura inicial creada. Rama main. Próximo: feature/setup-mvp.* |
+| | |
+| | |
+| | |
+
+---
+
+**Documento:** Bitácora de desarrollo  
+**Versión:** 1.0  
+**Fecha:** 2026  
+**Proyecto:** SCA-EMPX – STI S.A.S.
