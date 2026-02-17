@@ -22,7 +22,7 @@ Documento para **registrar el avance** del desarrollo del proyecto: check de act
 | 2    | feature/hu-01-registrar-empleado    | HU-01 | Hecho       | 2026-02                      |
 | 3    | feature/hu-03-registrar-visitante   | HU-03 | Hecho       | 2026-02                      |
 | 4    | feature/hu-04-autorizacion-visita    | HU-04 | Hecho       | 2026-02                      |
-| 5    | feature/hu-06-registro-evento-entrada| HU-06 | Pendiente   | —                            |
+| 5    | feature/hu-06-registro-evento-entrada| HU-06 | Hecho       | 2026-02                      |
 | 6    | feature/hu-07-registro-evento-salida | HU-07 | Pendiente   | —                            |
 | 7    | feature/hu-09-gestionar-usuarios     | HU-09 | Pendiente   | —                            |
 | 8    | feature/hu-02-desactivar-empleado   | HU-02 | Pendiente   | —                            |
@@ -137,14 +137,14 @@ Documento para **registrar el avance** del desarrollo del proyecto: check de act
 
 | # | Actividad | Check | Notas |
 |---|-----------|--------|-------|
-| 1 | Tabla registro_acceso (id_persona, fecha_hora, tipo_movimiento, resultado, similarity_score, metodo) | [ ] | |
-| 2 | Servicio/función que inserta registro (persona, entrada, permitido, score) | [ ] | |
-| 3 | Invocar desde POST validate-access cuando acceso permitido | [ ] | |
-| 4 | (Opcional) GET /api/eventos con eventos tipo entrada | [ ] | |
+| 1 | Tabla registro_acceso (id_persona, fecha_hora, tipo_movimiento, resultado, similarity_score, metodo) | [x] | Ya existía (setup/HU-05) |
+| 2 | Servicio/función que inserta registro (persona, entrada, permitido, score) | [x] | event_service.register_entrada(); access_service lo invoca |
+| 3 | Invocar desde POST validate-access cuando acceso permitido | [x] | validate_access → register_entrada al permitir acceso |
+| 4 | (Opcional) GET /api/eventos con eventos tipo entrada | [x] | GET /api/v1/events?tipo=ingreso; limit/offset; EventoListItem |
 
 **Fecha inicio:** ___________  
-**Fecha fin:** ___________  
-**Notas:** ___________________________________________
+**Fecha fin:** 2026-02  
+**Notas:** Servicio eventos desacoplado; GET events con filtro tipo (ingreso/salida) y paginación (máx 100).
 
 ---
 
@@ -207,6 +207,7 @@ Anotar aquí hitos, decisiones, bloqueos o cambios de orden con fecha.
 |-------|-------------------------------------------------------------------------------|
 |       | *Ejemplo: Estructura inicial creada. Rama main. Próximo: feature/setup-mvp.*  |
 | 2026-02 | HU-01, HU-03, HU-04 implementados. Bitácora actualizada: Pasos 2, 3, 4 marcados Hecho; tareas con check y notas. |
+| 2026-02 | HU-06 implementado: event_service.register_entrada, GET /api/v1/events (tipo, limit, offset). Bitácora Paso 5 actualizada. |
 |       |                                                                               |
 |       |                                                                               |
 |       |                                                                               |
