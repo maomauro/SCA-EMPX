@@ -37,12 +37,14 @@ def listar_personas(
     db: Session = Depends(get_db),
 ):
     """
-    Lista personas. Si tipo=empleado_propio devuelve solo empleados (para selector «a quién visita»). HU-03.
+    Lista personas. tipo=empleado_propio|empleado: solo empleados. tipo=visitante_temporal|visitante: solo visitantes. HU-03, HU-04.
     """
     from backend.app.db.models import Persona, TipoPersona
     q = db.query(Persona).join(TipoPersona, Persona.id_tipo_persona == TipoPersona.id_tipo_persona)
-    if tipo == "empleado_propio" or tipo == "empleado":
+    if tipo in ("empleado_propio", "empleado"):
         q = q.filter(TipoPersona.nombre_tipo == "empleado_propio")
+    elif tipo in ("visitante_temporal", "visitante"):
+        q = q.filter(TipoPersona.nombre_tipo == "visitante_temporal")
     q = q.filter(Persona.estado == "activo")
     personas = q.order_by(Persona.nombre_completo).all()
     return [PersonaListItem(id_persona=p.id_persona, nombre_completo=p.nombre_completo, documento=p.documento) for p in personas]
