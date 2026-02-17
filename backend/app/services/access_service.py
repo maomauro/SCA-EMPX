@@ -24,16 +24,28 @@ class ValidateAccessResult:
     reason: str = ""
 
 
-def validate_access(db: Session, image_bytes: bytes) -> ValidateAccessResult:
+def validate_access(
+    db: Session, image_bytes: bytes, register_entrada_event: bool = True
+) -> ValidateAccessResult:
     """
     Valida acceso por imagen facial.
-    Si hay coincidencia y persona activa: allowed=True y se registra evento de entrada.
+    Si hay coincidencia y persona activa: allowed=True y, si register_entrada_event,
+    se registra evento de entrada (HU-06). Si register_entrada_event=False solo identifica (para HU-07 salida).
     """
+    result = _identify_person(db, image_bytes)
+    if not result.allowed:
+        return result
+    if register_entrada_event:
+        register_entrada(db, id_persona=result.person_id, similarity_score=result.similarity)
+    return result
+
+
+def _identify_person(db: Session, image_bytes: bytes) -> ValidateAccessResult:
+    """Identifica persona por imagen (sin registrar evento). Usado por validate_access y register-exit."""
     embedding = get_embedding_from_image(image_bytes)
     if embedding is None:
         return ValidateAccessResult(allowed=False, reason="rostro_no_detectado")
 
-    # Obtener todos los embeddings activos (persona activa + reconocimiento activo)
     rows = (
         db.query(ReconocimientoFacial, Persona)
         .join(Persona, ReconocimientoFacial.id_persona == Persona.id_persona)
@@ -52,8 +64,6 @@ def validate_access(db: Session, image_bytes: bytes) -> ValidateAccessResult:
     if similarity < SIMILARITY_THRESHOLD:
         return ValidateAccessResult(allowed=False, reason="similitud_insuficiente")
 
-    # Registrar evento de entrada (HU-06)
-    register_entrada(db, id_persona=person_id, similarity_score=similarity)
     return ValidateAccessResult(
         allowed=True,
         person_id=person_id,
