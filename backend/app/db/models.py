@@ -69,6 +69,8 @@ class Persona(Base):
     telefono = Column(String(20), nullable=True)
     email = Column(String(200), nullable=True)
     empresa = Column(String(200), nullable=True)
+    motivo_visita = Column(String(500), nullable=True)  # HU-03 visitante
+    id_empleado_visitado = Column(Integer, ForeignKey("persona.id_persona"), nullable=True)  # HU-03 opcional
     cargo = Column(String(100), nullable=True)
     area = Column(String(100), nullable=True)
     estado = Column(String(20), nullable=False, default="activo")
@@ -77,6 +79,7 @@ class Persona(Base):
     creado_por = Column(Integer, nullable=True)  # FK a usuario_sistema.id_usuario (evita ciclo en create_all)
 
     tipo_persona = relationship("TipoPersona", backref="personas")
+    empleado_visitado = relationship("Persona", remote_side=[id_persona], foreign_keys=[id_empleado_visitado])
     reconocimiento_facial = relationship("ReconocimientoFacial", back_populates="persona", uselist=False)
     registros_acceso = relationship("RegistroAcceso", back_populates="persona")
 
