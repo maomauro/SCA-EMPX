@@ -19,9 +19,9 @@ Documento para **registrar el avance** del desarrollo del proyecto: check de act
 |------|-----------------------------|-------|-------------|------------------------------|
 | 0    | feature/setup-mvp           | —     | Hecho       | —                            |
 | 1    | feature/hu-05-validar-acceso-facial | HU-05 | Hecho       | —                            |
-| 2    | feature/hu-01-registrar-empleado    | HU-01 | Pendiente   | —                            |
-| 3    | feature/hu-03-registrar-visitante   | HU-03 | Pendiente   | —                            |
-| 4    | feature/hu-04-autorizacion-visita    | HU-04 | Pendiente   | —                            |
+| 2    | feature/hu-01-registrar-empleado    | HU-01 | Hecho       | 2026-02                      |
+| 3    | feature/hu-03-registrar-visitante   | HU-03 | Hecho       | 2026-02                      |
+| 4    | feature/hu-04-autorizacion-visita    | HU-04 | Hecho       | 2026-02                      |
 | 5    | feature/hu-06-registro-evento-entrada| HU-06 | Pendiente   | —                            |
 | 6    | feature/hu-07-registro-evento-salida | HU-07 | Pendiente   | —                            |
 | 7    | feature/hu-09-gestionar-usuarios     | HU-09 | Pendiente   | —                            |
@@ -82,18 +82,18 @@ Documento para **registrar el avance** del desarrollo del proyecto: check de act
 
 | # | Actividad | Check | Notas |
 |---|-----------|--------|-------|
-| 1 | Esquema BD: tabla persona (id, nombre_completo, documento, cargo, área, tipo_persona, estado, fecha_registro) | [ ] | |
-| 2 | Tabla reconocimiento_facial (id_persona, embedding, modelo_version, estado) | [ ] | |
-| 3 | POST /api/personas: JSON + foto (multipart/base64) | [ ] | |
-| 4 | Integrar librería reconocimiento facial: detección rostro + embedding | [ ] | |
-| 5 | Validar documento único; 409 si existe | [ ] | |
-| 6 | Persistir persona + embedding; retornar id, estado, score (opcional) | [ ] | |
-| 7 | Pantalla registro: formulario + captura/carga de foto | [ ] | |
-| 8 | Conectar formulario a POST /api/personas; confirmación o error | [ ] | |
+| 1 | Esquema BD: tabla persona (id, nombre_completo, documento, cargo, área, tipo_persona, estado, fecha_registro) | [x] | Ya en setup-mvp |
+| 2 | Tabla reconocimiento_facial (id_persona, embedding, modelo_version, estado) | [x] | Ya en setup-mvp |
+| 3 | POST /api/personas: JSON + foto (multipart/base64) | [x] | POST /api/v1/personas multipart Form + File |
+| 4 | Integrar librería reconocimiento facial: detección rostro + embedding | [x] | DeepFace Facenet en persona_service |
+| 5 | Validar documento único; 409 si existe | [x] | documento_duplicado → 409 |
+| 6 | Persistir persona + embedding; retornar id, estado, score (opcional) | [x] | PersonaRegistroResponse |
+| 7 | Pantalla registro: formulario + captura/carga de foto | [x] | GET /registro-empleado |
+| 8 | Conectar formulario a POST /api/personas; confirmación o error | [x] | FormData → POST /api/v1/personas |
 
 **Fecha inicio:** ___________  
-**Fecha fin:** ___________  
-**Notas:** ___________________________________________
+**Fecha fin:** 2026-02  
+**Notas:** Fix id_registro INTEGER (RegistroAcceso); scripts clear_personas, fix_registro_acceso; umbrales similitud configurables.
 
 ---
 
@@ -103,13 +103,13 @@ Documento para **registrar el avance** del desarrollo del proyecto: check de act
 
 | # | Actividad | Check | Notas |
 |---|-----------|--------|-------|
-| 1 | Extender modelo persona: empresa, motivo_visita; opcional id_empleado_visitado | [ ] | |
-| 2 | Reutilizar POST /api/personas tipo visitante; mismo flujo foto/embedding | [ ] | |
-| 3 | (Opcional) GET /api/personas?tipo=empleado para selector “a quien visita” | [ ] | |
-| 4 | Pantalla registro visitante: formulario + foto → POST /api/personas | [ ] | |
+| 1 | Extender modelo persona: empresa, motivo_visita; opcional id_empleado_visitado | [x] | Persona.motivo_visita, id_empleado_visitado; ensure_persona_visitante_columns |
+| 2 | Reutilizar POST /api/personas tipo visitante; mismo flujo foto/embedding | [x] | tipo=visitante_temporal; registrar_visitante() en persona_service |
+| 3 | (Opcional) GET /api/personas?tipo=empleado para selector “a quien visita” | [x] | GET /api/v1/personas?tipo=empleado; también ?tipo=visitante |
+| 4 | Pantalla registro visitante: formulario + foto → POST /api/personas | [x] | GET /registro-visitante (empresa, motivo, selector empleado, foto) |
 
 **Fecha inicio:** ___________  
-**Fecha fin:** ___________  
+**Fecha fin:** 2026-02  
 **Notas:** ___________________________________________
 
 ---
@@ -121,13 +121,13 @@ Documento para **registrar el avance** del desarrollo del proyecto: check de act
 
 | # | Actividad | Check | Notas |
 |---|-----------|--------|-------|
-| 1 | Tabla autorizacion (id_persona, fecha_inicio, fecha_fin, estado) | [ ] | |
-| 2 | POST /api/autorizaciones para crear autorización vigente | [ ] | |
-| 3 | Pantalla: selector visitante + fechas → POST /api/autorizaciones | [ ] | |
+| 1 | Tabla autorizacion (id_persona, fecha_inicio, fecha_fin, estado) | [x] | Modelo Autorizacion; ensure_autorizacion_table al arranque |
+| 2 | POST /api/autorizaciones para crear autorización vigente | [x] | POST /api/v1/autorizaciones JSON; solo visitantes activos |
+| 3 | Pantalla: selector visitante + fechas → POST /api/autorizaciones | [x] | GET /autorizacion-visita (selector ?tipo=visitante, fecha inicio/fin) |
 
 **Fecha inicio:** ___________  
-**Fecha fin:** ___________  
-**Notas:** ___________________________________________
+**Fecha fin:** 2026-02  
+**Notas:** GET /api/v1/autorizaciones lista todas; servicio valida fecha_fin > fecha_inicio.
 
 ---
 
@@ -206,6 +206,7 @@ Anotar aquí hitos, decisiones, bloqueos o cambios de orden con fecha.
 | Fecha | Entrada                                                                       |
 |-------|-------------------------------------------------------------------------------|
 |       | *Ejemplo: Estructura inicial creada. Rama main. Próximo: feature/setup-mvp.*  |
+| 2026-02 | HU-01, HU-03, HU-04 implementados. Bitácora actualizada: Pasos 2, 3, 4 marcados Hecho; tareas con check y notas. |
 |       |                                                                               |
 |       |                                                                               |
 |       |                                                                               |

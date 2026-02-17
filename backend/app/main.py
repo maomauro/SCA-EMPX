@@ -7,7 +7,11 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 
 from backend.app.api.v1 import api_router
-from backend.app.db.database import ensure_registro_acceso_schema, ensure_persona_visitante_columns
+from backend.app.db.database import (
+    ensure_registro_acceso_schema,
+    ensure_persona_visitante_columns,
+    ensure_autorizacion_table,
+)
 
 app = FastAPI(
     title="SCA-EMPX API",
@@ -21,6 +25,7 @@ def startup():
     """Corrige esquema de registro_acceso en SQLite si la BD es antigua; añade columnas HU-03 a persona si faltan."""
     ensure_registro_acceso_schema()
     ensure_persona_visitante_columns()
+    ensure_autorizacion_table()
 
 
 app.include_router(api_router, prefix="/api/v1")
@@ -56,4 +61,11 @@ def registro_empleado_page():
 def registro_visitante_page():
     """Página de registro de visitante con foto (HU-03)."""
     path = Path(__file__).parent / "static" / "registro-visitante.html"
+    return FileResponse(path)
+
+
+@app.get("/autorizacion-visita")
+def autorizacion_visita_page():
+    """Pantalla para generar autorización de visita (HU-04)."""
+    path = Path(__file__).parent / "static" / "autorizacion-visita.html"
     return FileResponse(path)
