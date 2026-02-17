@@ -4,7 +4,7 @@ Modelos ORM para SQLite. Referencia: docs/05-modelo-datos.md.
 from datetime import datetime
 from sqlalchemy import (
     Column, Integer, String, Text, Float, DateTime, ForeignKey,
-    Enum as SQLEnum, BigInteger, LargeBinary,
+    Enum as SQLEnum, LargeBinary,
 )
 from sqlalchemy.orm import relationship
 
@@ -100,7 +100,7 @@ class ReconocimientoFacial(Base):
 class RegistroAcceso(Base):
     __tablename__ = "registro_acceso"
 
-    id_registro = Column(BigInteger, primary_key=True, autoincrement=True)
+    id_registro = Column(Integer, primary_key=True, autoincrement=True)
     id_persona = Column(Integer, ForeignKey("persona.id_persona"), nullable=False)
     tipo_movimiento = Column(String(20), nullable=False)  # ingreso | salida
     metodo_identificacion = Column(String(30), nullable=False, default="reconocimiento_facial")
