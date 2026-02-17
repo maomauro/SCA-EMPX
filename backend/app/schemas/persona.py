@@ -2,6 +2,15 @@
 from pydantic import BaseModel
 
 
+class PersonaListItem(BaseModel):
+    id_persona: int
+    nombre_completo: str
+    documento: str
+
+    class Config:
+        from_attributes = True
+
+
 class PersonaRegistroResponse(BaseModel):
     id_persona: int
     nombre_completo: str

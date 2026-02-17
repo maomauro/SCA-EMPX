@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 
 from backend.app.api.v1 import api_router
-from backend.app.db.database import ensure_registro_acceso_schema
+from backend.app.db.database import ensure_registro_acceso_schema, ensure_persona_visitante_columns
 
 app = FastAPI(
     title="SCA-EMPX API",
@@ -18,8 +18,9 @@ app = FastAPI(
 
 @app.on_event("startup")
 def startup():
-    """Corrige esquema de registro_acceso en SQLite si la BD es antigua (id_registro BIGINT -> INTEGER)."""
+    """Corrige esquema de registro_acceso en SQLite si la BD es antigua; añade columnas HU-03 a persona si faltan."""
     ensure_registro_acceso_schema()
+    ensure_persona_visitante_columns()
 
 
 app.include_router(api_router, prefix="/api/v1")
@@ -48,4 +49,11 @@ def validate_access_page():
 def registro_empleado_page():
     """Página de registro de empleado con foto (HU-01)."""
     path = Path(__file__).parent / "static" / "registro-empleado.html"
+    return FileResponse(path)
+
+
+@app.get("/registro-visitante")
+def registro_visitante_page():
+    """Página de registro de visitante con foto (HU-03)."""
+    path = Path(__file__).parent / "static" / "registro-visitante.html"
     return FileResponse(path)

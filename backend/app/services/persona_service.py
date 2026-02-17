@@ -72,3 +72,59 @@ def registrar_empleado(
     db.refresh(persona)
     db.refresh(reco)
     return persona, reco, calidad
+
+
+def registrar_visitante(
+    db: Session,
+    nombre_completo: str,
+    documento: str,
+    empresa: str,
+    motivo_visita: str,
+    tipo_documento: str = "CC",
+    id_empleado_visitado: int | None = None,
+    image_bytes: bytes | None = None,
+) -> tuple[Persona, ReconocimientoFacial | None, float | None]:
+    """
+    Registra un visitante con foto. Misma lógica que empleado: documento único, embedding Facenet.
+    Retorna (persona, reconocimiento_facial, calidad_embedding o None).
+    """
+    if documento_existe(db, documento):
+        raise ValueError("documento_duplicado")
+
+    id_tipo = get_tipo_persona_id(db, "visitante_temporal")
+    if not id_tipo:
+        raise ValueError("tipo_persona_no_configurado")
+
+    if not image_bytes or len(image_bytes) == 0:
+        raise ValueError("foto_requerida")
+
+    embedding = get_embedding_from_image(image_bytes)
+    if embedding is None:
+        raise ValueError("rostro_no_detectado")
+
+    persona = Persona(
+        id_tipo_persona=id_tipo,
+        nombre_completo=nombre_completo.strip(),
+        documento=documento.strip(),
+        tipo_documento=tipo_documento.strip() or "CC",
+        empresa=(empresa or "").strip() or None,
+        motivo_visita=(motivo_visita or "").strip() or None,
+        id_empleado_visitado=id_empleado_visitado,
+        estado="activo",
+    )
+    db.add(persona)
+    db.flush()
+
+    embedding_bytes = embedding_to_bytes(embedding)
+    reco = ReconocimientoFacial(
+        id_persona=persona.id_persona,
+        embedding=embedding_bytes,
+        modelo_version=MODEL_NAME,
+        estado="activo",
+        calidad_embedding=None,
+    )
+    db.add(reco)
+    db.commit()
+    db.refresh(persona)
+    db.refresh(reco)
+    return persona, reco, None
