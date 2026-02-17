@@ -7,12 +7,20 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 
 from backend.app.api.v1 import api_router
+from backend.app.db.database import ensure_registro_acceso_schema
 
 app = FastAPI(
     title="SCA-EMPX API",
     description="Sistema de Control de Acceso Físico y Registro de Ingresos/Salidas - STI S.A.S.",
     version="0.1.0",
 )
+
+
+@app.on_event("startup")
+def startup():
+    """Corrige esquema de registro_acceso en SQLite si la BD es antigua (id_registro BIGINT -> INTEGER)."""
+    ensure_registro_acceso_schema()
+
 
 app.include_router(api_router, prefix="/api/v1")
 
@@ -33,4 +41,11 @@ def health():
 def validate_access_page():
     """Página de prueba para validar acceso por reconocimiento facial (HU-05)."""
     path = Path(__file__).parent / "static" / "validate-access.html"
+    return FileResponse(path)
+
+
+@app.get("/registro-empleado")
+def registro_empleado_page():
+    """Página de registro de empleado con foto (HU-01)."""
+    path = Path(__file__).parent / "static" / "registro-empleado.html"
     return FileResponse(path)
