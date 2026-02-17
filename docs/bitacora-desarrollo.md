@@ -23,7 +23,7 @@ Documento para **registrar el avance** del desarrollo del proyecto: check de act
 | 3    | feature/hu-03-registrar-visitante   | HU-03 | Hecho       | 2026-02                      |
 | 4    | feature/hu-04-autorizacion-visita    | HU-04 | Hecho       | 2026-02                      |
 | 5    | feature/hu-06-registro-evento-entrada| HU-06 | Hecho       | 2026-02                      |
-| 6    | feature/hu-07-registro-evento-salida | HU-07 | Pendiente   | —                            |
+| 6    | feature/hu-07-registro-evento-salida | HU-07 | Hecho       | 2026-02                      |
 | 7    | feature/hu-09-gestionar-usuarios     | HU-09 | Pendiente   | —                            |
 | 8    | feature/hu-02-desactivar-empleado   | HU-02 | Pendiente   | —                            |
 | 9    | feature/hu-08-historial-accesos      | HU-08 | Pendiente   | —                            |
@@ -154,13 +154,13 @@ Documento para **registrar el avance** del desarrollo del proyecto: check de act
 
 | # | Actividad | Check | Notas |
 |---|-----------|--------|-------|
-| 1 | POST /api/register-exit o tipo “salida”: imagen → identifica persona → registra salida | [ ] | |
-| 2 | Insertar en registro_acceso tipo_movimiento=salida, resultado=permitido | [ ] | |
-| 3 | (Opcional) Pantalla/botón “Registrar salida” | [ ] | |
+| 1 | POST /api/register-exit o tipo “salida”: imagen → identifica persona → registra salida | [x] | POST /api/v1/access/register-exit; validate_access(..., register_entrada_event=False) + register_salida |
+| 2 | Insertar en registro_acceso tipo_movimiento=salida, resultado=permitido | [x] | event_service.register_salida() |
+| 3 | (Opcional) Pantalla/botón "Registrar salida" | [x] | GET /registrar-salida (registrar-salida.html) |
 
 **Fecha inicio:** ___________  
-**Fecha fin:** ___________  
-**Notas:** ___________________________________________
+**Fecha fin:** 2026-02  
+**Notas:** Misma identificación que validar acceso; solo se registra salida al identificar correctamente.
 
 ---
 
@@ -208,6 +208,7 @@ Anotar aquí hitos, decisiones, bloqueos o cambios de orden con fecha.
 |       | *Ejemplo: Estructura inicial creada. Rama main. Próximo: feature/setup-mvp.*  |
 | 2026-02 | HU-01, HU-03, HU-04 implementados. Bitácora actualizada: Pasos 2, 3, 4 marcados Hecho; tareas con check y notas. |
 | 2026-02 | HU-06 implementado: event_service.register_entrada, GET /api/v1/events (tipo, limit, offset). Bitácora Paso 5 actualizada. |
+| 2026-02 | HU-07 implementado: register_salida, POST /api/v1/access/register-exit, GET /registrar-salida. Bitácora Paso 6 actualizada. |
 |       |                                                                               |
 |       |                                                                               |
 |       |                                                                               |

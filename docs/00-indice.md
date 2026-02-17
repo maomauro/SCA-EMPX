@@ -164,6 +164,18 @@ Este índice te ayudará a navegar por toda la documentación del **Sistema de C
 
 ---
 
+### 12. [URLs de acceso](./urls-acceso.md)
+**Descripción**: Listado de URLs para acceder a la aplicación: páginas web, documentación de la API y endpoints REST.
+
+**Contenido**:
+- Páginas web (validate-access, registro empleado/visitante, autorización, registrar salida)
+- Documentación OpenAPI (Swagger, ReDoc)
+- API REST por recurso (personas, access, events, autorizaciones, usuarios)
+
+**Audiencia**: Desarrolladores, QA, usuarios que prueben la API.
+
+---
+
 ## 🗺️ Guía de Lectura Recomendada
 
 ### Para Nuevos Miembros del Equipo
@@ -234,6 +246,7 @@ Procesos BPMN
 - **Tareas de desarrollo por HU (para desarrollo y Azure DevOps)**: [Tareas por HU](./09-tareas-por-hu.md)
 - **Orden para desarrollar y registrar features (ramas Git / backlog)**: [Orden desarrollo y features](./orden-desarrollo-features.md)
 - **Bitácora de desarrollo (check de actividades, orden, avance)**: [Bitácora de desarrollo](./bitacora-desarrollo.md)
+- **URLs para acceder a la API y páginas (listado completo)**: [URLs de acceso](./urls-acceso.md)
 - **Uso de Git (ramas, commits, ambientes, pull, push)**: [Guía de Uso de Git](./guia-git.md)
 
 ---
