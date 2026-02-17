@@ -12,10 +12,7 @@ from backend.app.ml.inference import (
     bytes_to_embedding,
     find_best_match,
 )
-from backend.app.core.config import SIMILARITY_THRESHOLD
-
-# Distancia euclidiana máxima para considerar match (Facenet: típico 0.8–1.0)
-FACE_DISTANCE_THRESHOLD = 0.8
+from backend.app.core.config import SIMILARITY_THRESHOLD, FACE_DISTANCE_THRESHOLD
 
 
 @dataclass
@@ -43,7 +40,9 @@ def validate_access(db: Session, image_bytes: bytes) -> ValidateAccessResult:
         .all()
     )
     candidates = [(p.id_persona, bytes_to_embedding(r.embedding)) for r, p in rows]
-    match = find_best_match(embedding, candidates, distance_threshold=FACE_DISTANCE_THRESHOLD)
+    match = find_best_match(
+        embedding, candidates, distance_threshold=FACE_DISTANCE_THRESHOLD
+    )
 
     if match is None:
         return ValidateAccessResult(allowed=False, reason="persona_no_identificada")

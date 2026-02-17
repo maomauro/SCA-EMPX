@@ -1,7 +1,7 @@
 """
 Conexión y sesión SQLite. Referencia: docs/05-modelo-datos.md.
 """
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 from backend.app.core.config import DATABASE_URL
@@ -27,3 +27,30 @@ def init_db():
     """Crea todas las tablas en la BD (para script init_db)."""
     from backend.app.db import models  # noqa: F401 - registra modelos
     Base.metadata.create_all(bind=engine)
+
+
+def ensure_registro_acceso_schema():
+    """
+    En SQLite, si la tabla registro_acceso tiene id_registro como BIGINT
+    no se autoincrementa y falla NOT NULL. Recrea la tabla con INTEGER.
+    Se llama al arranque de la app para auto-corregir BDs antiguas.
+    """
+    if not DATABASE_URL.startswith("sqlite"):
+        return
+    from backend.app.db import models  # noqa: F401
+    from backend.app.db.models import RegistroAcceso
+    needs_fix = False
+    with engine.connect() as conn:
+        try:
+            r = conn.execute(
+                text("SELECT type FROM pragma_table_info('registro_acceso') WHERE name='id_registro'")
+            )
+            row = r.fetchone()
+            if row:
+                col_type = (row[0] or "").upper()
+                needs_fix = "BIGINT" in col_type
+        except Exception:
+            pass  # Tabla no existe, create_all se encargará
+    if needs_fix:
+        RegistroAcceso.__table__.drop(engine, checkfirst=True)
+        RegistroAcceso.__table__.create(engine)
