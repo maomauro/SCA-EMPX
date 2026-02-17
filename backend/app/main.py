@@ -69,3 +69,10 @@ def autorizacion_visita_page():
     """Pantalla para generar autorización de visita (HU-04)."""
     path = Path(__file__).parent / "static" / "autorizacion-visita.html"
     return FileResponse(path)
+
+
+@app.get("/registrar-salida")
+def registrar_salida_page():
+    """Página para registrar salida por reconocimiento facial (HU-07)."""
+    path = Path(__file__).parent / "static" / "registrar-salida.html"
+    return FileResponse(path)
