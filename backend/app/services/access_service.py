@@ -6,7 +6,8 @@ from typing import Literal
 
 from sqlalchemy.orm import Session
 
-from backend.app.db.models import Persona, ReconocimientoFacial, RegistroAcceso
+from backend.app.db.models import Persona, ReconocimientoFacial
+from backend.app.services.event_service import register_entrada
 from backend.app.ml.inference import (
     get_embedding_from_image,
     bytes_to_embedding,
@@ -52,7 +53,7 @@ def validate_access(db: Session, image_bytes: bytes) -> ValidateAccessResult:
         return ValidateAccessResult(allowed=False, reason="similitud_insuficiente")
 
     # Registrar evento de entrada (HU-06)
-    _register_entrada(db, person_id=person_id, similarity_score=similarity)
+    register_entrada(db, id_persona=person_id, similarity_score=similarity)
     return ValidateAccessResult(
         allowed=True,
         person_id=person_id,
@@ -61,14 +62,3 @@ def validate_access(db: Session, image_bytes: bytes) -> ValidateAccessResult:
     )
 
 
-def _register_entrada(db: Session, person_id: int, similarity_score: float) -> None:
-    """Registra evento de entrada en registro_acceso (HU-06)."""
-    reg = RegistroAcceso(
-        id_persona=person_id,
-        tipo_movimiento="ingreso",
-        metodo_identificacion="reconocimiento_facial",
-        resultado="permitido",
-        similarity_score=similarity_score,
-    )
-    db.add(reg)
-    db.commit()
