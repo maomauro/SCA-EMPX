@@ -54,3 +54,19 @@ def ensure_registro_acceso_schema():
     if needs_fix:
         RegistroAcceso.__table__.drop(engine, checkfirst=True)
         RegistroAcceso.__table__.create(engine)
+
+
+def ensure_persona_visitante_columns():
+    """
+    Añade columnas HU-03 (motivo_visita, id_empleado_visitado) a persona si no existen.
+    """
+    if not DATABASE_URL.startswith("sqlite"):
+        return
+    with engine.connect() as conn:
+        r = conn.execute(text("SELECT name FROM pragma_table_info('persona')"))
+        names = {row[0] for row in r.fetchall()}
+        if "motivo_visita" not in names:
+            conn.execute(text("ALTER TABLE persona ADD COLUMN motivo_visita VARCHAR(500)"))
+        if "id_empleado_visitado" not in names:
+            conn.execute(text("ALTER TABLE persona ADD COLUMN id_empleado_visitado INTEGER"))
+        conn.commit()
