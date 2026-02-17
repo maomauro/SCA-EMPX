@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Registrar empleado - SCA-EMPX</title>
+  <style>
+    body { font-family: sans-serif; max-width: 500px; margin: 2rem auto; padding: 0 1rem; }
+    h1 { font-size: 1.25rem; }
+    label { display: block; margin-top: 0.75rem; }
+    input[type="text"], input[type="file"] { margin: 0.25rem 0; width: 100%; box-sizing: border-box; }
+    button { margin-top: 1rem; padding: 0.5rem 1rem; cursor: pointer; }
+    #result { margin-top: 1rem; padding: 1rem; border-radius: 8px; }
+    .ok { background: #d4edda; color: #155724; }
+    .error { background: #f8d7da; color: #721c24; }
+  </style>
+</head>
+<body>
+  <h1>Registrar empleado</h1>
+  <p>Complete el formulario y suba una foto con el rostro visible (un único rostro).</p>
+  <form id="form">
+    <label>Nombre completo *</label>
+    <input type="text" id="nombre_completo" name="nombre_completo" required />
+    <label>Documento *</label>
+    <input type="text" id="documento" name="documento" required placeholder="ej. 12345678" />
+    <label>Tipo documento</label>
+    <input type="text" id="tipo_documento" name="tipo_documento" value="CC" placeholder="CC" />
+    <label>Cargo</label>
+    <input type="text" id="cargo" name="cargo" placeholder="opcional" />
+    <label>Área</label>
+    <input type="text" id="area" name="area" placeholder="opcional" />
+    <label>Foto (rostro visible) *</label>
+    <input type="file" id="foto" name="foto" accept="image/*" required />
+    <br />
+    <button type="submit">Registrar empleado</button>
+  </form>
+  <div id="result"></div>
+  <script>
+    document.getElementById("form").onsubmit = async (e) => {
+      e.preventDefault();
+      const resultDiv = document.getElementById("result");
+      const formEl = document.getElementById("form");
+      const formData = new FormData();
+      formData.append("nombre_completo", document.getElementById("nombre_completo").value.trim());
+      formData.append("documento", document.getElementById("documento").value.trim());
+      formData.append("tipo_documento", document.getElementById("tipo_documento").value.trim() || "CC");
+      formData.append("cargo", document.getElementById("cargo").value.trim());
+      formData.append("area", document.getElementById("area").value.trim());
+      const fileInput = document.getElementById("foto");
+      if (!fileInput.files.length) {
+        resultDiv.className = "error";
+        resultDiv.textContent = "Seleccione una foto.";
+        return;
+      }
+      formData.append("foto", fileInput.files[0]);
+      resultDiv.textContent = "Registrando...";
+      resultDiv.className = "";
+      try {
+        const r = await fetch("/api/v1/personas", { method: "POST", body: formData });
+        const data = await r.json().catch(() => ({}));
+        if (r.ok) {
+          resultDiv.className = "ok";
+          resultDiv.textContent = "Empleado registrado. ID: " + data.id_persona + ", " + data.nombre_completo;
+          formEl.reset();
+        } else {
+          resultDiv.className = "error";
+          resultDiv.textContent = (data.detail || "Error " + r.status) + (Array.isArray(data.detail) ? " " + data.detail.map(x => x.msg).join(", ") : "");
+        }
+      } catch (err) {
+        resultDiv.className = "error";
+        resultDiv.textContent = "Error: " + err.message;
+      }
+    };
+  </script>
+</body>
+</html>
