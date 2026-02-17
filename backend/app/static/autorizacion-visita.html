@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Autorización de visita - SCA-EMPX</title>
+  <style>
+    body { font-family: sans-serif; max-width: 500px; margin: 2rem auto; padding: 0 1rem; }
+    h1 { font-size: 1.25rem; }
+    label { display: block; margin-top: 0.75rem; }
+    input, select { margin: 0.25rem 0; width: 100%; box-sizing: border-box; }
+    button { margin-top: 1rem; padding: 0.5rem 1rem; cursor: pointer; }
+    #result { margin-top: 1rem; padding: 1rem; border-radius: 8px; }
+    .ok { background: #d4edda; color: #155724; }
+    .error { background: #f8d7da; color: #721c24; }
+  </style>
+</head>
+<body>
+  <h1>Generar autorización de visita</h1>
+  <p>Seleccione un visitante y el período de vigencia de la autorización.</p>
+  <form id="form">
+    <label>Visitante *</label>
+    <select id="id_persona" name="id_persona" required>
+      <option value="">-- Seleccione visitante --</option>
+    </select>
+    <label>Fecha y hora inicio *</label>
+    <input type="datetime-local" id="fecha_inicio" name="fecha_inicio" required />
+    <label>Fecha y hora fin *</label>
+    <input type="datetime-local" id="fecha_fin" name="fecha_fin" required />
+    <br />
+    <button type="submit">Crear autorización</button>
+  </form>
+  <div id="result"></div>
+  <script>
+    (async function loadVisitantes() {
+      try {
+        const r = await fetch("/api/v1/personas?tipo=visitante");
+        const list = await r.json();
+        const sel = document.getElementById("id_persona");
+        list.forEach(function(p) {
+          const opt = document.createElement("option");
+          opt.value = p.id_persona;
+          opt.textContent = p.nombre_completo + " (" + p.documento + ")";
+          sel.appendChild(opt);
+        });
+      } catch (e) {}
+    })();
+
+    document.getElementById("form").onsubmit = async (e) => {
+      e.preventDefault();
+      const resultDiv = document.getElementById("result");
+      const idPersona = document.getElementById("id_persona").value;
+      const inicio = document.getElementById("fecha_inicio").value;
+      const fin = document.getElementById("fecha_fin").value;
+      if (!idPersona || !inicio || !fin) {
+        resultDiv.className = "error";
+        resultDiv.textContent = "Complete todos los campos.";
+        return;
+      }
+      const body = {
+        id_persona: parseInt(idPersona, 10),
+        fecha_inicio: new Date(inicio).toISOString(),
+        fecha_fin: new Date(fin).toISOString(),
+      };
+      resultDiv.textContent = "Creando...";
+      resultDiv.className = "";
+      try {
+        const r = await fetch("/api/v1/autorizaciones", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const text = await r.text();
+        let data = {};
+        try { data = JSON.parse(text); } catch (_) {}
+        if (r.ok) {
+          resultDiv.className = "ok";
+          resultDiv.textContent = "Autorización creada. ID: " + data.id_autorizacion + ", estado: " + data.estado;
+          document.getElementById("form").reset();
+        } else {
+          resultDiv.className = "error";
+          resultDiv.textContent = data.detail || ("Error " + r.status);
+        }
+      } catch (err) {
+        resultDiv.className = "error";
+        resultDiv.textContent = "Error: " + err.message;
+      }
+    };
+  </script>
+</body>
+</html>

@@ -70,3 +70,15 @@ def ensure_persona_visitante_columns():
         if "id_empleado_visitado" not in names:
             conn.execute(text("ALTER TABLE persona ADD COLUMN id_empleado_visitado INTEGER"))
         conn.commit()
+
+
+def ensure_autorizacion_table():
+    """Crea la tabla autorizacion (HU-04) si no existe."""
+    if not DATABASE_URL.startswith("sqlite"):
+        return
+    from backend.app.db import models  # noqa: F401
+    from backend.app.db.models import Autorizacion
+    with engine.connect() as conn:
+        r = conn.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name='autorizacion'"))
+        if r.fetchone() is None:
+            Autorizacion.__table__.create(engine)

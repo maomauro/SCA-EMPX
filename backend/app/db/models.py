@@ -116,6 +116,20 @@ class RegistroAcceso(Base):
     persona = relationship("Persona", back_populates="registros_acceso")
 
 
+class Autorizacion(Base):
+    """Autorización de visita para un visitante. HU-04."""
+    __tablename__ = "autorizacion"
+
+    id_autorizacion = Column(Integer, primary_key=True, autoincrement=True)
+    id_persona = Column(Integer, ForeignKey("persona.id_persona"), nullable=False)
+    fecha_inicio = Column(DateTime, nullable=False)
+    fecha_fin = Column(DateTime, nullable=False)
+    estado = Column(String(20), nullable=False, default="vigente")  # vigente | vencida | cancelada
+    fecha_creacion = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    persona = relationship("Persona", backref="autorizaciones")
+
+
 class UsuarioSistema(Base):
     __tablename__ = "usuario_sistema"
 
