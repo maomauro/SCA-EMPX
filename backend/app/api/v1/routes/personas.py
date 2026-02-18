@@ -1,10 +1,12 @@
 """Rutas personas (empleados y visitantes). HU-01, HU-02, HU-03, HU-10."""
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 
 from backend.app.db.database import get_db
+from backend.app.db.models import Persona, TipoPersona
 from backend.app.services.persona_service import registrar_empleado, registrar_visitante
-from backend.app.schemas.persona import PersonaRegistroResponse, PersonaListItem
+from backend.app.schemas.persona import PersonaRegistroResponse, PersonaListItem, PersonaUpdateEstado
 
 router = APIRouter()
 
@@ -34,20 +36,30 @@ def _map_registro_errors(e: ValueError) -> None:
 @router.get("/", response_model=list[PersonaListItem])
 def listar_personas(
     tipo: str | None = None,
+    estado: str | None = Query(None, description="activo | inactivo | todos"),
+    q: str | None = Query(None, description="Búsqueda por nombre o documento"),
     db: Session = Depends(get_db),
 ):
     """
-    Lista personas. tipo=empleado_propio|empleado: solo empleados. tipo=visitante_temporal|visitante: solo visitantes. HU-03, HU-04.
+    Lista personas. tipo=empleado|visitante. estado=activo|inactivo|todos (default activo). q=búsqueda nombre/documento. HU-02, HU-03.
     """
-    from backend.app.db.models import Persona, TipoPersona
-    q = db.query(Persona).join(TipoPersona, Persona.id_tipo_persona == TipoPersona.id_tipo_persona)
+    query = db.query(Persona).join(TipoPersona, Persona.id_tipo_persona == TipoPersona.id_tipo_persona)
     if tipo in ("empleado_propio", "empleado"):
-        q = q.filter(TipoPersona.nombre_tipo == "empleado_propio")
+        query = query.filter(TipoPersona.nombre_tipo == "empleado_propio")
     elif tipo in ("visitante_temporal", "visitante"):
-        q = q.filter(TipoPersona.nombre_tipo == "visitante_temporal")
-    q = q.filter(Persona.estado == "activo")
-    personas = q.order_by(Persona.nombre_completo).all()
-    return [PersonaListItem(id_persona=p.id_persona, nombre_completo=p.nombre_completo, documento=p.documento) for p in personas]
+        query = query.filter(TipoPersona.nombre_tipo == "visitante_temporal")
+    if estado == "inactivo":
+        query = query.filter(Persona.estado == "inactivo")
+    elif estado != "todos":
+        query = query.filter(Persona.estado == "activo")
+    if q and q.strip():
+        term = "%" + q.strip() + "%"
+        query = query.filter(or_(Persona.nombre_completo.ilike(term), Persona.documento.ilike(term)))
+    personas = query.order_by(Persona.nombre_completo).all()
+    return [
+        PersonaListItem(id_persona=p.id_persona, nombre_completo=p.nombre_completo, documento=p.documento, estado=p.estado)
+        for p in personas
+    ]
 
 
 @router.post("/", response_model=PersonaRegistroResponse)
@@ -119,6 +131,28 @@ def registrar_persona(
     )
 
 
-@router.patch("/{persona_id:int}")
-def actualizar_persona(persona_id: int):
-    return {"message": f"Actualizar persona {persona_id} (por implementar)"}
+@router.patch("/{persona_id:int}", response_model=PersonaRegistroResponse)
+def actualizar_persona(
+    persona_id: int,
+    body: PersonaUpdateEstado,
+    db: Session = Depends(get_db),
+):
+    """
+    Actualizar estado de una persona (activo | inactivo). HU-02.
+    Las personas inactivas son rechazadas en validación de acceso (HU-05).
+    """
+    if body.estado not in ("activo", "inactivo"):
+        raise HTTPException(status_code=400, detail="estado debe ser 'activo' o 'inactivo'.")
+    persona = db.query(Persona).filter(Persona.id_persona == persona_id).first()
+    if not persona:
+        raise HTTPException(status_code=404, detail="Persona no encontrada.")
+    persona.estado = body.estado
+    db.commit()
+    db.refresh(persona)
+    return PersonaRegistroResponse(
+        id_persona=persona.id_persona,
+        nombre_completo=persona.nombre_completo,
+        documento=persona.documento,
+        estado=persona.estado,
+        calidad_embedding=None,
+    )
