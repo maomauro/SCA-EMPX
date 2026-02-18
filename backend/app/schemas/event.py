@@ -1,6 +1,13 @@
-"""Schemas para eventos de acceso (registro_acceso). HU-06, HU-08."""
+"""Schemas para eventos de acceso (registro_acceso). HU-06, HU-08, HU-11."""
 from datetime import datetime
 from pydantic import BaseModel
+
+
+class DashboardEstadisticas(BaseModel):
+    """Métricas para dashboard. HU-11."""
+    total_dentro: int
+    accesos_hoy: int
+    denegaciones_hoy: int
 
 
 class EventoListItem(BaseModel):

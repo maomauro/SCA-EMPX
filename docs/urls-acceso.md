@@ -19,6 +19,7 @@ Listado de URLs para acceder a la aplicación con la API en ejecución en **http
 | http://127.0.0.1:8000/listado-personas | Listado de personas con búsqueda y Desactivar/Activar (HU-02) |
 | http://127.0.0.1:8000/historial-accesos | Historial de accesos: filtros, tabla y exportación CSV (HU-08) |
 | http://127.0.0.1:8000/editar-persona | Editar persona (empleado/visitante). Usar ?id= (HU-10) |
+| http://127.0.0.1:8000/dashboard | Dashboard de accesos: métricas y eventos recientes; actualización 30 s (HU-11) |
 
 ---
 
@@ -54,6 +55,8 @@ Listado de URLs para acceder a la aplicación con la API en ejecución en **http
 | Método | URL | Descripción |
 |--------|-----|-------------|
 | GET | http://127.0.0.1:8000/api/v1/events | Listar eventos. Query: `persona_id`, `documento`, `fecha_desde`, `fecha_hasta` (YYYY-MM-DD), `tipo` (ingreso\|salida), `resultado` (permitido\|denegado), `limit` (máx 100), `offset`. Orden: fecha_hora desc. HU-08. |
+| GET | http://127.0.0.1:8000/api/v1/events/recientes | Eventos de los últimos N minutos. Query: `minutos` (1–120), `limit` (máx 100). HU-11. |
+| GET | http://127.0.0.1:8000/api/v1/events/estadisticas | Métricas dashboard: total_dentro, accesos_hoy, denegaciones_hoy. HU-11. |
 | GET | http://127.0.0.1:8000/api/v1/events/export | Exportar eventos a CSV. Mismos filtros que GET /events; `limit` (máx 5000). HU-08. |
 | POST | http://127.0.0.1:8000/api/v1/events/exit | Stub (por implementar; usar `/access/register-exit`) |
 
