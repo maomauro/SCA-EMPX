@@ -76,3 +76,10 @@ def registrar_salida_page():
     """Página para registrar salida por reconocimiento facial (HU-07)."""
     path = Path(__file__).parent / "static" / "registrar-salida.html"
     return FileResponse(path)
+
+
+@app.get("/administracion-usuarios")
+def administracion_usuarios_page():
+    """Pantalla de administración de usuarios: login, listado, alta, activar/desactivar (HU-09)."""
+    path = Path(__file__).parent / "static" / "administracion-usuarios.html"
+    return FileResponse(path)
