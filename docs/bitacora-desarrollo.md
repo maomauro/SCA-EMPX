@@ -27,7 +27,7 @@ Documento para **registrar el avance** del desarrollo del proyecto: check de act
 | 7    | feature/hu-09-gestionar-usuarios     | HU-09 | Hecho       | 2026-02                      |
 | 8    | feature/hu-02-desactivar-empleado   | HU-02 | Hecho       | 2026-02                      |
 | 9    | feature/hu-08-historial-accesos      | HU-08 | Hecho       | 2026-02                      |
-| 10   | feature/hu-10-actualizar-empleado    | HU-10 | Pendiente   | —                            |
+| 10   | feature/hu-10-actualizar-empleado    | HU-10 | Hecho       | 2026-02                      |
 | 11   | feature/hu-11-dashboard-accesos      | HU-11 | Pendiente   | —                            |
 | 12   | feature/hu-13-revocar-autorizacion   | HU-13 | Pendiente   | —                            |
 | 13   | feature/hu-14-personas-dentro        | HU-14 | Pendiente   | —                            |
@@ -215,13 +215,29 @@ Documento para **registrar el avance** del desarrollo del proyecto: check de act
 
 ---
 
+## Paso 10 – HU-10: Actualizar información de empleado
+
+**Rama:** `feature/hu-10-actualizar-empleado`
+
+| # | Actividad | Check | Notas |
+|---|-----------|--------|-------|
+| 1 | PATCH /api/v1/personas/{id} para actualizar nombre, cargo, área, telefono, email, estado | [x] | PersonaUpdate (todos opcionales); compat con HU-02 (solo estado) |
+| 2 | GET /api/v1/personas/{id} para detalle (formulario de edición) | [x] | PersonaDetail con tipo |
+| 3 | Pantalla /editar-persona?id= con formulario que llama a PATCH | [x] | editar-persona.html |
+| 4 | En listado de personas: enlace Editar que abre detalle/edición | [x] | listado-personas.html: enlace a /editar-persona?id= |
+
+**Fecha fin:** 2026-02  
+**Notas:** Documento no editable en edición (evitar conflictos de unicidad). tipo_contrato no existe en modelo; se usan cargo, área, telefono, email.
+
+---
+
 ## Pasos 8 a 14 – Resumen de check
 
 | Paso | HU / feature | Actividades principales | Check global |
 |------|--------------|-------------------------|--------------|
 | 8 | HU-02 Desactivar empleado | PATCH personas/{id} inactivo; validación rechace inactivos; pantalla listado + Desactivar | [x] |
 | 9 | HU-08 Historial accesos | GET /api/eventos filtros + paginación; export CSV; pantalla consulta | [x] |
-| 10 | HU-10 Actualizar empleado | PATCH personas/{id}; pantalla detalle/edición | [ ] |
+| 10 | HU-10 Actualizar empleado | PATCH personas/{id}; pantalla detalle/edición | [x] |
 | 11 | HU-11 Dashboard accesos | GET eventos recientes + estadísticas; pantalla métricas + actualización periódica | [ ] |
 | 12 | HU-13 Revocar autorización | PATCH autorizaciones/{id} revocada; pantalla listar activas + revocar | [ ] |
 | 13 | HU-14 Personas dentro | GET /api/personas/dentro; pantalla lista “actualmente dentro” | [ ] |
@@ -244,6 +260,7 @@ Anotar aquí hitos, decisiones, bloqueos o cambios de orden con fecha.
 | 2026-02 | HU-09 implementado: GET/POST/PATCH usuarios, require_admin, /administracion-usuarios. Bitácora Paso 7 actualizada. |
 | 2026-02 | HU-02 implementado: PATCH /api/v1/personas/{id} estado; GET con estado y q; /listado-personas. Validación acceso ya rechaza inactivos. Bitácora Paso 8 actualizada. |
 | 2026-02 | HU-08 implementado: GET /api/v1/events con persona_id, documento, fecha_desde/hasta, tipo, resultado, limit/offset; GET /api/v1/events/export CSV; /historial-accesos con filtros, tabla y Exportar CSV. Bitácora Paso 9 actualizada. |
+| 2026-02 | HU-10 implementado: GET /api/v1/personas/{id} (PersonaDetail), PATCH /api/v1/personas/{id} (nombre, cargo, área, telefono, email, estado); /editar-persona?id=; enlace Editar en listado-personas. Bitácora Paso 10 actualizada. |
 |       |                                                                               |
 |       |                                                                               |
 |       |                                                                               |

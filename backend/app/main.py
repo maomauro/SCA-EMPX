@@ -97,3 +97,10 @@ def historial_accesos_page():
     """Pantalla de historial de accesos con filtros y exportación CSV (HU-08)."""
     path = Path(__file__).parent / "static" / "historial-accesos.html"
     return FileResponse(path)
+
+
+@app.get("/editar-persona")
+def editar_persona_page():
+    """Pantalla de edición de persona (empleado/visitante). HU-10. Usar ?id= para indicar persona."""
+    path = Path(__file__).parent / "static" / "editar-persona.html"
+    return FileResponse(path)
