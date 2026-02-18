@@ -33,8 +33,15 @@ app.include_router(api_router, prefix="/api/v1")
 
 @app.get("/")
 def root():
-    """Health check."""
+    """Health check (JSON). Para la interfaz con menú use /inicio."""
     return {"app": "SCA-EMPX", "status": "ok"}
+
+
+@app.get("/inicio")
+def inicio_page():
+    """Página de inicio con menú de navegación a todas las funcionalidades."""
+    path = Path(__file__).parent / "static" / "inicio.html"
+    return FileResponse(path)
 
 
 @app.get("/health")

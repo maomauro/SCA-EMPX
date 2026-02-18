@@ -2,6 +2,8 @@
 
 Listado de URLs para acceder a la aplicación con la API en ejecución en **http://127.0.0.1:8000** (tras ejecutar `uv run uvicorn backend.app.main:app --reload` desde la raíz del proyecto).
 
+**Interfaz con menú:** Todas las pantallas incluyen una barra de navegación superior. Punto de entrada recomendado: **http://127.0.0.1:8000/inicio**.
+
 ---
 
 ## Páginas web (navegador)
@@ -9,6 +11,7 @@ Listado de URLs para acceder a la aplicación con la API en ejecución en **http
 | URL | Descripción |
 |-----|-------------|
 | http://127.0.0.1:8000/ | Health check (JSON) |
+| http://127.0.0.1:8000/inicio | Página de inicio con menú de navegación y tarjetas por módulo |
 | http://127.0.0.1:8000/health | Estado para despliegue |
 | http://127.0.0.1:8000/validate-access | Validar acceso por reconocimiento facial (HU-05) |
 | http://127.0.0.1:8000/registro-empleado | Registrar empleado con foto (HU-01) |

@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Administración de usuarios - SCA-EMPX</title>
   <style>
+    .app-nav { background: #1a365d; color: #fff; padding: 0.6rem 1rem; margin: 0 -1rem 1rem -1rem; }
+    .app-nav nav { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: center; }
+    .app-nav a { color: #e2e8f0; text-decoration: none; font-size: 0.9rem; }
+    .app-nav a:hover { color: #fff; text-decoration: underline; }
+    .app-nav .brand { font-weight: bold; margin-right: 0.5rem; color: #fff; }
     body { font-family: sans-serif; max-width: 700px; margin: 2rem auto; padding: 0 1rem; }
     h1 { font-size: 1.25rem; }
     label { display: block; margin-top: 0.5rem; }
@@ -20,6 +25,25 @@
   </style>
 </head>
 <body>
+  <header class="app-nav">
+    <nav>
+      <span class="brand">SCA-EMPX</span>
+      <a href="/inicio">Inicio</a>
+      <a href="/validate-access">Validar acceso</a>
+      <a href="/registro-empleado">Reg. empleado</a>
+      <a href="/registro-visitante">Reg. visitante</a>
+      <a href="/autorizacion-visita">Autorización</a>
+      <a href="/registrar-salida">Reg. salida</a>
+      <a href="/listado-personas">Personas</a>
+      <a href="/historial-accesos">Historial</a>
+      <a href="/dashboard">Dashboard</a>
+      <a href="/revocar-autorizacion">Revocar auth.</a>
+      <a href="/personas-dentro">Personas dentro</a>
+      <a href="/reporte-accesos">Reporte</a>
+      <a href="/administracion-usuarios">Admin</a>
+    </nav>
+  </header>
+  <div class="app-container">
   <h1>Administración de usuarios</h1>
 
   <div id="loginPanel" class="panel visible">
@@ -162,5 +186,6 @@
     if (getToken()) showListado();
     else showLogin();
   </script>
+  </div>
 </body>
 </html>
