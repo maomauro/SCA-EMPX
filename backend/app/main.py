@@ -90,3 +90,10 @@ def listado_personas_page():
     """Listado de personas con búsqueda y botón Desactivar/Activar (HU-02)."""
     path = Path(__file__).parent / "static" / "listado-personas.html"
     return FileResponse(path)
+
+
+@app.get("/historial-accesos")
+def historial_accesos_page():
+    """Pantalla de historial de accesos con filtros y exportación CSV (HU-08)."""
+    path = Path(__file__).parent / "static" / "historial-accesos.html"
+    return FileResponse(path)
