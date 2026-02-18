@@ -111,3 +111,10 @@ def dashboard_page():
     """Dashboard de accesos: métricas y eventos recientes (HU-11). Actualización cada 30 s."""
     path = Path(__file__).parent / "static" / "dashboard.html"
     return FileResponse(path)
+
+
+@app.get("/revocar-autorizacion")
+def revocar_autorizacion_page():
+    """Listar autorizaciones vigentes y revocarlas (HU-13)."""
+    path = Path(__file__).parent / "static" / "revocar-autorizacion.html"
+    return FileResponse(path)

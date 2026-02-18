@@ -1,20 +1,38 @@
-"""Rutas autorizaciones de visita. HU-04."""
-from fastapi import APIRouter, Depends, HTTPException
+"""Rutas autorizaciones de visita. HU-04, HU-13."""
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from backend.app.db.database import get_db
 from backend.app.db.models import Autorizacion
-from backend.app.schemas.autorizacion import AutorizacionCreate, AutorizacionResponse
+from backend.app.schemas.autorizacion import AutorizacionCreate, AutorizacionResponse, AutorizacionRevocar
 from backend.app.services.autorizacion_service import crear_autorizacion as svc_crear_autorizacion
 
 router = APIRouter()
 
 
+def _autorizacion_to_response(r) -> AutorizacionResponse:
+    return AutorizacionResponse(
+        id_autorizacion=r.id_autorizacion,
+        id_persona=r.id_persona,
+        fecha_inicio=r.fecha_inicio,
+        fecha_fin=r.fecha_fin,
+        estado=r.estado,
+        motivo_revocacion=getattr(r, "motivo_revocacion", None),
+        nombre_completo=r.persona.nombre_completo if r.persona else None,
+    )
+
+
 @router.get("/", response_model=list[AutorizacionResponse])
-def listar_autorizaciones(db: Session = Depends(get_db)):
-    """Lista todas las autorizaciones (vigentes, vencidas, canceladas)."""
-    rows = db.query(Autorizacion).order_by(Autorizacion.fecha_inicio.desc()).all()
-    return [AutorizacionResponse.model_validate(r) for r in rows]
+def listar_autorizaciones(
+    estado: str | None = Query(None, description="vigente | vencida | cancelada | revocada; sin valor = todas"),
+    db: Session = Depends(get_db),
+):
+    """Lista autorizaciones. HU-13: use estado=vigente para listar solo activas."""
+    query = db.query(Autorizacion).order_by(Autorizacion.fecha_inicio.desc())
+    if estado and estado.strip() in ("vigente", "vencida", "cancelada", "revocada"):
+        query = query.filter(Autorizacion.estado == estado.strip())
+    rows = query.all()
+    return [_autorizacion_to_response(r) for r in rows]
 
 
 @router.post("/", response_model=AutorizacionResponse)
@@ -41,4 +59,25 @@ def crear_autorizacion(body: AutorizacionCreate, db: Session = Depends(get_db)):
         if msg == "persona_inactiva":
             raise HTTPException(status_code=400, detail="La persona está inactiva.")
         raise HTTPException(status_code=400, detail=msg)
-    return AutorizacionResponse.model_validate(aut)
+    return _autorizacion_to_response(aut)
+
+
+@router.patch("/{autorizacion_id:int}", response_model=AutorizacionResponse)
+def revocar_autorizacion(
+    autorizacion_id: int,
+    body: AutorizacionRevocar,
+    db: Session = Depends(get_db),
+):
+    """
+    Revoca una autorización vigente. HU-13. Solo se puede revocar si estado actual es vigente.
+    """
+    aut = db.query(Autorizacion).filter(Autorizacion.id_autorizacion == autorizacion_id).first()
+    if not aut:
+        raise HTTPException(status_code=404, detail="Autorización no encontrada.")
+    if aut.estado != "vigente":
+        raise HTTPException(status_code=400, detail="Solo se puede revocar una autorización vigente.")
+    aut.estado = "revocada"
+    aut.motivo_revocacion = (body.motivo or "").strip() or None
+    db.commit()
+    db.refresh(aut)
+    return _autorizacion_to_response(aut)
