@@ -22,6 +22,7 @@ Listado de URLs para acceder a la aplicación con la API en ejecución en **http
 | http://127.0.0.1:8000/dashboard | Dashboard de accesos: métricas y eventos recientes; actualización 30 s (HU-11) |
 | http://127.0.0.1:8000/revocar-autorizacion | Listar autorizaciones vigentes y revocarlas (HU-13) |
 | http://127.0.0.1:8000/personas-dentro | Personas actualmente dentro: nombre y hora de entrada (HU-14) |
+| http://127.0.0.1:8000/reporte-accesos | Reporte de accesos: selector fechas y formato CSV/PDF; descarga (HU-12) |
 
 ---
 
@@ -70,6 +71,12 @@ Listado de URLs para acceder a la aplicación con la API en ejecución en **http
 | GET | http://127.0.0.1:8000/api/v1/autorizaciones | Listar autorizaciones. Query: `estado` (vigente\|vencida\|cancelada\|revocada). HU-13. |
 | POST | http://127.0.0.1:8000/api/v1/autorizaciones | Crear autorización (JSON: id_persona, fecha_inicio, fecha_fin) |
 | PATCH | http://127.0.0.1:8000/api/v1/autorizaciones/{id} | Revocar autorización. JSON: estado=revocada, motivo (opcional). Solo si vigente. HU-13. |
+
+### Reportes
+
+| Método | URL | Descripción |
+|--------|-----|-------------|
+| GET | http://127.0.0.1:8000/api/v1/reportes/accesos | Reporte de accesos. Query: fecha_desde, fecha_hasta (YYYY-MM-DD), formato (csv o pdf), opc. tipo, persona_id, documento, resultado. Máx 2000 filas. HU-12. |
 
 ### Usuarios
 
