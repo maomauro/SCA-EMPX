@@ -1,13 +1,14 @@
-"""Rutas eventos entrada/salida. HU-06, HU-07, HU-08."""
-from datetime import datetime
+"""Rutas eventos entrada/salida. HU-06, HU-07, HU-08, HU-11."""
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import PlainTextResponse
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 from backend.app.db.database import get_db
 from backend.app.db.models import RegistroAcceso, Persona
-from backend.app.schemas.event import EventoListItem
+from backend.app.schemas.event import EventoListItem, DashboardEstadisticas
 
 router = APIRouter()
 
@@ -87,6 +88,73 @@ def listar_eventos(
         )
         for r in rows
     ]
+
+
+@router.get("/recientes", response_model=list[EventoListItem])
+def listar_eventos_recientes(
+    minutos: int = Query(10, ge=1, le=120, description="Últimos N minutos"),
+    limit: int = Query(50, ge=1, le=MAX_LIMIT),
+    db: Session = Depends(get_db),
+):
+    """
+    Lista eventos de los últimos N minutos. HU-11 (dashboard).
+    """
+    desde = datetime.utcnow() - timedelta(minutes=minutos)
+    rows = (
+        db.query(RegistroAcceso)
+        .join(Persona, RegistroAcceso.id_persona == Persona.id_persona)
+        .filter(RegistroAcceso.fecha_hora >= desde)
+        .order_by(RegistroAcceso.fecha_hora.desc())
+        .limit(limit)
+        .all()
+    )
+    return [
+        EventoListItem(
+            id_registro=r.id_registro,
+            id_persona=r.id_persona,
+            nombre_completo=r.persona.nombre_completo if r.persona else None,
+            tipo_movimiento=r.tipo_movimiento,
+            fecha_hora=r.fecha_hora,
+            resultado=r.resultado,
+            similarity_score=r.similarity_score,
+            metodo_identificacion=r.metodo_identificacion,
+        )
+        for r in rows
+    ]
+
+
+@router.get("/estadisticas", response_model=DashboardEstadisticas)
+def obtener_estadisticas_dashboard(db: Session = Depends(get_db)):
+    """
+    Métricas para dashboard: total personas dentro, accesos permitidos hoy, denegaciones hoy. HU-11.
+    """
+    hoy_inicio = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    accesos_hoy = (
+        db.query(func.count(RegistroAcceso.id_registro))
+        .filter(RegistroAcceso.fecha_hora >= hoy_inicio, RegistroAcceso.resultado == "permitido")
+        .scalar()
+        or 0
+    )
+    denegaciones_hoy = (
+        db.query(func.count(RegistroAcceso.id_registro))
+        .filter(RegistroAcceso.fecha_hora >= hoy_inicio, RegistroAcceso.resultado == "denegado")
+        .scalar()
+        or 0
+    )
+    # Personas cuyo último evento es ingreso permitido (están "dentro")
+    subq = (
+        db.query(RegistroAcceso.id_persona, func.max(RegistroAcceso.fecha_hora).label("max_fecha"))
+        .group_by(RegistroAcceso.id_persona)
+        .subquery()
+    )
+    total_dentro = (
+        db.query(func.count(RegistroAcceso.id_registro))
+        .join(subq, (RegistroAcceso.id_persona == subq.c.id_persona) & (RegistroAcceso.fecha_hora == subq.c.max_fecha))
+        .filter(RegistroAcceso.tipo_movimiento == "ingreso", RegistroAcceso.resultado == "permitido")
+        .scalar()
+        or 0
+    )
+    return DashboardEstadisticas(total_dentro=total_dentro, accesos_hoy=accesos_hoy, denegaciones_hoy=denegaciones_hoy)
 
 
 @router.get("/export", response_class=PlainTextResponse)

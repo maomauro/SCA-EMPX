@@ -104,3 +104,10 @@ def editar_persona_page():
     """Pantalla de edición de persona (empleado/visitante). HU-10. Usar ?id= para indicar persona."""
     path = Path(__file__).parent / "static" / "editar-persona.html"
     return FileResponse(path)
+
+
+@app.get("/dashboard")
+def dashboard_page():
+    """Dashboard de accesos: métricas y eventos recientes (HU-11). Actualización cada 30 s."""
+    path = Path(__file__).parent / "static" / "dashboard.html"
+    return FileResponse(path)
