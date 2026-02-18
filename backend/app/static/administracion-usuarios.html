@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Administración de usuarios - SCA-EMPX</title>
+  <style>
+    body { font-family: sans-serif; max-width: 700px; margin: 2rem auto; padding: 0 1rem; }
+    h1 { font-size: 1.25rem; }
+    label { display: block; margin-top: 0.5rem; }
+    input, select, button { margin: 0.25rem 0; padding: 0.35rem; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; }
+    .panel { margin-top: 1.5rem; padding: 1rem; border: 1px solid #ddd; border-radius: 8px; }
+    .error { background: #f8d7da; color: #721c24; padding: 0.5rem; margin-top: 0.5rem; border-radius: 4px; }
+    .ok { background: #d4edda; color: #155724; padding: 0.5rem; margin-top: 0.5rem; border-radius: 4px; }
+    #listado { display: none; }
+    #loginPanel { display: none; }
+    .visible { display: block !important; }
+  </style>
+</head>
+<body>
+  <h1>Administración de usuarios</h1>
+
+  <div id="loginPanel" class="panel visible">
+    <p>Inicie sesión con un usuario administrador.</p>
+    <label>Usuario</label>
+    <input type="text" id="loginUser" placeholder="admin" />
+    <label>Contraseña</label>
+    <input type="password" id="loginPass" placeholder="admin" />
+    <br />
+    <button type="button" id="btnLogin">Entrar</button>
+    <div id="loginError" class="error" style="display:none;"></div>
+  </div>
+
+  <div id="listado" class="panel">
+    <p>Conectado. <button type="button" id="btnLogout">Cerrar sesión</button></p>
+    <h2>Listado de usuarios</h2>
+    <table>
+      <thead>
+        <tr><th>ID</th><th>Usuario</th><th>Rol</th><th>Estado</th><th>Acción</th></tr>
+      </thead>
+      <tbody id="tablaUsuarios"></tbody>
+    </table>
+    <h2>Alta de usuario (solo admin)</h2>
+    <label>Nombre de usuario</label>
+    <input type="text" id="newUser" placeholder="nombre_usuario" />
+    <label>Contraseña</label>
+    <input type="password" id="newPass" placeholder="contraseña" />
+    <label>Rol</label>
+    <select id="newRol">
+      <option value="recepcion">recepcion</option>
+      <option value="admin">admin</option>
+      <option value="rrhh">rrhh</option>
+      <option value="seguridad">seguridad</option>
+    </select>
+    <br />
+    <button type="button" id="btnCrear">Crear usuario</button>
+    <div id="msgResult" style="margin-top:0.5rem;"></div>
+  </div>
+
+  <script>
+    const TOKEN_KEY = "sca_empx_token";
+
+    function getToken() { return sessionStorage.getItem(TOKEN_KEY); }
+    function setToken(t) { if (t) sessionStorage.setItem(TOKEN_KEY, t); else sessionStorage.removeItem(TOKEN_KEY); }
+
+    function showLogin() {
+      document.getElementById("loginPanel").classList.add("visible");
+      document.getElementById("listado").classList.remove("visible");
+    }
+    function showListado() {
+      document.getElementById("loginPanel").classList.remove("visible");
+      document.getElementById("listado").classList.add("visible");
+      cargarUsuarios();
+    }
+
+    document.getElementById("btnLogin").onclick = async function() {
+      const user = document.getElementById("loginUser").value.trim();
+      const pass = document.getElementById("loginPass").value;
+      const errDiv = document.getElementById("loginError");
+      errDiv.style.display = "none";
+      if (!user || !pass) { errDiv.textContent = "Usuario y contraseña requeridos."; errDiv.style.display = "block"; return; }
+      try {
+        const r = await fetch("/api/v1/usuarios/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: user, password: pass }),
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) { errDiv.textContent = data.detail || "Error al iniciar sesión."; errDiv.style.display = "block"; return; }
+        setToken(data.access_token);
+        showListado();
+      } catch (e) { errDiv.textContent = "Error: " + e.message; errDiv.style.display = "block"; }
+    };
+
+    document.getElementById("btnLogout").onclick = function() { setToken(null); showLogin(); };
+
+    async function cargarUsuarios() {
+      const token = getToken();
+      if (!token) { showLogin(); return; }
+      try {
+        const r = await fetch("/api/v1/usuarios", { headers: { "Authorization": "Bearer " + token } });
+        if (r.status === 401) { setToken(null); showLogin(); return; }
+        const list = await r.json().catch(() => []);
+        const tbody = document.getElementById("tablaUsuarios");
+        tbody.innerHTML = "";
+        (Array.isArray(list) ? list : []).forEach(function(u) {
+          const tr = document.createElement("tr");
+          tr.innerHTML = "<td>" + u.id_usuario + "</td><td>" + u.nombre_usuario + "</td><td>" + u.rol + "</td><td>" + u.estado + "</td><td>" +
+            (u.estado === "activo" ? "<button type=\"button\" data-id=\"" + u.id_usuario + "\" data-action=\"inactivo\">Desactivar</button>" :
+             "<button type=\"button\" data-id=\"" + u.id_usuario + "\" data-action=\"activo\">Activar</button>") + "</td>";
+          tbody.appendChild(tr);
+        });
+        tbody.querySelectorAll("button[data-id]").forEach(function(btn) {
+          btn.onclick = function() { cambiarEstado(parseInt(btn.getAttribute("data-id"), 10), btn.getAttribute("data-action")); };
+        });
+      } catch (e) {}
+    }
+
+    async function cambiarEstado(id, estado) {
+      const token = getToken();
+      if (!token) return;
+      try {
+        const r = await fetch("/api/v1/usuarios/" + id, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+          body: JSON.stringify({ estado: estado }),
+        });
+        if (r.status === 401) { setToken(null); showLogin(); return; }
+        if (r.status === 403) { alert("Se requiere rol administrador."); return; }
+        if (r.ok) cargarUsuarios();
+        else { const d = await r.json().catch(() => ({})); alert(d.detail || "Error"); }
+      } catch (e) { alert("Error: " + e.message); }
+    }
+
+    document.getElementById("btnCrear").onclick = async function() {
+      const token = getToken();
+      const nombre = document.getElementById("newUser").value.trim();
+      const pass = document.getElementById("newPass").value;
+      const rol = document.getElementById("newRol").value;
+      const msgDiv = document.getElementById("msgResult");
+      msgDiv.className = ""; msgDiv.textContent = "";
+      if (!nombre || !pass) { msgDiv.className = "error"; msgDiv.textContent = "Nombre de usuario y contraseña requeridos."; return; }
+      try {
+        const r = await fetch("/api/v1/usuarios", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+          body: JSON.stringify({ nombre_usuario: nombre, password: pass, rol: rol }),
+        });
+        const data = await r.json().catch(() => ({}));
+        if (r.status === 401) { setToken(null); showLogin(); return; }
+        if (r.status === 403) { msgDiv.className = "error"; msgDiv.textContent = "Se requiere rol administrador para crear usuarios."; return; }
+        if (r.ok) {
+          msgDiv.className = "ok"; msgDiv.textContent = "Usuario creado: " + data.nombre_usuario;
+          document.getElementById("newUser").value = ""; document.getElementById("newPass").value = "";
+          cargarUsuarios();
+        } else { msgDiv.className = "error"; msgDiv.textContent = data.detail || "Error " + r.status; }
+      } catch (e) { msgDiv.className = "error"; msgDiv.textContent = "Error: " + e.message; }
+    };
+
+    if (getToken()) showListado();
+    else showLogin();
+  </script>
+</body>
+</html>

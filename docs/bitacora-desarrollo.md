@@ -24,7 +24,7 @@ Documento para **registrar el avance** del desarrollo del proyecto: check de act
 | 4    | feature/hu-04-autorizacion-visita    | HU-04 | Hecho       | 2026-02                      |
 | 5    | feature/hu-06-registro-evento-entrada| HU-06 | Hecho       | 2026-02                      |
 | 6    | feature/hu-07-registro-evento-salida | HU-07 | Hecho       | 2026-02                      |
-| 7    | feature/hu-09-gestionar-usuarios     | HU-09 | Pendiente   | —                            |
+| 7    | feature/hu-09-gestionar-usuarios     | HU-09 | Hecho       | 2026-02                      |
 | 8    | feature/hu-02-desactivar-empleado   | HU-02 | Pendiente   | —                            |
 | 9    | feature/hu-08-historial-accesos      | HU-08 | Pendiente   | —                            |
 | 10   | feature/hu-10-actualizar-empleado    | HU-10 | Pendiente   | —                            |
@@ -170,16 +170,16 @@ Documento para **registrar el avance** del desarrollo del proyecto: check de act
 
 | # | Actividad | Check | Notas |
 |---|-----------|--------|-------|
-| 1 | Tabla usuario_sistema (username, password_hash, rol, estado) | [ ] | |
-| 2 | Registro/login básico (JWT o sesión); middleware auth para rutas protegidas | [ ] | |
-| 3 | POST /api/usuarios crear; GET /api/usuarios listar | [ ] | |
-| 4 | Pantalla administración: listado, alta, activar/desactivar | [ ] | |
+| 1 | Tabla usuario_sistema (username, password_hash, rol, estado) | [x] | Ya existía en setup-mvp |
+| 2 | Registro/login básico (JWT o sesión); middleware auth para rutas protegidas | [x] | POST /login; get_current_user, require_admin en dependencies |
+| 3 | POST /api/usuarios crear; GET /api/usuarios listar | [x] | GET/POST /api/v1/usuarios (auth); PATCH /api/v1/usuarios/{id} estado (solo admin) |
+| 4 | Pantalla administración: listado, alta, activar/desactivar | [x] | GET /administracion-usuarios (login, listado, alta, Activar/Desactivar) |
 
 *MVP: puede limitarse a un usuario administrador y login simple.*
 
 **Fecha inicio:** ___________  
-**Fecha fin:** ___________  
-**Notas:** ___________________________________________
+**Fecha fin:** 2026-02  
+**Notas:** Crear/desactivar solo rol admin; nombre_usuario único; roles: admin, rrhh, recepcion, seguridad.
 
 ---
 
@@ -209,6 +209,7 @@ Anotar aquí hitos, decisiones, bloqueos o cambios de orden con fecha.
 | 2026-02 | HU-01, HU-03, HU-04 implementados. Bitácora actualizada: Pasos 2, 3, 4 marcados Hecho; tareas con check y notas. |
 | 2026-02 | HU-06 implementado: event_service.register_entrada, GET /api/v1/events (tipo, limit, offset). Bitácora Paso 5 actualizada. |
 | 2026-02 | HU-07 implementado: register_salida, POST /api/v1/access/register-exit, GET /registrar-salida. Bitácora Paso 6 actualizada. |
+| 2026-02 | HU-09 implementado: GET/POST/PATCH usuarios, require_admin, /administracion-usuarios. Bitácora Paso 7 actualizada. |
 |       |                                                                               |
 |       |                                                                               |
 |       |                                                                               |
