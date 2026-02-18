@@ -181,8 +181,3 @@ def exportar_eventos_csv(
             f"{r.id_registro};{r.id_persona};{nombre};{r.tipo_movimiento};{r.fecha_hora.isoformat() if r.fecha_hora else ''};{r.resultado};{r.similarity_score or ''};{r.metodo_identificacion}"
         )
     return "\n".join(lines)
-
-
-@router.post("/exit")
-def registrar_salida():
-    return {"message": "Registro de salida (por implementar)"}

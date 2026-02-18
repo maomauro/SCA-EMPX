@@ -1,1 +1,1 @@
-# Core: config, seguridad, logging
+# Core: config, seguridad
