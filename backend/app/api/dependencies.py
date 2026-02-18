@@ -46,3 +46,15 @@ def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
     return user
+
+
+def require_admin(
+    user: Annotated[UsuarioSistema, Depends(get_current_user)],
+) -> UsuarioSistema:
+    """Exige usuario autenticado con rol admin; 403 si no es admin. HU-09."""
+    if user.rol != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Se requiere rol administrador",
+        )
+    return user

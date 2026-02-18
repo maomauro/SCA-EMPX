@@ -15,6 +15,7 @@ Listado de URLs para acceder a la aplicación con la API en ejecución en **http
 | http://127.0.0.1:8000/registro-visitante | Registrar visitante con foto (HU-03) |
 | http://127.0.0.1:8000/autorizacion-visita | Generar autorización de visita (HU-04) |
 | http://127.0.0.1:8000/registrar-salida | Registrar salida por reconocimiento facial (HU-07) |
+| http://127.0.0.1:8000/administracion-usuarios | Administración de usuarios: login, listado, alta, activar/desactivar (HU-09) |
 
 ---
 
@@ -62,9 +63,10 @@ Listado de URLs para acceder a la aplicación con la API en ejecución en **http
 
 | Método | URL | Descripción |
 |--------|-----|-------------|
-| POST | http://127.0.0.1:8000/api/v1/usuarios/login | Login (JSON: usuario, contraseña → JWT) |
-| GET | http://127.0.0.1:8000/api/v1/usuarios | Listar usuarios (por implementar) |
-| POST | http://127.0.0.1:8000/api/v1/usuarios | Crear usuario (por implementar) |
+| POST | http://127.0.0.1:8000/api/v1/usuarios/login | Login (JSON: username, password → JWT) |
+| GET | http://127.0.0.1:8000/api/v1/usuarios | Listar usuarios (requiere Authorization: Bearer &lt;token&gt;) |
+| POST | http://127.0.0.1:8000/api/v1/usuarios | Crear usuario (solo admin; JSON: nombre_usuario, password, rol) |
+| PATCH | http://127.0.0.1:8000/api/v1/usuarios/{id} | Activar/desactivar usuario (solo admin; JSON: estado activo\|inactivo) |
 
 ---
 
