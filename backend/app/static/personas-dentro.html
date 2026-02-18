@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Personas dentro - SCA-EMPX</title>
+  <style>
+    body { font-family: sans-serif; max-width: 700px; margin: 2rem auto; padding: 0 1rem; }
+    h1 { font-size: 1.25rem; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; }
+    th { background: #f0f0f0; }
+    .msg { margin-top: 0.5rem; padding: 0.5rem; border-radius: 4px; }
+    .error { background: #f8d7da; color: #721c24; }
+    .actualizado { font-size: 0.85rem; color: #666; margin-top: 0.5rem; }
+  </style>
+</head>
+<body>
+  <h1>Personas actualmente dentro (HU-14)</h1>
+  <p>Listado de personas cuyo último registro de acceso es un ingreso permitido (aún no han registrado salida).</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Hora de entrada</th>
+      </tr>
+    </thead>
+    <tbody id="tabla"></tbody>
+  </table>
+  <div class="actualizado" id="actualizado"></div>
+  <div id="msg" class="msg error" style="display:none;"></div>
+
+  <script>
+    function formatFecha(d) {
+      if (!d) return "";
+      const x = new Date(d);
+      return isNaN(x.getTime()) ? d : x.toLocaleString("es-AR", { dateStyle: "short", timeStyle: "medium" });
+    }
+
+    async function cargar() {
+      try {
+        const r = await fetch("/api/v1/personas/dentro");
+        const list = await r.json().catch(function() { return []; });
+        const tbody = document.getElementById("tabla");
+        tbody.innerHTML = "";
+        (Array.isArray(list) ? list : []).forEach(function(p) {
+          const tr = document.createElement("tr");
+          tr.innerHTML =
+            "<td>" + (p.nombre_completo || "—") + "</td>" +
+            "<td>" + formatFecha(p.fecha_hora_entrada) + "</td>";
+          tbody.appendChild(tr);
+        });
+        document.getElementById("actualizado").textContent = "Actualizado: " + new Date().toLocaleTimeString("es-AR") + " — " + list.length + " persona(s) dentro.";
+        document.getElementById("msg").style.display = "none";
+      } catch (e) {
+        document.getElementById("msg").textContent = "Error: " + e.message;
+        document.getElementById("msg").style.display = "block";
+      }
+    }
+
+    cargar();
+    setInterval(cargar, 60000);
+  </script>
+</body>
+</html>
