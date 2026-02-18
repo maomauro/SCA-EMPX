@@ -37,10 +37,6 @@ class PersonaDetail(BaseModel):
         from_attributes = True
 
 
-class PersonaUpdateEstado(BaseModel):
-    estado: str  # activo | inactivo
-
-
 class PersonaUpdate(BaseModel):
     """Campos editables de persona. HU-10. Todos opcionales; solo se actualizan los enviados."""
     nombre_completo: str | None = None

@@ -62,7 +62,6 @@ Listado de URLs para acceder a la aplicación con la API en ejecución en **http
 | GET | http://127.0.0.1:8000/api/v1/events/recientes | Eventos de los últimos N minutos. Query: `minutos` (1–120), `limit` (máx 100). HU-11. |
 | GET | http://127.0.0.1:8000/api/v1/events/estadisticas | Métricas dashboard: total_dentro, accesos_hoy, denegaciones_hoy. HU-11. |
 | GET | http://127.0.0.1:8000/api/v1/events/export | Exportar eventos a CSV. Mismos filtros que GET /events; `limit` (máx 5000). HU-08. |
-| POST | http://127.0.0.1:8000/api/v1/events/exit | Stub (por implementar; usar `/access/register-exit`) |
 
 ### Autorizaciones
 
