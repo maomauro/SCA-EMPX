@@ -6,9 +6,14 @@ class PersonaListItem(BaseModel):
     id_persona: int
     nombre_completo: str
     documento: str
+    estado: str | None = None  # HU-02: incluido para listado con Desactivar/Activar
 
     class Config:
         from_attributes = True
+
+
+class PersonaUpdateEstado(BaseModel):
+    estado: str  # activo | inactivo
 
 
 class PersonaRegistroResponse(BaseModel):

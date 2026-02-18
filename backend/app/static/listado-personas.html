@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Listado de personas - SCA-EMPX</title>
+  <style>
+    body { font-family: sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+    h1 { font-size: 1.25rem; }
+    label { display: block; margin-top: 0.5rem; }
+    input, select, button { margin: 0.25rem 0.25rem 0.25rem 0; padding: 0.35rem; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; }
+    .msg { margin-top: 0.5rem; padding: 0.5rem; border-radius: 4px; }
+    .ok { background: #d4edda; color: #155724; }
+    .error { background: #f8d7da; color: #721c24; }
+  </style>
+</head>
+<body>
+  <h1>Listado de personas (empleados y visitantes)</h1>
+  <p>Busque por nombre o documento y desactive o reactive personas. Las inactivas no pueden validar acceso.</p>
+  <div>
+    <label>Buscar (nombre o documento)</label>
+    <input type="text" id="q" placeholder="Ej: Juan o 12345678" />
+    <label>Tipo</label>
+    <select id="tipo">
+      <option value="">Todos</option>
+      <option value="empleado" selected>Empleados</option>
+      <option value="visitante">Visitantes</option>
+    </select>
+    <label>Estado</label>
+    <select id="estado">
+      <option value="activo">Solo activos</option>
+      <option value="todos" selected>Todos</option>
+      <option value="inactivo">Solo inactivos</option>
+    </select>
+    <br />
+    <button type="button" id="btnBuscar">Buscar</button>
+  </div>
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Nombre</th><th>Documento</th><th>Estado</th><th>Acción</th></tr>
+    </thead>
+    <tbody id="tabla"></tbody>
+  </table>
+  <div id="msg" class="msg" style="display:none;"></div>
+
+  <script>
+    function params() {
+      const q = document.getElementById("q").value.trim();
+      const tipo = document.getElementById("tipo").value;
+      const estado = document.getElementById("estado").value;
+      let url = "/api/v1/personas?estado=" + (estado || "todos");
+      if (tipo) url += "&tipo=" + tipo;
+      if (q) url += "&q=" + encodeURIComponent(q);
+      return url;
+    }
+
+    async function cargar() {
+      try {
+        const r = await fetch(params());
+        const list = await r.json().catch(function() { return []; });
+        const tbody = document.getElementById("tabla");
+        tbody.innerHTML = "";
+        (Array.isArray(list) ? list : []).forEach(function(p) {
+          const tr = document.createElement("tr");
+          const estado = p.estado || "activo";
+          const btn = estado === "activo"
+            ? "<button type=\"button\" data-id=\"" + p.id_persona + "\" data-estado=\"inactivo\">Desactivar</button>"
+            : "<button type=\"button\" data-id=\"" + p.id_persona + "\" data-estado=\"activo\">Activar</button>";
+          tr.innerHTML = "<td>" + p.id_persona + "</td><td>" + p.nombre_completo + "</td><td>" + p.documento + "</td><td>" + estado + "</td><td>" + btn + "</td>";
+          tbody.appendChild(tr);
+        });
+        tbody.querySelectorAll("button[data-id]").forEach(function(btn) {
+          btn.onclick = function() { cambiarEstado(parseInt(btn.getAttribute("data-id"), 10), btn.getAttribute("data-estado")); };
+        });
+      } catch (e) {
+        document.getElementById("msg").className = "msg error";
+        document.getElementById("msg").textContent = "Error: " + e.message;
+        document.getElementById("msg").style.display = "block";
+      }
+    }
+
+    function mostrarMsg(texto, esOk) {
+      const msg = document.getElementById("msg");
+      msg.textContent = texto;
+      msg.className = "msg " + (esOk ? "ok" : "error");
+      msg.style.display = "block";
+    }
+
+    async function cambiarEstado(id, estado) {
+      try {
+        const r = await fetch("/api/v1/personas/" + id, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ estado: estado }),
+        });
+        const data = await r.json().catch(function() { return {}; });
+        if (r.ok) {
+          mostrarMsg("Estado actualizado correctamente.", true);
+          cargar();
+        } else {
+          mostrarMsg(data.detail || "Error " + r.status, false);
+        }
+      } catch (e) {
+        mostrarMsg("Error: " + e.message, false);
+      }
+    }
+
+    document.getElementById("btnBuscar").onclick = cargar;
+    cargar();
+  </script>
+</body>
+</html>
