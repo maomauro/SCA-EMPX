@@ -20,6 +20,7 @@ Listado de URLs para acceder a la aplicación con la API en ejecución en **http
 | http://127.0.0.1:8000/historial-accesos | Historial de accesos: filtros, tabla y exportación CSV (HU-08) |
 | http://127.0.0.1:8000/editar-persona | Editar persona (empleado/visitante). Usar ?id= (HU-10) |
 | http://127.0.0.1:8000/dashboard | Dashboard de accesos: métricas y eventos recientes; actualización 30 s (HU-11) |
+| http://127.0.0.1:8000/revocar-autorizacion | Listar autorizaciones vigentes y revocarlas (HU-13) |
 
 ---
 
@@ -64,8 +65,9 @@ Listado de URLs para acceder a la aplicación con la API en ejecución en **http
 
 | Método | URL | Descripción |
 |--------|-----|-------------|
-| GET | http://127.0.0.1:8000/api/v1/autorizaciones | Listar autorizaciones |
+| GET | http://127.0.0.1:8000/api/v1/autorizaciones | Listar autorizaciones. Query: `estado` (vigente\|vencida\|cancelada\|revocada). HU-13. |
 | POST | http://127.0.0.1:8000/api/v1/autorizaciones | Crear autorización (JSON: id_persona, fecha_inicio, fecha_fin) |
+| PATCH | http://127.0.0.1:8000/api/v1/autorizaciones/{id} | Revocar autorización. JSON: estado=revocada, motivo (opcional). Solo si vigente. HU-13. |
 
 ### Usuarios
 
