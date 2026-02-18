@@ -68,7 +68,8 @@
           const btn = estado === "activo"
             ? "<button type=\"button\" data-id=\"" + p.id_persona + "\" data-estado=\"inactivo\">Desactivar</button>"
             : "<button type=\"button\" data-id=\"" + p.id_persona + "\" data-estado=\"activo\">Activar</button>";
-          tr.innerHTML = "<td>" + p.id_persona + "</td><td>" + p.nombre_completo + "</td><td>" + p.documento + "</td><td>" + estado + "</td><td>" + btn + "</td>";
+          const editar = "<a href=\"/editar-persona?id=" + p.id_persona + "\">Editar</a>";
+          tr.innerHTML = "<td>" + p.id_persona + "</td><td>" + p.nombre_completo + "</td><td>" + p.documento + "</td><td>" + estado + "</td><td>" + editar + " " + btn + "</td>";
           tbody.appendChild(tr);
         });
         tbody.querySelectorAll("button[data-id]").forEach(function(btn) {

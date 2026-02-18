@@ -6,7 +6,7 @@ from sqlalchemy import or_
 from backend.app.db.database import get_db
 from backend.app.db.models import Persona, TipoPersona
 from backend.app.services.persona_service import registrar_empleado, registrar_visitante
-from backend.app.schemas.persona import PersonaRegistroResponse, PersonaListItem, PersonaUpdateEstado
+from backend.app.schemas.persona import PersonaRegistroResponse, PersonaListItem, PersonaDetail, PersonaUpdate
 
 router = APIRouter()
 
@@ -60,6 +60,29 @@ def listar_personas(
         PersonaListItem(id_persona=p.id_persona, nombre_completo=p.nombre_completo, documento=p.documento, estado=p.estado)
         for p in personas
     ]
+
+
+@router.get("/{persona_id:int}", response_model=PersonaDetail)
+def obtener_persona(persona_id: int, db: Session = Depends(get_db)):
+    """
+    Obtiene el detalle de una persona por ID. HU-10 (formulario de edición).
+    """
+    persona = db.query(Persona).filter(Persona.id_persona == persona_id).first()
+    if not persona:
+        raise HTTPException(status_code=404, detail="Persona no encontrada.")
+    tipo_nombre = persona.tipo_persona.nombre_tipo if persona.tipo_persona else "empleado_propio"
+    return PersonaDetail(
+        id_persona=persona.id_persona,
+        nombre_completo=persona.nombre_completo,
+        documento=persona.documento,
+        tipo_documento=persona.tipo_documento or "CC",
+        cargo=persona.cargo,
+        area=persona.area,
+        telefono=persona.telefono,
+        email=persona.email,
+        estado=persona.estado,
+        tipo=tipo_nombre,
+    )
 
 
 @router.post("/", response_model=PersonaRegistroResponse)
@@ -134,19 +157,30 @@ def registrar_persona(
 @router.patch("/{persona_id:int}", response_model=PersonaRegistroResponse)
 def actualizar_persona(
     persona_id: int,
-    body: PersonaUpdateEstado,
+    body: PersonaUpdate,
     db: Session = Depends(get_db),
 ):
     """
-    Actualizar estado de una persona (activo | inactivo). HU-02.
-    Las personas inactivas son rechazadas en validación de acceso (HU-05).
+    Actualiza datos de una persona. HU-02 (estado), HU-10 (nombre, cargo, área, contacto).
+    Solo se actualizan los campos enviados. Las personas inactivas son rechazadas en validación (HU-05).
     """
-    if body.estado not in ("activo", "inactivo"):
-        raise HTTPException(status_code=400, detail="estado debe ser 'activo' o 'inactivo'.")
     persona = db.query(Persona).filter(Persona.id_persona == persona_id).first()
     if not persona:
         raise HTTPException(status_code=404, detail="Persona no encontrada.")
-    persona.estado = body.estado
+    if body.estado is not None and body.estado not in ("activo", "inactivo"):
+        raise HTTPException(status_code=400, detail="estado debe ser 'activo' o 'inactivo'.")
+    if body.nombre_completo is not None:
+        persona.nombre_completo = body.nombre_completo.strip() or persona.nombre_completo
+    if body.cargo is not None:
+        persona.cargo = body.cargo.strip() if body.cargo else None
+    if body.area is not None:
+        persona.area = body.area.strip() if body.area else None
+    if body.telefono is not None:
+        persona.telefono = body.telefono.strip() if body.telefono else None
+    if body.email is not None:
+        persona.email = body.email.strip() if body.email else None
+    if body.estado is not None:
+        persona.estado = body.estado
     db.commit()
     db.refresh(persona)
     return PersonaRegistroResponse(

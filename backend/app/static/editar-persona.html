@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Editar persona - SCA-EMPX</title>
+  <style>
+    body { font-family: sans-serif; max-width: 520px; margin: 2rem auto; padding: 0 1rem; }
+    h1 { font-size: 1.25rem; }
+    label { display: block; margin-top: 0.5rem; }
+    input, select, button { margin: 0.25rem 0 0.5rem 0; padding: 0.35rem; width: 100%; box-sizing: border-box; }
+    input[readonly] { background: #eee; }
+    .msg { margin-top: 0.5rem; padding: 0.5rem; border-radius: 4px; }
+    .ok { background: #d4edda; color: #155724; }
+    .error { background: #f8d7da; color: #721c24; }
+    .row { display: flex; gap: 0.5rem; }
+    .row button { width: auto; }
+    a { color: #0066cc; }
+  </style>
+</head>
+<body>
+  <h1>Editar persona (HU-10)</h1>
+  <p><a href="/listado-personas">← Volver al listado</a></p>
+  <div id="cargando" style="display:block;">Cargando...</div>
+  <form id="form" style="display:none;">
+    <input type="hidden" id="id_persona" />
+    <label for="nombre_completo">Nombre completo</label>
+    <input type="text" id="nombre_completo" required minlength="1" />
+    <label for="documento">Documento</label>
+    <input type="text" id="documento" readonly />
+    <label for="cargo">Cargo</label>
+    <input type="text" id="cargo" placeholder="Opcional" />
+    <label for="area">Área</label>
+    <input type="text" id="area" placeholder="Opcional" />
+    <label for="telefono">Teléfono</label>
+    <input type="tel" id="telefono" placeholder="Opcional" />
+    <label for="email">Email</label>
+    <input type="email" id="email" placeholder="Opcional" />
+    <label for="estado">Estado</label>
+    <select id="estado">
+      <option value="activo">Activo</option>
+      <option value="inactivo">Inactivo</option>
+    </select>
+    <div class="row" style="margin-top:1rem;">
+      <button type="submit" id="btnGuardar">Guardar cambios</button>
+      <button type="button" id="btnCancelar">Cancelar</button>
+    </div>
+  </form>
+  <div id="msg" class="msg" style="display:none;"></div>
+
+  <script>
+    function getId() {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get("id");
+      return id ? parseInt(id, 10) : null;
+    }
+
+    function mostrarMsg(texto, esOk) {
+      const msg = document.getElementById("msg");
+      msg.textContent = texto;
+      msg.className = "msg " + (esOk ? "ok" : "error");
+      msg.style.display = "block";
+    }
+
+    async function cargar() {
+      const id = getId();
+      if (!id || isNaN(id)) {
+        document.getElementById("cargando").style.display = "none";
+        mostrarMsg("Falta el parámetro id en la URL. Ejemplo: /editar-persona?id=1", false);
+        return;
+      }
+      try {
+        const r = await fetch("/api/v1/personas/" + id);
+        if (r.status === 404) {
+          document.getElementById("cargando").style.display = "none";
+          mostrarMsg("Persona no encontrada.", false);
+          return;
+        }
+        const p = await r.json();
+        document.getElementById("id_persona").value = p.id_persona;
+        document.getElementById("nombre_completo").value = p.nombre_completo || "";
+        document.getElementById("documento").value = p.documento || "";
+        document.getElementById("cargo").value = p.cargo || "";
+        document.getElementById("area").value = p.area || "";
+        document.getElementById("telefono").value = p.telefono || "";
+        document.getElementById("email").value = p.email || "";
+        document.getElementById("estado").value = p.estado || "activo";
+        document.getElementById("cargando").style.display = "none";
+        document.getElementById("form").style.display = "block";
+      } catch (e) {
+        document.getElementById("cargando").style.display = "none";
+        mostrarMsg("Error: " + e.message, false);
+      }
+    }
+
+    document.getElementById("form").onsubmit = async function(e) {
+      e.preventDefault();
+      const id = document.getElementById("id_persona").value;
+      const body = {
+        nombre_completo: document.getElementById("nombre_completo").value.trim(),
+        cargo: document.getElementById("cargo").value.trim() || null,
+        area: document.getElementById("area").value.trim() || null,
+        telefono: document.getElementById("telefono").value.trim() || null,
+        email: document.getElementById("email").value.trim() || null,
+        estado: document.getElementById("estado").value,
+      };
+      try {
+        const r = await fetch("/api/v1/personas/" + id, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const data = await r.json().catch(function() { return {}; });
+        if (r.ok) {
+          mostrarMsg("Cambios guardados correctamente.", true);
+        } else {
+          const detail = Array.isArray(data.detail) ? data.detail.map(function(x) { return x.msg || x.loc; }).join("; ") : (data.detail || "Error " + r.status);
+          mostrarMsg(detail, false);
+        }
+      } catch (e) {
+        mostrarMsg("Error: " + e.message, false);
+      }
+    };
+
+    document.getElementById("btnCancelar").onclick = function() {
+      window.location.href = "/listado-personas";
+    };
+
+    cargar();
+  </script>
+</body>
+</html>
