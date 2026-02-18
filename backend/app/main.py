@@ -118,3 +118,10 @@ def revocar_autorizacion_page():
     """Listar autorizaciones vigentes y revocarlas (HU-13)."""
     path = Path(__file__).parent / "static" / "revocar-autorizacion.html"
     return FileResponse(path)
+
+
+@app.get("/personas-dentro")
+def personas_dentro_page():
+    """Lista de personas actualmente dentro (HU-14)."""
+    path = Path(__file__).parent / "static" / "personas-dentro.html"
+    return FileResponse(path)

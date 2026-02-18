@@ -1,4 +1,4 @@
-# Bitácora de desarrollo - SCA-EMPX
+﻿# Bitácora de desarrollo - SCA-EMPX
 
 Documento para **registrar el avance** del desarrollo del proyecto: check de actividades, orden de implementación y contexto. Referencia: [Orden de desarrollo y features](./orden-desarrollo-features.md), [Tareas por HU](./09-tareas-por-hu.md).
 
@@ -30,7 +30,7 @@ Documento para **registrar el avance** del desarrollo del proyecto: check de act
 | 10   | feature/hu-10-actualizar-empleado    | HU-10 | Hecho       | 2026-02                      |
 | 11   | feature/hu-11-dashboard-accesos      | HU-11 | Hecho       | 2026-02                      |
 | 12   | feature/hu-13-revocar-autorizacion   | HU-13 | Hecho       | 2026-02                      |
-| 13   | feature/hu-14-personas-dentro        | HU-14 | Pendiente   | —                            |
+| 13   | feature/hu-14-personas-dentro        | HU-14 | Hecho       | 2026-02                      |
 | 14   | feature/hu-12-reporte-accesos       | HU-12 | Pendiente   | —                            |
 
 *Actualizar "Estado" (Pendiente / En curso / Hecho) y "Fecha" al avanzar.*
@@ -261,6 +261,20 @@ Documento para **registrar el avance** del desarrollo del proyecto: check de act
 
 ---
 
+## Paso 13 – HU-14: Personas dentro
+
+**Rama:** `feature/hu-14-personas-dentro`
+
+| # | Actividad | Check | Notas |
+|---|-----------|--------|-------|
+| 1 | GET /api/v1/personas/dentro: personas con último evento = ingreso permitido | [x] | PersonaDentro: id_persona, nombre_completo, fecha_hora_entrada |
+| 2 | Pantalla: lista "Personas actualmente dentro" con nombre y hora de entrada | [x] | /personas-dentro; actualización cada 60 s |
+
+**Fecha fin:** 2026-02  
+**Notas:** Misma lógica que total_dentro del dashboard (último evento por persona = ingreso permitido).
+
+---
+
 ## Pasos 8 a 14 – Resumen de check
 
 | Paso | HU / feature | Actividades principales | Check global |
@@ -270,7 +284,7 @@ Documento para **registrar el avance** del desarrollo del proyecto: check de act
 | 10 | HU-10 Actualizar empleado | PATCH personas/{id}; pantalla detalle/edición | [x] |
 | 11 | HU-11 Dashboard accesos | GET eventos recientes + estadísticas; pantalla métricas + actualización periódica | [x] |
 | 12 | HU-13 Revocar autorización | PATCH autorizaciones/{id} revocada; pantalla listar activas + revocar | [x] |
-| 13 | HU-14 Personas dentro | GET /api/personas/dentro; pantalla lista “actualmente dentro” | [ ] |
+| 13 | HU-14 Personas dentro | GET /api/personas/dentro; pantalla lista “actualmente dentro” | [x] |
 | 14 | HU-12 Reporte accesos | GET reportes + filtros; export PDF/CSV; pantalla selector + descarga | [ ] |
 
 *Desarrollar cada paso en su rama; integrar en `develop`; luego siguiente rama desde `develop`.*
@@ -293,6 +307,7 @@ Anotar aquí hitos, decisiones, bloqueos o cambios de orden con fecha.
 | 2026-02 | HU-10 implementado: GET /api/v1/personas/{id} (PersonaDetail), PATCH /api/v1/personas/{id} (nombre, cargo, área, telefono, email, estado); /editar-persona?id=; enlace Editar en listado-personas. Bitácora Paso 10 actualizada. |
 | 2026-02 | HU-11 implementado: GET /api/v1/events/recientes?minutos=, GET /api/v1/events/estadisticas (total_dentro, accesos_hoy, denegaciones_hoy); /dashboard con tarjetas y tabla; refresh 30 s. Bitácora Paso 11 actualizada. |
 | 2026-02 | HU-13 implementado: PATCH /api/v1/autorizaciones/{id} revocada (motivo opcional); GET ?estado=vigente; /revocar-autorizacion con listado y botón Revocar. Bitácora Paso 12 actualizada. |
+| 2026-02 | HU-14 implementado: GET /api/v1/personas/dentro (nombre, hora entrada); /personas-dentro con lista y actualización 60 s. Bitácora Paso 13 actualizada. |
 |       |                                                                               |
 |       |                                                                               |
 |       |                                                                               |
