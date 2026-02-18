@@ -29,7 +29,7 @@ Documento para **registrar el avance** del desarrollo del proyecto: check de act
 | 9    | feature/hu-08-historial-accesos      | HU-08 | Hecho       | 2026-02                      |
 | 10   | feature/hu-10-actualizar-empleado    | HU-10 | Hecho       | 2026-02                      |
 | 11   | feature/hu-11-dashboard-accesos      | HU-11 | Hecho       | 2026-02                      |
-| 12   | feature/hu-13-revocar-autorizacion   | HU-13 | Pendiente   | —                            |
+| 12   | feature/hu-13-revocar-autorizacion   | HU-13 | Hecho       | 2026-02                      |
 | 13   | feature/hu-14-personas-dentro        | HU-14 | Pendiente   | —                            |
 | 14   | feature/hu-12-reporte-accesos       | HU-12 | Pendiente   | —                            |
 
@@ -246,6 +246,21 @@ Documento para **registrar el avance** del desarrollo del proyecto: check de act
 
 ---
 
+## Paso 12 – HU-13: Revocar autorización
+
+**Rama:** `feature/hu-13-revocar-autorizacion`
+
+| # | Actividad | Check | Notas |
+|---|-----------|--------|-------|
+| 1 | PATCH /api/v1/autorizaciones/{id} con estado=revocada; motivo opcional | [x] | Solo si estado actual es vigente; motivo_revocacion en BD |
+| 2 | GET /api/v1/autorizaciones?estado=vigente para listar activas | [x] | Query param estado opcional |
+| 3 | Pantalla: listar autorizaciones activas por persona; botón Revocar | [x] | /revocar-autorizacion; selector vigentes/todas/revocadas |
+
+**Fecha fin:** 2026-02  
+**Notas:** Modelo Autorizacion: estado revocada, columna motivo_revocacion. ensure_autorizacion_table añade columna si falta.
+
+---
+
 ## Pasos 8 a 14 – Resumen de check
 
 | Paso | HU / feature | Actividades principales | Check global |
@@ -254,7 +269,7 @@ Documento para **registrar el avance** del desarrollo del proyecto: check de act
 | 9 | HU-08 Historial accesos | GET /api/eventos filtros + paginación; export CSV; pantalla consulta | [x] |
 | 10 | HU-10 Actualizar empleado | PATCH personas/{id}; pantalla detalle/edición | [x] |
 | 11 | HU-11 Dashboard accesos | GET eventos recientes + estadísticas; pantalla métricas + actualización periódica | [x] |
-| 12 | HU-13 Revocar autorización | PATCH autorizaciones/{id} revocada; pantalla listar activas + revocar | [ ] |
+| 12 | HU-13 Revocar autorización | PATCH autorizaciones/{id} revocada; pantalla listar activas + revocar | [x] |
 | 13 | HU-14 Personas dentro | GET /api/personas/dentro; pantalla lista “actualmente dentro” | [ ] |
 | 14 | HU-12 Reporte accesos | GET reportes + filtros; export PDF/CSV; pantalla selector + descarga | [ ] |
 
@@ -277,6 +292,7 @@ Anotar aquí hitos, decisiones, bloqueos o cambios de orden con fecha.
 | 2026-02 | HU-08 implementado: GET /api/v1/events con persona_id, documento, fecha_desde/hasta, tipo, resultado, limit/offset; GET /api/v1/events/export CSV; /historial-accesos con filtros, tabla y Exportar CSV. Bitácora Paso 9 actualizada. |
 | 2026-02 | HU-10 implementado: GET /api/v1/personas/{id} (PersonaDetail), PATCH /api/v1/personas/{id} (nombre, cargo, área, telefono, email, estado); /editar-persona?id=; enlace Editar en listado-personas. Bitácora Paso 10 actualizada. |
 | 2026-02 | HU-11 implementado: GET /api/v1/events/recientes?minutos=, GET /api/v1/events/estadisticas (total_dentro, accesos_hoy, denegaciones_hoy); /dashboard con tarjetas y tabla; refresh 30 s. Bitácora Paso 11 actualizada. |
+| 2026-02 | HU-13 implementado: PATCH /api/v1/autorizaciones/{id} revocada (motivo opcional); GET ?estado=vigente; /revocar-autorizacion con listado y botón Revocar. Bitácora Paso 12 actualizada. |
 |       |                                                                               |
 |       |                                                                               |
 |       |                                                                               |
