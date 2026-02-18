@@ -125,3 +125,10 @@ def personas_dentro_page():
     """Lista de personas actualmente dentro (HU-14)."""
     path = Path(__file__).parent / "static" / "personas-dentro.html"
     return FileResponse(path)
+
+
+@app.get("/reporte-accesos")
+def reporte_accesos_page():
+    """Selector de rango de fechas y formato; descarga reporte CSV o PDF (HU-12)."""
+    path = Path(__file__).parent / "static" / "reporte-accesos.html"
+    return FileResponse(path)

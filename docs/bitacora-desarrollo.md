@@ -1,4 +1,4 @@
-﻿# Bitácora de desarrollo - SCA-EMPX
+# Bitácora de desarrollo - SCA-EMPX
 
 Documento para **registrar el avance** del desarrollo del proyecto: check de actividades, orden de implementación y contexto. Referencia: [Orden de desarrollo y features](./orden-desarrollo-features.md), [Tareas por HU](./09-tareas-por-hu.md).
 
@@ -31,7 +31,7 @@ Documento para **registrar el avance** del desarrollo del proyecto: check de act
 | 11   | feature/hu-11-dashboard-accesos      | HU-11 | Hecho       | 2026-02                      |
 | 12   | feature/hu-13-revocar-autorizacion   | HU-13 | Hecho       | 2026-02                      |
 | 13   | feature/hu-14-personas-dentro        | HU-14 | Hecho       | 2026-02                      |
-| 14   | feature/hu-12-reporte-accesos       | HU-12 | Pendiente   | —                            |
+| 14   | feature/hu-12-reporte-accesos       | HU-12 | Hecho       | 2026-02                      |
 
 *Actualizar "Estado" (Pendiente / En curso / Hecho) y "Fecha" al avanzar.*
 
@@ -275,6 +275,20 @@ Documento para **registrar el avance** del desarrollo del proyecto: check de act
 
 ---
 
+## Paso 14 – HU-12: Reporte de accesos
+
+**Rama:** `feature/hu-12-reporte-accesos`
+
+| # | Actividad | Check | Notas |
+|---|-----------|--------|-------|
+| 1 | GET /api/v1/reportes/accesos con fecha_desde, fecha_hasta, formato=csv o pdf | [x] | Filtros opcionales: tipo, persona_id, documento, resultado; máx 2000 filas |
+| 2 | Pantalla: selector rango fechas y formato; botón descargar PDF/CSV | [x] | /reporte-accesos; reporte-accesos.html |
+
+**Fecha fin:** 2026-02  
+**Notas:** PDF con fpdf2: resumen (total, permitidos, denegados, personas únicas) y tabla (hasta 100 filas). CSV con mismo detalle que events/export.
+
+---
+
 ## Pasos 8 a 14 – Resumen de check
 
 | Paso | HU / feature | Actividades principales | Check global |
@@ -285,7 +299,7 @@ Documento para **registrar el avance** del desarrollo del proyecto: check de act
 | 11 | HU-11 Dashboard accesos | GET eventos recientes + estadísticas; pantalla métricas + actualización periódica | [x] |
 | 12 | HU-13 Revocar autorización | PATCH autorizaciones/{id} revocada; pantalla listar activas + revocar | [x] |
 | 13 | HU-14 Personas dentro | GET /api/personas/dentro; pantalla lista “actualmente dentro” | [x] |
-| 14 | HU-12 Reporte accesos | GET reportes + filtros; export PDF/CSV; pantalla selector + descarga | [ ] |
+| 14 | HU-12 Reporte accesos | GET reportes + filtros; export PDF/CSV; pantalla selector + descarga | [x] |
 
 *Desarrollar cada paso en su rama; integrar en `develop`; luego siguiente rama desde `develop`.*
 
@@ -308,6 +322,7 @@ Anotar aquí hitos, decisiones, bloqueos o cambios de orden con fecha.
 | 2026-02 | HU-11 implementado: GET /api/v1/events/recientes?minutos=, GET /api/v1/events/estadisticas (total_dentro, accesos_hoy, denegaciones_hoy); /dashboard con tarjetas y tabla; refresh 30 s. Bitácora Paso 11 actualizada. |
 | 2026-02 | HU-13 implementado: PATCH /api/v1/autorizaciones/{id} revocada (motivo opcional); GET ?estado=vigente; /revocar-autorizacion con listado y botón Revocar. Bitácora Paso 12 actualizada. |
 | 2026-02 | HU-14 implementado: GET /api/v1/personas/dentro (nombre, hora entrada); /personas-dentro con lista y actualización 60 s. Bitácora Paso 13 actualizada. |
+| 2026-02 | HU-12 implementado: GET /api/v1/reportes/accesos (fecha_desde, fecha_hasta, formato csv/pdf); /reporte-accesos con selector y descarga. fpdf2 para PDF. Bitácora Paso 14 actualizada. |
 |       |                                                                               |
 |       |                                                                               |
 |       |                                                                               |
