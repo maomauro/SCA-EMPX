@@ -1,5 +1,13 @@
-"""Schemas para personas. HU-01, HU-03, HU-10."""
+"""Schemas para personas. HU-01, HU-03, HU-10, HU-14."""
+from datetime import datetime
 from pydantic import BaseModel
+
+
+class PersonaDentro(BaseModel):
+    """Persona actualmente dentro (último evento = ingreso permitido). HU-14."""
+    id_persona: int
+    nombre_completo: str
+    fecha_hora_entrada: datetime
 
 
 class PersonaListItem(BaseModel):

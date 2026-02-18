@@ -21,6 +21,7 @@ Listado de URLs para acceder a la aplicación con la API en ejecución en **http
 | http://127.0.0.1:8000/editar-persona | Editar persona (empleado/visitante). Usar ?id= (HU-10) |
 | http://127.0.0.1:8000/dashboard | Dashboard de accesos: métricas y eventos recientes; actualización 30 s (HU-11) |
 | http://127.0.0.1:8000/revocar-autorizacion | Listar autorizaciones vigentes y revocarlas (HU-13) |
+| http://127.0.0.1:8000/personas-dentro | Personas actualmente dentro: nombre y hora de entrada (HU-14) |
 
 ---
 
@@ -39,7 +40,8 @@ Listado de URLs para acceder a la aplicación con la API en ejecución en **http
 
 | Método | URL | Descripción |
 |--------|-----|-------------|
-| GET | http://127.0.0.1:8000/api/v1/personas | Listar personas (`?tipo=empleado\|visitante`, `?estado=activo\|inactivo\|todos`, `?q=nombre o documento`) |
+| GET | http://127.0.0.1:8000/api/v1/personas | Listar personas. Query: tipo, estado, q. (`?tipo=empleado\|visitante`, `?estado=activo\|inactivo\|todos`, `?q=nombre o documento`) |
+| GET | http://127.0.0.1:8000/api/v1/personas/dentro | Personas actualmente dentro: id_persona, nombre_completo, fecha_hora_entrada. HU-14. |
 | GET | http://127.0.0.1:8000/api/v1/personas/{id} | Detalle de persona para edición (HU-10) |
 | POST | http://127.0.0.1:8000/api/v1/personas | Registrar persona (empleado o visitante; multipart + foto) |
 | PATCH | http://127.0.0.1:8000/api/v1/personas/{id} | Actualizar persona. JSON opcionales: nombre_completo, cargo, area, telefono, email, estado (activo\|inactivo). HU-02, HU-10. |

@@ -1,12 +1,12 @@
-"""Rutas personas (empleados y visitantes). HU-01, HU-02, HU-03, HU-10."""
+"""Rutas personas (empleados y visitantes). HU-01, HU-02, HU-03, HU-10, HU-14."""
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 
 from backend.app.db.database import get_db
-from backend.app.db.models import Persona, TipoPersona
+from backend.app.db.models import Persona, TipoPersona, RegistroAcceso
 from backend.app.services.persona_service import registrar_empleado, registrar_visitante
-from backend.app.schemas.persona import PersonaRegistroResponse, PersonaListItem, PersonaDetail, PersonaUpdate
+from backend.app.schemas.persona import PersonaRegistroResponse, PersonaListItem, PersonaDetail, PersonaUpdate, PersonaDentro
 
 router = APIRouter()
 
@@ -59,6 +59,35 @@ def listar_personas(
     return [
         PersonaListItem(id_persona=p.id_persona, nombre_completo=p.nombre_completo, documento=p.documento, estado=p.estado)
         for p in personas
+    ]
+
+
+@router.get("/dentro", response_model=list[PersonaDentro])
+def listar_personas_dentro(db: Session = Depends(get_db)):
+    """
+    Lista personas actualmente dentro: último evento = ingreso permitido. HU-14.
+    Devuelve id_persona, nombre_completo y fecha_hora del ingreso.
+    """
+    subq = (
+        db.query(RegistroAcceso.id_persona, func.max(RegistroAcceso.fecha_hora).label("max_fecha"))
+        .group_by(RegistroAcceso.id_persona)
+        .subquery()
+    )
+    rows = (
+        db.query(RegistroAcceso, Persona)
+        .join(Persona, RegistroAcceso.id_persona == Persona.id_persona)
+        .join(subq, (RegistroAcceso.id_persona == subq.c.id_persona) & (RegistroAcceso.fecha_hora == subq.c.max_fecha))
+        .filter(RegistroAcceso.tipo_movimiento == "ingreso", RegistroAcceso.resultado == "permitido")
+        .order_by(RegistroAcceso.fecha_hora.desc())
+        .all()
+    )
+    return [
+        PersonaDentro(
+            id_persona=r.id_persona,
+            nombre_completo=p.nombre_completo or "",
+            fecha_hora_entrada=r.fecha_hora,
+        )
+        for r, p in rows
     ]
 
 
