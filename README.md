@@ -148,7 +148,7 @@ Flujo: **petición** → `api/` → `services/` → `db/` (SQLite) y/o `ml/` →
    ```bash
    uv run python main.py
    ```
-   La API queda en `http://0.0.0.0:8000`. Documentación interactiva: `http://localhost:8000/docs`.
+   La API queda en `http://0.0.0.0:8000`. **Interfaz con menú:** abrir **http://localhost:8000/inicio** para la página de inicio y navegación entre todas las pantallas. Documentación interactiva: `http://localhost:8000/docs`.
 
 7. **Login**: `POST /api/v1/usuarios/login` con body `{"username": "admin", "password": "admin"}`. Respuesta: `{"access_token": "...", "token_type": "bearer"}`. Usar el token en cabecera `Authorization: Bearer <token>` para rutas protegidas.
 
