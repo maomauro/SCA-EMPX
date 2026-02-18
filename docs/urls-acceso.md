@@ -17,6 +17,7 @@ Listado de URLs para acceder a la aplicación con la API en ejecución en **http
 | http://127.0.0.1:8000/registrar-salida | Registrar salida por reconocimiento facial (HU-07) |
 | http://127.0.0.1:8000/administracion-usuarios | Administración de usuarios: login, listado, alta, activar/desactivar (HU-09) |
 | http://127.0.0.1:8000/listado-personas | Listado de personas con búsqueda y Desactivar/Activar (HU-02) |
+| http://127.0.0.1:8000/historial-accesos | Historial de accesos: filtros, tabla y exportación CSV (HU-08) |
 
 ---
 
@@ -50,7 +51,8 @@ Listado de URLs para acceder a la aplicación con la API en ejecución en **http
 
 | Método | URL | Descripción |
 |--------|-----|-------------|
-| GET | http://127.0.0.1:8000/api/v1/events | Listar eventos (`?tipo=ingreso`, `?tipo=salida`, `?limit=50`, `?offset=0`) |
+| GET | http://127.0.0.1:8000/api/v1/events | Listar eventos. Query: `persona_id`, `documento`, `fecha_desde`, `fecha_hasta` (YYYY-MM-DD), `tipo` (ingreso\|salida), `resultado` (permitido\|denegado), `limit` (máx 100), `offset`. Orden: fecha_hora desc. HU-08. |
+| GET | http://127.0.0.1:8000/api/v1/events/export | Exportar eventos a CSV. Mismos filtros que GET /events; `limit` (máx 5000). HU-08. |
 | POST | http://127.0.0.1:8000/api/v1/events/exit | Stub (por implementar; usar `/access/register-exit`) |
 
 ### Autorizaciones
