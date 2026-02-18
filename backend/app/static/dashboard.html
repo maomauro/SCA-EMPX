@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard de accesos - SCA-EMPX</title>
+  <style>
+    body { font-family: sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+    h1 { font-size: 1.35rem; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+    .card { border: 1px solid #ccc; border-radius: 8px; padding: 1rem; text-align: center; background: #fafafa; }
+    .card .valor { font-size: 1.75rem; font-weight: bold; color: #333; }
+    .card .etiqueta { font-size: 0.85rem; color: #666; margin-top: 0.25rem; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.9rem; }
+    th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; }
+    th { background: #f0f0f0; }
+    .msg { margin-top: 0.5rem; padding: 0.5rem; border-radius: 4px; }
+    .error { background: #f8d7da; color: #721c24; }
+    .actualizado { font-size: 0.8rem; color: #666; margin-top: 0.5rem; }
+  </style>
+</head>
+<body>
+  <h1>Dashboard de accesos (HU-11)</h1>
+  <p>Métricas en tiempo real. Se actualiza automáticamente cada 30 segundos.</p>
+
+  <div class="cards">
+    <div class="card">
+      <div class="valor" id="totalDentro">—</div>
+      <div class="etiqueta">Personas dentro</div>
+    </div>
+    <div class="card">
+      <div class="valor" id="accesosHoy">—</div>
+      <div class="etiqueta">Accesos hoy</div>
+    </div>
+    <div class="card">
+      <div class="valor" id="denegacionesHoy">—</div>
+      <div class="etiqueta">Denegaciones hoy</div>
+    </div>
+  </div>
+
+  <h2 style="font-size:1.1rem;">Últimos eventos (10 min)</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Fecha y hora</th>
+        <th>Persona</th>
+        <th>Tipo</th>
+        <th>Resultado</th>
+        <th>Método</th>
+      </tr>
+    </thead>
+    <tbody id="tabla"></tbody>
+  </table>
+  <div class="actualizado" id="actualizado"></div>
+  <div id="msg" class="msg error" style="display:none;"></div>
+
+  <script>
+    const INTERVALO_MS = 30000; // 30 segundos
+
+    function formatFecha(d) {
+      if (!d) return "";
+      const x = new Date(d);
+      return isNaN(x.getTime()) ? d : x.toLocaleString("es-AR");
+    }
+
+    async function cargar() {
+      try {
+        const [rEst, rRec] = await Promise.all([
+          fetch("/api/v1/events/estadisticas"),
+          fetch("/api/v1/events/recientes?minutos=10&limit=30"),
+        ]);
+        const stats = await rEst.json().catch(function() { return {}; });
+        const list = await rRec.json().catch(function() { return []; });
+
+        document.getElementById("totalDentro").textContent = stats.total_dentro ?? "—";
+        document.getElementById("accesosHoy").textContent = stats.accesos_hoy ?? "—";
+        document.getElementById("denegacionesHoy").textContent = stats.denegaciones_hoy ?? "—";
+
+        const tbody = document.getElementById("tabla");
+        tbody.innerHTML = "";
+        (Array.isArray(list) ? list : []).forEach(function(e) {
+          const tr = document.createElement("tr");
+          tr.innerHTML =
+            "<td>" + formatFecha(e.fecha_hora) + "</td>" +
+            "<td>" + (e.nombre_completo || "—") + "</td>" +
+            "<td>" + (e.tipo_movimiento || "—") + "</td>" +
+            "<td>" + (e.resultado || "—") + "</td>" +
+            "<td>" + (e.metodo_identificacion || "—") + "</td>";
+          tbody.appendChild(tr);
+        });
+
+        document.getElementById("actualizado").textContent = "Última actualización: " + new Date().toLocaleTimeString("es-AR");
+        document.getElementById("msg").style.display = "none";
+      } catch (e) {
+        document.getElementById("msg").textContent = "Error: " + e.message;
+        document.getElementById("msg").style.display = "block";
+      }
+    }
+
+    cargar();
+    setInterval(cargar, INTERVALO_MS);
+  </script>
+</body>
+</html>
