@@ -18,6 +18,7 @@ Listado de URLs para acceder a la aplicación con la API en ejecución en **http
 | http://127.0.0.1:8000/administracion-usuarios | Administración de usuarios: login, listado, alta, activar/desactivar (HU-09) |
 | http://127.0.0.1:8000/listado-personas | Listado de personas con búsqueda y Desactivar/Activar (HU-02) |
 | http://127.0.0.1:8000/historial-accesos | Historial de accesos: filtros, tabla y exportación CSV (HU-08) |
+| http://127.0.0.1:8000/editar-persona | Editar persona (empleado/visitante). Usar ?id= (HU-10) |
 
 ---
 
@@ -37,8 +38,9 @@ Listado de URLs para acceder a la aplicación con la API en ejecución en **http
 | Método | URL | Descripción |
 |--------|-----|-------------|
 | GET | http://127.0.0.1:8000/api/v1/personas | Listar personas (`?tipo=empleado\|visitante`, `?estado=activo\|inactivo\|todos`, `?q=nombre o documento`) |
+| GET | http://127.0.0.1:8000/api/v1/personas/{id} | Detalle de persona para edición (HU-10) |
 | POST | http://127.0.0.1:8000/api/v1/personas | Registrar persona (empleado o visitante; multipart + foto) |
-| PATCH | http://127.0.0.1:8000/api/v1/personas/{id} | Actualizar estado (JSON: estado activo\|inactivo). HU-02. |
+| PATCH | http://127.0.0.1:8000/api/v1/personas/{id} | Actualizar persona. JSON opcionales: nombre_completo, cargo, area, telefono, email, estado (activo\|inactivo). HU-02, HU-10. |
 
 ### Acceso
 
