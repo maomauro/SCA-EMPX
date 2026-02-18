@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Historial de accesos - SCA-EMPX</title>
+  <style>
+    body { font-family: sans-serif; max-width: 1000px; margin: 2rem auto; padding: 0 1rem; }
+    h1 { font-size: 1.25rem; }
+    label { display: block; margin-top: 0.5rem; }
+    input, select, button { margin: 0.25rem 0.25rem 0.25rem 0; padding: 0.35rem; }
+    .filtros { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.5rem 1rem; margin-bottom: 1rem; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.9rem; }
+    th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; }
+    th { background: #f0f0f0; }
+    .msg { margin-top: 0.5rem; padding: 0.5rem; border-radius: 4px; }
+    .ok { background: #d4edda; color: #155724; }
+    .error { background: #f8d7da; color: #721c24; }
+    .nav { margin-top: 1rem; }
+    .nav button { margin-right: 0.5rem; }
+  </style>
+</head>
+<body>
+  <h1>Historial de accesos (HU-08)</h1>
+  <p>Filtre por persona, documento, rango de fechas, tipo de movimiento y resultado. Exporte a CSV con los mismos filtros.</p>
+
+  <div class="filtros">
+    <div>
+      <label for="persona_id">ID persona</label>
+      <input type="number" id="persona_id" placeholder="Opcional" min="1" />
+    </div>
+    <div>
+      <label for="documento">Documento</label>
+      <input type="text" id="documento" placeholder="Parcial, opcional" />
+    </div>
+    <div>
+      <label for="fecha_desde">Desde (YYYY-MM-DD)</label>
+      <input type="date" id="fecha_desde" />
+    </div>
+    <div>
+      <label for="fecha_hasta">Hasta (YYYY-MM-DD)</label>
+      <input type="date" id="fecha_hasta" />
+    </div>
+    <div>
+      <label for="tipo">Tipo</label>
+      <select id="tipo">
+        <option value="">Todos</option>
+        <option value="ingreso">Ingreso</option>
+        <option value="salida">Salida</option>
+      </select>
+    </div>
+    <div>
+      <label for="resultado">Resultado</label>
+      <select id="resultado">
+        <option value="">Todos</option>
+        <option value="permitido">Permitido</option>
+        <option value="denegado">Denegado</option>
+      </select>
+    </div>
+  </div>
+  <div>
+    <button type="button" id="btnBuscar">Buscar</button>
+    <button type="button" id="btnExportar">Exportar CSV</button>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>ID reg.</th>
+        <th>ID pers.</th>
+        <th>Nombre</th>
+        <th>Tipo</th>
+        <th>Fecha y hora</th>
+        <th>Resultado</th>
+        <th>Método</th>
+      </tr>
+    </thead>
+    <tbody id="tabla"></tbody>
+  </table>
+  <div class="nav">
+    <button type="button" id="btnAnterior" disabled>Anterior</button>
+    <button type="button" id="btnSiguiente" disabled>Siguiente</button>
+    <span id="infoPagina"></span>
+  </div>
+  <div id="msg" class="msg" style="display:none;"></div>
+
+  <script>
+    const LIMIT = 50;
+    let offset = 0;
+    let totalCargados = 0;
+
+    function params(paraExport) {
+      const persona_id = document.getElementById("persona_id").value.trim();
+      const documento = document.getElementById("documento").value.trim();
+      const fecha_desde = document.getElementById("fecha_desde").value;
+      const fecha_hasta = document.getElementById("fecha_hasta").value;
+      const tipo = document.getElementById("tipo").value;
+      const resultado = document.getElementById("resultado").value;
+      const parts = [];
+      if (persona_id) parts.push("persona_id=" + encodeURIComponent(persona_id));
+      if (documento) parts.push("documento=" + encodeURIComponent(documento));
+      if (fecha_desde) parts.push("fecha_desde=" + encodeURIComponent(fecha_desde));
+      if (fecha_hasta) parts.push("fecha_hasta=" + encodeURIComponent(fecha_hasta));
+      if (tipo) parts.push("tipo=" + encodeURIComponent(tipo));
+      if (resultado) parts.push("resultado=" + encodeURIComponent(resultado));
+      if (!paraExport) {
+        parts.push("limit=" + LIMIT);
+        parts.push("offset=" + offset);
+      } else {
+        parts.push("limit=1000");
+      }
+      return "/api/v1/events" + (paraExport ? "/export" : "") + "?" + parts.join("&");
+    }
+
+    function mostrarMsg(texto, esOk) {
+      const msg = document.getElementById("msg");
+      msg.textContent = texto;
+      msg.className = "msg " + (esOk ? "ok" : "error");
+      msg.style.display = "block";
+    }
+
+    function formatFecha(d) {
+      if (!d) return "";
+      const x = new Date(d);
+      return isNaN(x.getTime()) ? d : x.toLocaleString("es-AR");
+    }
+
+    async function cargar() {
+      try {
+        const r = await fetch(params(false));
+        const list = await r.json().catch(function() { return []; });
+        const tbody = document.getElementById("tabla");
+        tbody.innerHTML = "";
+        const arr = Array.isArray(list) ? list : [];
+        arr.forEach(function(e) {
+          const tr = document.createElement("tr");
+          tr.innerHTML =
+            "<td>" + (e.id_registro ?? "") + "</td>" +
+            "<td>" + (e.id_persona ?? "") + "</td>" +
+            "<td>" + (e.nombre_completo ?? "") + "</td>" +
+            "<td>" + (e.tipo_movimiento ?? "") + "</td>" +
+            "<td>" + formatFecha(e.fecha_hora) + "</td>" +
+            "<td>" + (e.resultado ?? "") + "</td>" +
+            "<td>" + (e.metodo_identificacion ?? "") + "</td>";
+          tbody.appendChild(tr);
+        });
+        totalCargados = arr.length;
+        document.getElementById("btnSiguiente").disabled = totalCargados < LIMIT;
+        document.getElementById("btnAnterior").disabled = offset === 0;
+        document.getElementById("infoPagina").textContent = "Mostrando " + arr.length + " registros (offset " + offset + ")";
+        document.getElementById("msg").style.display = "none";
+      } catch (e) {
+        mostrarMsg("Error: " + e.message, false);
+      }
+    }
+
+    function exportar() {
+      window.open(params(true), "_blank", "noopener");
+      mostrarMsg("Exportación iniciada. Si no se descarga, revise la nueva pestaña.", true);
+    }
+
+    document.getElementById("btnBuscar").onclick = function() { offset = 0; cargar(); };
+    document.getElementById("btnExportar").onclick = exportar;
+    document.getElementById("btnAnterior").onclick = function() { offset = Math.max(0, offset - LIMIT); cargar(); };
+    document.getElementById("btnSiguiente").onclick = function() { offset += LIMIT; cargar(); };
+
+    cargar();
+  </script>
+</body>
+</html>
