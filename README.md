@@ -31,6 +31,7 @@ La documentación completa del proyecto se encuentra en la carpeta [`docs/`](./d
 - **[📋 Tareas por HU](./docs/09-tareas-por-hu.md)** - Tareas de desarrollo por historia de usuario
 - **[📌 Orden desarrollo y features](./docs/orden-desarrollo-features.md)** - Orden para desarrollar y registrar features (Git / backlog)
 - **[📘 Guía de Uso de Git](./docs/guia-git.md)** - Flujo de trabajo con Git (ramas, ambientes, commits, sincronización)
+- **[📱 Guía de Uso de la Aplicación](./docs/guia-uso-aplicacion.md)** - Cómo usar la aplicación (pantallas, flujos, instalación y ejecución)
 
 **💡 Recomendación**: Comienza por el [Índice de Documentación](./docs/00-indice.md) para una guía completa de lectura.
 
