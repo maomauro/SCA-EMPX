@@ -16,6 +16,7 @@ Listado de URLs para acceder a la aplicación con la API en ejecución en **http
 | http://127.0.0.1:8000/autorizacion-visita | Generar autorización de visita (HU-04) |
 | http://127.0.0.1:8000/registrar-salida | Registrar salida por reconocimiento facial (HU-07) |
 | http://127.0.0.1:8000/administracion-usuarios | Administración de usuarios: login, listado, alta, activar/desactivar (HU-09) |
+| http://127.0.0.1:8000/listado-personas | Listado de personas con búsqueda y Desactivar/Activar (HU-02) |
 
 ---
 
@@ -34,9 +35,9 @@ Listado de URLs para acceder a la aplicación con la API en ejecución en **http
 
 | Método | URL | Descripción |
 |--------|-----|-------------|
-| GET | http://127.0.0.1:8000/api/v1/personas | Listar personas (opcional: `?tipo=empleado` o `?tipo=visitante`) |
+| GET | http://127.0.0.1:8000/api/v1/personas | Listar personas (`?tipo=empleado\|visitante`, `?estado=activo\|inactivo\|todos`, `?q=nombre o documento`) |
 | POST | http://127.0.0.1:8000/api/v1/personas | Registrar persona (empleado o visitante; multipart + foto) |
-| PATCH | http://127.0.0.1:8000/api/v1/personas/{id} | Actualizar persona (por implementar) |
+| PATCH | http://127.0.0.1:8000/api/v1/personas/{id} | Actualizar estado (JSON: estado activo\|inactivo). HU-02. |
 
 ### Acceso
 

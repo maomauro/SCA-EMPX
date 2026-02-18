@@ -83,3 +83,10 @@ def administracion_usuarios_page():
     """Pantalla de administración de usuarios: login, listado, alta, activar/desactivar (HU-09)."""
     path = Path(__file__).parent / "static" / "administracion-usuarios.html"
     return FileResponse(path)
+
+
+@app.get("/listado-personas")
+def listado_personas_page():
+    """Listado de personas con búsqueda y botón Desactivar/Activar (HU-02)."""
+    path = Path(__file__).parent / "static" / "listado-personas.html"
+    return FileResponse(path)

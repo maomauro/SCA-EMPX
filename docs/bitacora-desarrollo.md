@@ -25,7 +25,7 @@ Documento para **registrar el avance** del desarrollo del proyecto: check de act
 | 5    | feature/hu-06-registro-evento-entrada| HU-06 | Hecho       | 2026-02                      |
 | 6    | feature/hu-07-registro-evento-salida | HU-07 | Hecho       | 2026-02                      |
 | 7    | feature/hu-09-gestionar-usuarios     | HU-09 | Hecho       | 2026-02                      |
-| 8    | feature/hu-02-desactivar-empleado   | HU-02 | Pendiente   | —                            |
+| 8    | feature/hu-02-desactivar-empleado   | HU-02 | Hecho       | 2026-02                      |
 | 9    | feature/hu-08-historial-accesos      | HU-08 | Pendiente   | —                            |
 | 10   | feature/hu-10-actualizar-empleado    | HU-10 | Pendiente   | —                            |
 | 11   | feature/hu-11-dashboard-accesos      | HU-11 | Pendiente   | —                            |
@@ -183,11 +183,27 @@ Documento para **registrar el avance** del desarrollo del proyecto: check de act
 
 ---
 
+## Paso 8 – HU-02: Desactivar empleado
+
+**Rama:** `feature/hu-02-desactivar-empleado`
+
+| # | Actividad | Check | Notas |
+|---|-----------|--------|-------|
+| 1 | PATCH /api/personas/{id} con cuerpo { "estado": "inactivo" } | [x] | PATCH /api/v1/personas/{id} con PersonaUpdateEstado (activo/inactivo) |
+| 2 | Validación de acceso (HU-05) rechace personas con estado inactivo | [x] | access_service ya filtra Persona.estado == "activo" |
+| 3 | Pantalla/listado de personas con búsqueda por nombre o documento | [x] | GET /api/v1/personas?estado=todos&q=...; GET /listado-personas |
+| 4 | Botón/acción "Desactivar" que llame a PATCH y muestre confirmación | [x] | listado-personas.html: Desactivar/Activar por fila |
+
+**Fecha fin:** 2026-02  
+**Notas:** GET personas admite estado=activo|inactivo|todos y q (búsqueda); PersonaListItem incluye estado.
+
+---
+
 ## Pasos 8 a 14 – Resumen de check
 
 | Paso | HU / feature | Actividades principales | Check global |
 |------|--------------|-------------------------|--------------|
-| 8 | HU-02 Desactivar empleado | PATCH personas/{id} inactivo; validación rechace inactivos; pantalla listado + Desactivar | [ ] |
+| 8 | HU-02 Desactivar empleado | PATCH personas/{id} inactivo; validación rechace inactivos; pantalla listado + Desactivar | [x] |
 | 9 | HU-08 Historial accesos | GET /api/eventos filtros + paginación; export CSV; pantalla consulta | [ ] |
 | 10 | HU-10 Actualizar empleado | PATCH personas/{id}; pantalla detalle/edición | [ ] |
 | 11 | HU-11 Dashboard accesos | GET eventos recientes + estadísticas; pantalla métricas + actualización periódica | [ ] |
@@ -210,6 +226,7 @@ Anotar aquí hitos, decisiones, bloqueos o cambios de orden con fecha.
 | 2026-02 | HU-06 implementado: event_service.register_entrada, GET /api/v1/events (tipo, limit, offset). Bitácora Paso 5 actualizada. |
 | 2026-02 | HU-07 implementado: register_salida, POST /api/v1/access/register-exit, GET /registrar-salida. Bitácora Paso 6 actualizada. |
 | 2026-02 | HU-09 implementado: GET/POST/PATCH usuarios, require_admin, /administracion-usuarios. Bitácora Paso 7 actualizada. |
+| 2026-02 | HU-02 implementado: PATCH /api/v1/personas/{id} estado; GET con estado y q; /listado-personas. Validación acceso ya rechaza inactivos. Bitácora Paso 8 actualizada. |
 |       |                                                                               |
 |       |                                                                               |
 |       |                                                                               |
