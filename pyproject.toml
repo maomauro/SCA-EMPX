@@ -16,4 +16,5 @@ dependencies = [
     "deepface>=0.0.79",
     "opencv-python-headless>=4.8.0",
     "tf-keras>=2.0.0",
+    "fpdf2>=2.7.0",
 ]
