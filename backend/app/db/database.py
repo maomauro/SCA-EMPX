@@ -73,7 +73,7 @@ def ensure_persona_visitante_columns():
 
 
 def ensure_autorizacion_table():
-    """Crea la tabla autorizacion (HU-04) si no existe."""
+    """Crea la tabla autorizacion (HU-04) si no existe; añade motivo_revocacion (HU-13) si falta."""
     if not DATABASE_URL.startswith("sqlite"):
         return
     from backend.app.db import models  # noqa: F401
@@ -82,3 +82,9 @@ def ensure_autorizacion_table():
         r = conn.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name='autorizacion'"))
         if r.fetchone() is None:
             Autorizacion.__table__.create(engine)
+        else:
+            r2 = conn.execute(text("SELECT name FROM pragma_table_info('autorizacion')"))
+            names = {row[0] for row in r2.fetchall()}
+            if "motivo_revocacion" not in names:
+                conn.execute(text("ALTER TABLE autorizacion ADD COLUMN motivo_revocacion VARCHAR(500)"))
+        conn.commit()
