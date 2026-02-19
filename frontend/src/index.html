@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>SCA-EMPX — Dashboard</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:system-ui,sans-serif;background:#f8fafc;color:#1e293b;min-height:100vh}
+    header{background:#1e293b;color:#fff;padding:1rem 2rem;display:flex;align-items:center;gap:1rem}
+    header h1{font-size:1.2rem;font-weight:700}
+    header span{font-size:.85rem;color:#94a3b8}
+    nav{background:#fff;border-bottom:1px solid #e2e8f0;padding:.75rem 2rem;display:flex;gap:.5rem;flex-wrap:wrap}
+    nav a{padding:.4rem .9rem;border-radius:6px;text-decoration:none;font-size:.85rem;font-weight:500;
+          background:#f1f5f9;color:#334155;transition:background .15s}
+    nav a:hover{background:#e2e8f0}
+    nav a.active{background:#1e293b;color:#fff}
+    main{max-width:900px;margin:2rem auto;padding:0 1rem}
+    h2{font-size:1rem;font-weight:600;margin-bottom:.75rem;color:#475569}
+    .feed-wrap{background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:1rem}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:2rem}
+    .stat{background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:1rem;text-align:center}
+    .stat .n{font-size:2rem;font-weight:700;color:#1e293b}
+    .stat .l{font-size:.8rem;color:#64748b;margin-top:.25rem}
+    /* Tabs */
+    .tabs-wrap{margin-top:2rem}
+    .tabs-nav{display:flex;gap:0;border-bottom:2px solid #e2e8f0;margin-bottom:0}
+    .tab-btn{padding:.55rem 1.2rem;border:none;background:none;font-size:.85rem;font-weight:500;
+             color:#64748b;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s}
+    .tab-btn:hover{color:#1e293b}
+    .tab-btn.active{color:#1e293b;border-bottom-color:#1e293b;font-weight:600}
+    .tab-panel{display:none;background:#fff;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;padding:1rem}
+    .tab-panel.active{display:block}
+    /* Tabla */
+    .tbl-wrap{overflow-x:auto}
+    table{width:100%;border-collapse:collapse;font-size:.82rem}
+    th{background:#f8fafc;padding:.5rem .75rem;text-align:left;font-weight:600;color:#475569;
+       border-bottom:1px solid #e2e8f0;white-space:nowrap}
+    td{padding:.5rem .75rem;border-bottom:1px solid #f1f5f9;color:#334155;vertical-align:middle}
+    tr:last-child td{border-bottom:none}
+    tr:hover td{background:#f8fafc}
+    .badge{display:inline-block;padding:.15rem .5rem;border-radius:99px;font-size:.72rem;font-weight:600}
+    .badge-emp{background:#dbeafe;color:#1d4ed8}
+    .badge-vis{background:#fef9c3;color:#854d0e}
+    .badge-con{background:#f3e8ff;color:#7e22ce}
+    .badge-in{background:#dcfce7;color:#16a34a}
+    .badge-out{background:#fee2e2;color:#dc2626}
+    /* Paginación */
+    .pag-wrap{display:flex;align-items:center;justify-content:space-between;margin-top:.75rem;flex-wrap:wrap;gap:.5rem}
+    .pag-wrap select{padding:.25rem .5rem;border:1px solid #cbd5e1;border-radius:6px;font-size:.8rem}
+    .pag-btns{display:flex;gap:.25rem}
+    .pag-btn{padding:.25rem .6rem;border:1px solid #e2e8f0;background:#fff;border-radius:5px;
+             font-size:.8rem;cursor:pointer;color:#334155}
+    .pag-btn:hover{background:#f1f5f9}
+    .pag-btn:disabled{opacity:.4;cursor:not-allowed}
+    .pag-info{font-size:.78rem;color:#94a3b8}
+  </style>
+</head>
+<body>
+<header>
+  <h1>SCA-EMPX</h1>
+  <span>Sistema de Control de Acceso Físico</span>
+</header>
+<nav>
+  <a href="/" class="active">Dashboard</a>
+  <a href="/registro">Registrar persona</a>
+  <a href="/acceso">Acceso facial</a>
+  <a href="/visitante">Visitante</a>
+  <a href="/configuracion">Configuración</a>
+  <a href="/docs" target="_blank">API Docs</a>
+</nav>
+<main>
+  <div class="stats">
+    <div class="stat"><div class="n" id="n-personas">—</div><div class="l">Personas registradas</div></div>
+    <div class="stat"><div class="n" id="n-accesos">—</div><div class="l">Accesos hoy</div></div>
+    <div class="stat"><div class="n" id="n-visitas">—</div><div class="l">Visitas activas</div></div>
+  </div>
+
+  <h2>Eventos en tiempo real</h2>
+  <div class="feed-wrap">
+    <div id="ws-feed"></div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs-wrap">
+    <div class="tabs-nav">
+      <button class="tab-btn active" data-tab="personas">Personas registradas</button>
+      <button class="tab-btn"        data-tab="accesos">Accesos</button>
+      <button class="tab-btn"        data-tab="visitas">Visitas</button>
+    </div>
+
+    <!-- TAB: PERSONAS -->
+    <div class="tab-panel active" id="tab-personas">
+      <div class="tbl-wrap">
+        <table id="tbl-personas">
+          <thead>
+            <tr>
+              <th>#</th><th>Nombres</th><th>Documento</th><th>Tipo</th>
+              <th>Cargo</th><th>Área</th><th>Fotos</th><th>Estado</th>
+            </tr>
+          </thead>
+          <tbody id="body-personas"><tr><td colspan="8" style="text-align:center;color:#94a3b8">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="pag-wrap">
+        <div>
+          <span class="pag-info" id="pag-personas-info"></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:.75rem">
+          <label style="font-size:.78rem;color:#64748b">Por página:
+            <select id="pp-personas"><option>10</option><option>20</option><option>30</option></select>
+          </label>
+          <div class="pag-btns">
+            <button class="pag-btn" id="btn-personas-prev">‹ Ant</button>
+            <button class="pag-btn" id="btn-personas-next">Sig ›</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: ACCESOS -->
+    <div class="tab-panel" id="tab-accesos">
+      <div class="tbl-wrap">
+        <table id="tbl-accesos">
+          <thead>
+            <tr>
+              <th>#</th><th>Nombres</th><th>Tipo acceso</th><th>Similitud</th><th>Fecha y hora</th>
+            </tr>
+          </thead>
+          <tbody id="body-accesos"><tr><td colspan="5" style="text-align:center;color:#94a3b8">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="pag-wrap">
+        <span class="pag-info" id="pag-accesos-info"></span>
+        <div style="display:flex;align-items:center;gap:.75rem">
+          <label style="font-size:.78rem;color:#64748b">Por página:
+            <select id="pp-accesos"><option>10</option><option>20</option><option>30</option></select>
+          </label>
+          <div class="pag-btns">
+            <button class="pag-btn" id="btn-accesos-prev">‹ Ant</button>
+            <button class="pag-btn" id="btn-accesos-next">Sig ›</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: VISITAS -->
+    <div class="tab-panel" id="tab-visitas">
+      <div class="tbl-wrap">
+        <table id="tbl-visitas">
+          <thead>
+            <tr>
+              <th>#</th><th>Nombres</th><th>Motivo</th><th>Entrada</th><th>Salida</th>
+            </tr>
+          </thead>
+          <tbody id="body-visitas"><tr><td colspan="5" style="text-align:center;color:#94a3b8">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="pag-wrap">
+        <span class="pag-info" id="pag-visitas-info"></span>
+        <div style="display:flex;align-items:center;gap:.75rem">
+          <label style="font-size:.78rem;color:#64748b">Por página:
+            <select id="pp-visitas"><option>10</option><option>20</option><option>30</option></select>
+          </label>
+          <div class="pag-btns">
+            <button class="pag-btn" id="btn-visitas-prev">‹ Ant</button>
+            <button class="pag-btn" id="btn-visitas-next">Sig ›</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="/static/ws-client.js"></script>
+<script>
+  initWsFeed("ws-feed");
+
+  // ── Zona horaria Colombia ─────────────────────────────────────────────────
+  function formatFechaCol(fechaStr) {
+    if (!fechaStr) return "—";
+    // El backend devuelve fechas UTC sin 'Z'; se lo añadimos para que JS las interprete correctamente
+    const utcStr = (fechaStr.endsWith("Z") || fechaStr.includes("+")) ? fechaStr : fechaStr + "Z";
+    return new Date(utcStr).toLocaleString("es-CO", {
+      timeZone: "America/Bogota",
+      day:    "2-digit",
+      month:  "2-digit",
+      year:   "numeric",
+      hour:   "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    });
+  }
+
+  // ── Datos en memoria ────────────────────────────────────────────────────────
+  let dataPersonas = [];
+  let dataAccesos  = [];
+  let dataVisitas  = [];
+
+  // ── Paginadores ─────────────────────────────────────────────────────────────
+  const pag = {
+    personas: { page: 0 },
+    accesos:  { page: 0 },
+    visitas:  { page: 0 },
+  };
+
+  function pp(key) {
+    return parseInt(document.getElementById("pp-" + key).value);
+  }
+
+  function renderPag(key, total) {
+    const perPage  = pp(key);
+    const page     = pag[key].page;
+    const totalPag = Math.max(1, Math.ceil(total / perPage));
+    const desde    = total === 0 ? 0 : page * perPage + 1;
+    const hasta    = Math.min((page + 1) * perPage, total);
+    document.getElementById("pag-" + key + "-info").textContent =
+      total === 0 ? "Sin registros" : `${desde}–${hasta} de ${total}`;
+    document.getElementById("btn-" + key + "-prev").disabled = page === 0;
+    document.getElementById("btn-" + key + "-next").disabled = page >= totalPag - 1;
+  }
+
+  function slice(data, key) {
+    const perPage = pp(key);
+    const page    = pag[key].page;
+    return data.slice(page * perPage, (page + 1) * perPage);
+  }
+
+  // ── Render personas ─────────────────────────────────────────────────────────
+  function renderPersonas() {
+    const tbody = document.getElementById("body-personas");
+    const rows  = slice(dataPersonas, "personas");
+    if (rows.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#94a3b8">Sin personas registradas</td></tr>';
+    } else {
+      const badgeClass = { Empleado: "badge-emp", Visitante: "badge-vis", Contratista: "badge-con" };
+      tbody.innerHTML = rows.map((p, i) => `
+        <tr>
+          <td style="color:#94a3b8">${pag.personas.page * pp("personas") + i + 1}</td>
+          <td><strong>${p.nombres}</strong></td>
+          <td style="color:#64748b">${p.tipo_documento} ${p.nro_documento}</td>
+          <td><span class="badge ${badgeClass[p.tipo] || "badge-vis"}">${p.tipo}</span></td>
+          <td>${p.cargo || '<span style="color:#cbd5e1">—</span>'}</td>
+          <td>${p.area  || '<span style="color:#cbd5e1">—</span>'}</td>
+          <td style="text-align:center">${p.n_embeddings}</td>
+          <td>${p.activo
+            ? '<span class="badge badge-in">Activo</span>'
+            : '<span class="badge badge-out">Inactivo</span>'}</td>
+        </tr>`).join("");
+    }
+    renderPag("personas", dataPersonas.length);
+  }
+
+  // ── Render accesos ──────────────────────────────────────────────────────────
+  function renderAccesos() {
+    const tbody = document.getElementById("body-accesos");
+    const rows  = slice(dataAccesos, "accesos");
+    if (rows.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94a3b8">Sin accesos registrados</td></tr>';
+    } else {
+      tbody.innerHTML = rows.map((a, i) => {
+        const fecha = formatFechaCol(a.fecha);
+        const badge = a.tipo_acceso === "entrada"
+          ? '<span class="badge badge-in">▲ Entrada</span>'
+          : '<span class="badge badge-out">▼ Salida</span>';
+        const sim = a.similitud != null ? (a.similitud * 100).toFixed(1) + "%" : "—";
+        return `<tr>
+          <td style="color:#94a3b8">${pag.accesos.page * pp("accesos") + i + 1}</td>
+          <td><strong>${a.nombres || "ID " + a.id_persona}</strong></td>
+          <td>${badge}</td>
+          <td style="text-align:center">${sim}</td>
+          <td style="color:#64748b">${fecha}</td>
+        </tr>`;
+      }).join("");
+    }
+    renderPag("accesos", dataAccesos.length);
+  }
+
+  // ── Render visitas ──────────────────────────────────────────────────────────
+  function renderVisitas() {
+    const tbody = document.getElementById("body-visitas");
+    const rows  = slice(dataVisitas, "visitas");
+    if (rows.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94a3b8">Sin visitas registradas</td></tr>';
+    } else {
+      tbody.innerHTML = rows.map((v, i) => {
+        const entrada = formatFechaCol(v.fecha);
+        const salida  = v.fecha_salida ? formatFechaCol(v.fecha_salida) : '<span style="color:#16a34a">En curso</span>';
+        return `<tr>
+          <td style="color:#94a3b8">${pag.visitas.page * pp("visitas") + i + 1}</td>
+          <td><strong>${v.nombres}</strong></td>
+          <td style="max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"
+              title="${v.motivo}">${v.motivo}</td>
+          <td style="color:#64748b">${entrada}</td>
+          <td>${salida}</td>
+        </tr>`;
+      }).join("");
+    }
+    renderPag("visitas", dataVisitas.length);
+  }
+
+  // ── Cargar datos ────────────────────────────────────────────────────────────
+  async function loadStats() {
+    try {
+      const [personas, visitas] = await Promise.all([
+        fetch("/api/v1/personas/").then(r => r.json()),
+        fetch("/api/v1/visitas/").then(r => r.json()),
+      ]);
+      dataPersonas = personas;
+      dataVisitas  = visitas;
+
+      document.getElementById("n-personas").textContent = personas.length;
+      document.getElementById("n-visitas").textContent  =
+        visitas.filter(v => !v.fecha_salida).length;
+
+      renderPersonas();
+      renderVisitas();
+    } catch(e) {}
+  }
+
+  async function loadAccesos() {
+    try {
+      const [accesos, hoy] = await Promise.all([
+        fetch("/api/v1/events/?limit=500").then(r => r.json()),
+        fetch("/api/v1/events/hoy").then(r => r.json()),
+      ]);
+      dataAccesos = accesos;
+      document.getElementById("n-accesos").textContent = hoy.total ?? accesos.length;
+      renderAccesos();
+    } catch(e) {
+      dataAccesos = [];
+      renderAccesos();
+    }
+  }
+
+  // ── Tabs ────────────────────────────────────────────────────────────────────
+  let accesosCargados = false;
+
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+      btn.classList.add("active");
+      document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+
+      if (btn.dataset.tab === "accesos" && !accesosCargados) {
+        accesosCargados = true;
+        loadAccesos();
+      }
+    });
+  });
+
+  // ── Paginación — eventos ────────────────────────────────────────────────────
+  ["personas", "accesos", "visitas"].forEach(key => {
+    document.getElementById("btn-" + key + "-prev").addEventListener("click", () => {
+      if (pag[key].page > 0) { pag[key].page--; window["render" + cap(key)](); }
+    });
+    document.getElementById("btn-" + key + "-next").addEventListener("click", () => {
+      const data = key === "personas" ? dataPersonas : key === "accesos" ? dataAccesos : dataVisitas;
+      const max  = Math.ceil(data.length / pp(key)) - 1;
+      if (pag[key].page < max) { pag[key].page++; window["render" + cap(key)](); }
+    });
+    document.getElementById("pp-" + key).addEventListener("change", () => {
+      pag[key].page = 0;
+      window["render" + cap(key)]();
+    });
+  });
+
+  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+  // Exponer renders al scope global para el truco de window["render"+key]
+  window.renderPersonas = renderPersonas;
+  window.renderAccesos  = renderAccesos;
+  window.renderVisitas  = renderVisitas;
+
+  // ── Recargar tabla personas cuando llega evento WS ─────────────────────────
+  const origInitWsFeed = window.initWsFeed;
+  loadStats();
+  loadAccesos();
+</script>
+</body>
+</html>

@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Registrar persona — SCA-EMPX</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:system-ui,sans-serif;background:#f8fafc;color:#1e293b}
+    header{background:#1e293b;color:#fff;padding:1rem 2rem}
+    header h1{font-size:1.1rem}
+    nav{background:#fff;border-bottom:1px solid #e2e8f0;padding:.75rem 2rem;display:flex;gap:.5rem;flex-wrap:wrap}
+    nav a{padding:.4rem .9rem;border-radius:6px;text-decoration:none;font-size:.85rem;font-weight:500;background:#f1f5f9;color:#334155}
+    nav a:hover,nav a.active{background:#1e293b;color:#fff}
+    main{max-width:800px;margin:2rem auto;padding:0 1rem;display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+    @media(max-width:600px){main{grid-template-columns:1fr}}
+    .card{background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:1.5rem}
+    h2{font-size:1rem;font-weight:600;margin-bottom:1rem;color:#475569}
+    label{display:block;font-size:.82rem;font-weight:500;color:#64748b;margin-bottom:.25rem;margin-top:.75rem}
+    input,select{width:100%;padding:.45rem .6rem;border:1px solid #cbd5e1;border-radius:6px;font-size:.9rem}
+    input:focus,select:focus{outline:none;border-color:#3b82f6}
+    .btn{display:inline-block;padding:.5rem 1.2rem;border:none;border-radius:6px;font-size:.9rem;font-weight:500;cursor:pointer;transition:background .15s}
+    .btn-primary{background:#1e293b;color:#fff;width:100%;margin-top:1rem}
+    .btn-primary:hover{background:#334155}
+    .btn-green{background:#16a34a;color:#fff;width:100%;margin-top:.5rem}
+    .btn-green:hover{background:#15803d}
+    .btn-red{background:#dc2626;color:#fff;width:100%;margin-top:.5rem}
+    .btn-red:hover{background:#b91c1c}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    #video-wrap{position:relative;width:100%;background:#0f172a;border-radius:8px;overflow:hidden;aspect-ratio:4/3}
+    video{width:100%;height:100%;object-fit:cover;display:block}
+    canvas{display:none}
+    #captura-status{margin-top:.75rem;padding:.6rem;border-radius:6px;font-size:.85rem;text-align:center}
+    .st-ok{background:#dcfce7;color:#16a34a}
+    .st-err{background:#fee2e2;color:#dc2626}
+    .st-info{background:#eff6ff;color:#2563eb}
+    .progress-bar{height:6px;background:#e2e8f0;border-radius:3px;margin-top:.5rem;overflow:hidden}
+    .progress-fill{height:100%;background:#16a34a;width:0%;transition:width .3s}
+    #n-fotos{font-size:.8rem;color:#64748b;text-align:center;margin-top:.3rem}
+    .msg{margin-top:.75rem;padding:.6rem;border-radius:6px;font-size:.85rem}
+    .msg-ok{background:#dcfce7;color:#16a34a}
+    .msg-err{background:#fee2e2;color:#dc2626}
+  </style>
+</head>
+<body>
+<header><h1>SCA-EMPX — Registrar persona</h1></header>
+<nav>
+  <a href="/">Dashboard</a>
+  <a href="/registro" class="active">Registrar persona</a>
+  <a href="/acceso">Acceso facial</a>
+  <a href="/visitante">Visitante</a>
+  <a href="/configuracion">Configuración</a>
+</nav>
+
+<main>
+  <!-- FORMULARIO -->
+  <div class="card">
+    <h2>Datos de la persona</h2>
+
+    <label>Tipo de documento</label>
+    <select id="tipo_documento">
+      <option value="CC">CC — Cédula de Ciudadanía</option>
+      <option value="CE">CE — Cédula de Extranjería</option>
+      <option value="PAS">PAS — Pasaporte</option>
+      <option value="NIT">NIT</option>
+    </select>
+
+    <label>Número de documento *</label>
+    <input type="text" id="nro_documento" placeholder="Ej: 1234567890"/>
+
+    <label>Nombres completos *</label>
+    <input type="text" id="nombres" placeholder="Ej: María García López"/>
+
+    <label>Tipo de persona *</label>
+    <select id="id_tipo_persona">
+      <option value="">— Seleccionar —</option>
+    </select>
+
+    <div id="cargo-wrap">
+      <label>Área *</label>
+      <select id="id_area">
+        <option value="">— Seleccionar área —</option>
+      </select>
+      <label>Cargo *</label>
+      <select id="id_cargo">
+        <option value="">— Seleccionar cargo —</option>
+      </select>
+    </div>
+
+    <button class="btn btn-primary" id="btn-guardar">Guardar datos y activar cámara</button>
+    <div id="msg-datos" class="msg" style="display:none"></div>
+  </div>
+
+  <!-- CÁMARA -->
+  <div class="card">
+    <h2>Captura facial</h2>
+    <div id="video-wrap">
+      <video id="video" autoplay playsinline muted></video>
+    </div>
+    <canvas id="canvas"></canvas>
+
+    <div id="captura-status" class="st-info" style="display:none"></div>
+    <div class="progress-bar" id="progress-bar" style="display:none">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+    <div id="n-fotos"></div>
+
+    <button class="btn btn-green" id="btn-captura" disabled>Iniciar captura de fotos</button>
+    <button class="btn btn-red"   id="btn-detener" disabled>Detener</button>
+  </div>
+</main>
+
+<script>
+  // ── Config ────────────────────────────────────────────────────────────────
+  const INTERVALO_MS = 1000;   // captura cada 1 seg
+  const DURACION_MS  = 8000;   // duración total 8 seg → ~8 fotos
+  const MAX_FOTOS    = 20;
+
+  // ── Estado ────────────────────────────────────────────────────────────────
+  let idPersonaCreada = null;
+  let capturando      = false;
+  let capturaTimer    = null;
+  let nFotos          = 0;
+  let stream          = null;
+
+  // ── Refs DOM ──────────────────────────────────────────────────────────────
+  const video      = document.getElementById("video");
+  const canvas     = document.getElementById("canvas");
+  const ctx        = canvas.getContext("2d");
+  const btnGuardar = document.getElementById("btn-guardar");
+  const btnCaptura = document.getElementById("btn-captura");
+  const btnDetener = document.getElementById("btn-detener");
+  const msgDatos   = document.getElementById("msg-datos");
+  const statusEl   = document.getElementById("captura-status");
+  const progressFill = document.getElementById("progress-fill");
+  const nFotosEl   = document.getElementById("n-fotos");
+  const cargoWrap  = document.getElementById("cargo-wrap");
+
+  // ── Cargar catálogos ──────────────────────────────────────────────────────
+  async function cargarCatalogos() {
+    const [tipos, areas] = await Promise.all([
+      fetch("/api/v1/catalogos/tipos-persona").then(r => r.json()),
+      fetch("/api/v1/catalogos/areas").then(r => r.json()),
+    ]);
+
+    const selTipo = document.getElementById("id_tipo_persona");
+    tipos.forEach(t => {
+      const o = document.createElement("option");
+      o.value = t.id_tipo_persona;
+      o.textContent = t.tipo;
+      o.dataset.esEmpleado = t.es_empleado;
+      selTipo.appendChild(o);
+    });
+
+    const selArea = document.getElementById("id_area");
+    areas.forEach(a => {
+      const o = document.createElement("option");
+      o.value = a.id_area;
+      o.textContent = a.nombre;
+      selArea.appendChild(o);
+    });
+
+    selTipo.addEventListener("change", () => {
+      const opt = selTipo.selectedOptions[0];
+      const esEmpleado = opt && opt.dataset.esEmpleado === "true";
+      cargoWrap.style.display = esEmpleado ? "block" : "none";
+    });
+    cargoWrap.style.display = "none";
+
+    selArea.addEventListener("change", async () => {
+      const id = selArea.value;
+      if (!id) return;
+      const cargos = await fetch(`/api/v1/catalogos/areas/${id}/cargos`).then(r => r.json());
+      const selCargo = document.getElementById("id_cargo");
+      selCargo.innerHTML = '<option value="">— Seleccionar cargo —</option>';
+      cargos.forEach(c => {
+        const o = document.createElement("option");
+        o.value = c.id_cargo;
+        o.textContent = c.nombre;
+        selCargo.appendChild(o);
+      });
+    });
+  }
+  cargarCatalogos();
+
+  // ── Guardar datos ─────────────────────────────────────────────────────────
+  btnGuardar.addEventListener("click", async () => {
+    const nro   = document.getElementById("nro_documento").value.trim();
+    const nombres = document.getElementById("nombres").value.trim();
+    const idTipo  = document.getElementById("id_tipo_persona").value;
+    const idCargo = document.getElementById("id_cargo").value || null;
+
+    if (!nro || !nombres || !idTipo) {
+      mostrarMsg(msgDatos, "Completa los campos obligatorios.", false);
+      return;
+    }
+
+    const body = {
+      tipo_documento:  document.getElementById("tipo_documento").value,
+      nro_documento:   nro,
+      nombres:         nombres,
+      id_tipo_persona: parseInt(idTipo),
+      id_cargo:        idCargo ? parseInt(idCargo) : null,
+    };
+
+    try {
+      const r = await fetch("/api/v1/personas/", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(body),
+      });
+      const data = await r.json();
+      if (!r.ok) { mostrarMsg(msgDatos, data.detail || "Error al guardar.", false); return; }
+
+      idPersonaCreada = data.id_persona;
+      mostrarMsg(msgDatos, `Persona creada (ID: ${idPersonaCreada}). Ahora captura las fotos.`, true);
+      await iniciarCamara();
+      btnCaptura.disabled = false;
+    } catch(e) {
+      mostrarMsg(msgDatos, "Error de conexión.", false);
+    }
+  });
+
+  // ── Cámara ────────────────────────────────────────────────────────────────
+  async function iniciarCamara() {
+    try {
+      const deviceId = localStorage.getItem("sca_camara_deviceId");
+      const videoConstraints = deviceId
+        ? { deviceId: { exact: deviceId }, width: 640, height: 480 }
+        : { width: 640, height: 480, facingMode: "user" };
+      stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints });
+      video.srcObject = stream;
+    } catch(e) {
+      mostrarMsg(msgDatos, "No se pudo acceder a la cámara: " + e.message, false);
+    }
+  }
+
+  btnCaptura.addEventListener("click", iniciarCaptura);
+  btnDetener.addEventListener("click", detenerCaptura);
+
+  function iniciarCaptura() {
+    if (!idPersonaCreada) return;
+    capturando = true;
+    nFotos = 0;
+    btnCaptura.disabled = true;
+    btnDetener.disabled = false;
+    document.getElementById("progress-bar").style.display = "block";
+
+    const inicio = Date.now();
+    setStatus("Capturando fotos…", "info");
+
+    capturaTimer = setInterval(async () => {
+      const elapsed = Date.now() - inicio;
+      const pct = Math.min((elapsed / DURACION_MS) * 100, 100);
+      progressFill.style.width = pct + "%";
+
+      if (elapsed >= DURACION_MS || nFotos >= MAX_FOTOS) {
+        detenerCaptura();
+        return;
+      }
+      await capturarYEnviar();
+    }, INTERVALO_MS);
+  }
+
+  function detenerCaptura() {
+    capturando = false;
+    clearInterval(capturaTimer);
+    btnCaptura.disabled = false;
+    btnDetener.disabled = true;
+    progressFill.style.width = "100%";
+    setStatus(`Captura finalizada. ${nFotos} fotos registradas.`, "ok");
+  }
+
+  async function capturarYEnviar() {
+    canvas.width  = video.videoWidth  || 640;
+    canvas.height = video.videoHeight || 480;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    const blob = await new Promise(res => canvas.toBlob(res, "image/jpeg", 0.85));
+    const fd = new FormData();
+    fd.append("foto", blob, "frame.jpg");
+
+    try {
+      const r = await fetch(`/api/v1/personas/${idPersonaCreada}/registros`, {
+        method: "POST", body: fd,
+      });
+      const data = await r.json();
+      if (data.ok) {
+        nFotos = data.n_embeddings;
+        nFotosEl.textContent = `Fotos capturadas: ${nFotos}`;
+      } else if (data.motivo === "limite_alcanzado") {
+        detenerCaptura();
+      }
+    } catch(e) {}
+  }
+
+  // ── Utils ─────────────────────────────────────────────────────────────────
+  function setStatus(msg, tipo) {
+    statusEl.style.display = "block";
+    statusEl.textContent = msg;
+    statusEl.className = "captura-status st-" + tipo;
+  }
+
+  function mostrarMsg(el, msg, ok) {
+    el.style.display = "block";
+    el.textContent = msg;
+    el.className = "msg " + (ok ? "msg-ok" : "msg-err");
+  }
+</script>
+</body>
+</html>
