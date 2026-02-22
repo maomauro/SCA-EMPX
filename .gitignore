@@ -20,6 +20,8 @@ wheels/
 # Environment and secrets
 .env
 .env.local
+.zip
+
 
 
 # SQLite (no versionar archivos de BD local)
