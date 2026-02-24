@@ -24,19 +24,28 @@ jobs:
 
     - name: Add Azure Repos remote and push (header auth)
       env:
-        AZURE_PAT:  ${{ secrets.AZURE_PAT }}
-        AZURE_REPO_URL: ${{ secrets.AZURE_REPO_URL }}
+        AZURE_USER: ${{ secrets.AZURE_USER }}       # ← tu usuario Azure DevOps
+        AZURE_PAT:  ${{ secrets.AZURE_PAT }}        # ← tu PAT
+        AZURE_REPO_URL: ${{ secrets.AZURE_REPO_URL }}  # ← URL limpia al repo
       run: |
-        # Añadir remoto 'mirror' a la URL limpia (sin credenciales)
+        set -e
+
+        # 1) Asegurar remoto 'mirror' con URL LIMPIA (sin credenciales)
         if ! git remote | grep -q '^mirror$'; then
           git remote add mirror "$AZURE_REPO_URL"
         else
           git remote set-url mirror "$AZURE_REPO_URL"
         fi
 
-        # Construir el header Authorization: Basic base64(:PAT)
-        AUTH=$(printf ":%s" "$AZURE_PAT" | base64)
+        # 2) Construir Authorization: Basic base64(usuario:PAT)
+        # (La opción -w0 no existe en macOS; por eso probamos y caemos a base64 normal)
+        AUTH=$(printf "%s:%s" "$AZURE_USER" "$AZURE_PAT" | base64 -w0 2>/dev/null || printf "%s:%s" "$AZURE_USER" "$AZURE_PAT" | base64)
 
-        # Empujar TODAS las ramas y etiquetas usando el header
+        echo "Validando acceso a Azure Repos..."
+        git -c http.extraHeader="Authorization: Basic $AUTH" ls-remote "$AZURE_REPO_URL" > /dev/null
+
+        echo "Empujando TODAS las ramas..."
         git -c http.extraHeader="Authorization: Basic $AUTH" push mirror --all
+
+        echo "Empujando etiquetas..."
         git -c http.extraHeader="Authorization: Basic $AUTH" push mirror --tags
