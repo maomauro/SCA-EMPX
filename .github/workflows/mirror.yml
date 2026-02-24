@@ -22,23 +22,21 @@ jobs:
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-    - name: Add Azure Repos remote and push
+    - name: Add Azure Repos remote and push (header auth)
       env:
-        AZURE_USER: ${{ secrets.AZURE_USER }}
         AZURE_PAT:  ${{ secrets.AZURE_PAT }}
+        AZURE_REPO_URL: ${{ secrets.AZURE_REPO_URL }}
       run: |
-        # URL de tu Azure Repos (ya con tu org/proyecto/repo reales)
-        AZURE_URL="https://$AZURE_USER:$AZURE_PAT@dev.azure.com/maomauroc/SCA-EMPX/_git/SCA-EMPX"
-
-        echo "Using Azure Repos URL: $AZURE_URL"
-
-        # Añadir remoto 'mirror' (o actualizarlo si ya existe)
+        # Añadir remoto 'mirror' a la URL limpia (sin credenciales)
         if ! git remote | grep -q '^mirror$'; then
-          git remote add mirror "$AZURE_URL"
+          git remote add mirror "$AZURE_REPO_URL"
         else
-          git remote set-url mirror "$AZURE_URL"
+          git remote set-url mirror "$AZURE_REPO_URL"
         fi
 
-        # Empujar TODAS las ramas y etiquetas
-        git push mirror --all
-        git push mirror --tags
+        # Construir el header Authorization: Basic base64(:PAT)
+        AUTH=$(printf ":%s" "$AZURE_PAT" | base64)
+
+        # Empujar TODAS las ramas y etiquetas usando el header
+        git -c http.extraHeader="Authorization: Basic $AUTH" push mirror --all
+        git -c http.extraHeader="Authorization: Basic $AUTH" push mirror --tags
