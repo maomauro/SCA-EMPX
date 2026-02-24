@@ -1,0 +1,59 @@
+name: CI (Python)
+
+on:
+  push:
+    branches: [ "main", "develop", "feature/**" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.13"
+
+    - name: Cache pip
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install dependencies (package + dev)
+      run: |
+        python -m pip install --upgrade pip
+        # Instala tu paquete con extras de desarrollo (pytest, pytest-cov)
+        pip install -e ".[dev]"
+
+    - name: Run tests with coverage
+      env:
+        PYTHONWARNINGS: "ignore::DeprecationWarning"
+      run: |
+        mkdir -p test-results
+        # Si definiste [tool.pytest.ini_options] en pyproject, basta con `pytest`
+        pytest --junitxml=test-results/junit.xml --cov=. --cov-report=xml:coverage.xml --cov-report=term-missing
+
+    - name: Upload test report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: junit
+        path: test-results/junit.xml
+
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: coverage
+        path: coverage.xml
