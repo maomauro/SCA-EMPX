@@ -1,0 +1,44 @@
+name: Mirror to Azure Repos
+
+on:
+  push:
+    branches:
+      - '**'             # dispara en cualquier rama
+  schedule:
+    - cron: "0 * * * *"  # cada hora (UTC)
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout (full history)
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set git identity
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+    - name: Add Azure Repos remote and push
+      env:
+        AZURE_USER: ${{ secrets.AZURE_USER }}
+        AZURE_PAT:  ${{ secrets.AZURE_PAT }}
+      run: |
+        # URL de tu Azure Repos (ya con tu org/proyecto/repo reales)
+        AZURE_URL="https://$AZURE_USER:$AZURE_PAT@dev.azure.com/maomauroc/SCA-EMPX/_git/SCA-EMPX"
+
+        echo "Using Azure Repos URL: $AZURE_URL"
+
+        # Añadir remoto 'mirror' (o actualizarlo si ya existe)
+        if ! git remote | grep -q '^mirror$'; then
+          git remote add mirror "$AZURE_URL"
+        else
+          git remote set-url mirror "$AZURE_URL"
+        fi
+
+        # Empujar TODAS las ramas y etiquetas
+        git push mirror --all
+        git push mirror --tags
