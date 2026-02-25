@@ -1,0 +1,51 @@
+name: Mirror to Azure Repos
+
+on:
+  push:
+    branches:
+      - '**'             # dispara en cualquier rama
+  schedule:
+    - cron: "0 * * * *"  # corre cada hora (UTC)
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout (full history)
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0    # trae todo el historial para poder espejar completo
+
+    - name: Set git identity
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+    - name: Add Azure Repos remote and push (header auth)
+      env:
+        AZURE_USER:     ${{ secrets.AZURE_USER }}       # tu usuario de Azure DevOps
+        AZURE_PAT:      ${{ secrets.AZURE_PAT }}        # tu PAT con Code: Read & write
+        AZURE_REPO_URL: ${{ secrets.AZURE_REPO_URL }}   # https://dev.azure.com/maomauroc/SCA-EMPX/_git/SCA-EMPX
+      run: |
+        set -e
+
+        # 1) Configurar remoto 'mirror' con la URL LIMPIA (sin credenciales en la URL)
+        if ! git remote | grep -q '^mirror$'; then
+          git remote add mirror "$AZURE_REPO_URL"
+        else
+          git remote set-url mirror "$AZURE_REPO_URL"
+        fi
+
+        # 2) Construir el header Authorization: Basic base64(usuario:PAT)
+        #    -w0 no existe en macOS; por eso usamos "o base64" sin -w0 como fallback
+        AUTH=$(printf "%s:%s" "$AZURE_USER" "$AZURE_PAT" | base64 -w0 2>/dev/null || printf "%s:%s" "$AZURE_USER" "$AZURE_PAT" | base64)
+
+        echo "Validando acceso a Azure Repos..."
+        git -c http.extraHeader="Authorization: Basic $AUTH" ls-remote "$AZURE_REPO_URL" > /dev/null
+
+        echo "Empujando TODAS las ramas..."
+        git -c http.extraHeader="Authorization: Basic $AUTH" push mirror --all
+
+        echo "Empujando etiquetas..."
+        git -c http.extraHeader="Authorization: Basic $AUTH" push mirror --tags
