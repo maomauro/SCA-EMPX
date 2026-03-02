@@ -2,7 +2,7 @@
 
 Esta guía describe cómo usar el **Sistema de Control de Acceso Físico y Registro de Ingresos/Salidas (SCA-EMPX)** desde el navegador y, en su caso, desde la API.
 
-**Requisito:** La API debe estar en ejecución en **http://127.0.0.1:8000** (o la URL configurada). Para arrancarla, ver [Instalación y ejecución](#1-instalación-y-ejecución) más abajo.
+**Requisito:** La API debe estar en ejecución en **http://127.0.0.1:8000** (o la URL configurada). Para arrancarla, ver [Instalación y ejecución](#1-instalación-y-ejecución) más abajo. Documentación general del proyecto: [README.md](../README.md) y [Índice de documentación](./00-indice.md).
 
 ---
 
@@ -30,7 +30,7 @@ Esta guía describe cómo usar el **Sistema de Control de Acceso Físico y Regis
    uv run uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8000
    ```
 
-5. Abrir en el navegador: **http://127.0.0.1:8000/inicio** (página de inicio con menú) o **http://127.0.0.1:8000** (health check en JSON).
+5. Abrir en el navegador: **http://127.0.0.1:8000/** (página principal/dashboard). Health check: **http://127.0.0.1:8000/health** (JSON).
 
 ---
 
@@ -42,64 +42,61 @@ Todas las pantallas de la aplicación incluyen una **barra de navegación** supe
 - **Validar acceso**, **Reg. empleado**, **Reg. visitante**, **Autorización**, **Reg. salida**  
 - **Personas** (listado), **Historial**, **Dashboard**, **Revocar auth.**, **Personas dentro**, **Reporte**, **Admin**
 
-Desde cualquier página se puede cambiar de pantalla sin escribir URLs. La **página de inicio** (`/inicio`) muestra además tarjetas agrupadas por función (Acceso, Personas, Autorizaciones, Consultas, Sistema) para acceder rápido a cada flujo.
+Desde cualquier página se puede cambiar de pantalla sin escribir URLs. La **página principal** (`/`) actúa como inicio; según la implementación puede incluir menú y enlaces a los módulos (acceso, registro, visitante, configuración).
 
 ---
 
 ## 3. Resumen de pantallas (URLs)
 
+**Listado oficial de URLs:** [urls-acceso.md](./urls-acceso.md).
+
 | Pantalla | URL | Uso principal |
 |----------|-----|----------------|
-| **Inicio** | http://127.0.0.1:8000/inicio | Página principal con menú y tarjetas de acceso a módulos |
-| Validar acceso (entrada) | http://127.0.0.1:8000/validate-access | Reconocimiento facial para permitir/denegar entrada |
-| Registrar empleado | http://127.0.0.1:8000/registro-empleado | Alta de empleado con foto |
-| Registrar visitante | http://127.0.0.1:8000/registro-visitante | Alta de visitante con foto y datos de visita |
-| Autorización de visita | http://127.0.0.1:8000/autorizacion-visita | Crear autorización vigente para un visitante |
-| Registrar salida | http://127.0.0.1:8000/registrar-salida | Reconocimiento facial para registrar salida |
-| Listado de personas | http://127.0.0.1:8000/listado-personas | Buscar personas, Desactivar/Activar, enlace Editar |
-| Editar persona | http://127.0.0.1:8000/editar-persona?id=**ID** | Editar nombre, cargo, área, teléfono, email, estado |
-| Historial de accesos | http://127.0.0.1:8000/historial-accesos | Consultar eventos con filtros y exportar CSV |
-| Dashboard | http://127.0.0.1:8000/dashboard | Métricas y últimos eventos (se actualiza cada 30 s) |
-| Revocar autorización | http://127.0.0.1:8000/revocar-autorizacion | Listar autorizaciones vigentes y revocarlas |
-| Personas dentro | http://127.0.0.1:8000/personas-dentro | Lista de personas que están dentro (sin salida registrada) |
-| Reporte de accesos | http://127.0.0.1:8000/reporte-accesos | Descargar reporte por fechas en CSV o PDF |
-| Administración de usuarios | http://127.0.0.1:8000/administracion-usuarios | Login, listado de usuarios, alta y activar/desactivar |
+| **Página principal** | http://127.0.0.1:8000/ | Inicio y navegación |
+| **Registro** | http://127.0.0.1:8000/registro | Alta de persona con captura facial |
+| **Validar acceso (entrada/salida)** | http://127.0.0.1:8000/acceso | Reconocimiento facial, registrar entrada o salida |
+| **Visitante / autorización** | http://127.0.0.1:8000/visitante | Registro de visitante y autorización de visita |
+| **Configuración** | http://127.0.0.1:8000/configuracion | Configuración del sistema |
+| **Documentación API** | http://127.0.0.1:8000/docs | Swagger UI (OpenAPI) |
+
+Otras pantallas (listado personas, historial, dashboard, reportes, administración de usuarios) pueden estar en otras rutas o pendientes; ver [URLs de acceso](./urls-acceso.md) y [Bitácora de desarrollo](./bitacora-desarrollo.md).
 
 ---
 
 ## 4. Uso por flujo
 
-### 4.1 Validar acceso (entrada)
+### 4.1 Validar acceso (entrada/salida)
 
-- **URL:** http://127.0.0.1:8000/validate-access  
-- **Qué hace:** Permite subir una foto (o usar cámara si está disponible). El sistema intenta identificar el rostro con las personas activas registradas. Si hay coincidencia y la persona está activa, se **permite el acceso** y se registra un evento de **ingreso**. Si no, se **deniega** y se registra el intento.
+- **URL:** http://127.0.0.1:8000/acceso  
+- **Qué hace:** Permite subir una foto (o usar cámara si está disponible). El sistema intenta identificar el rostro con las personas activas registradas. Si hay coincidencia y la persona está autorizada, se **permite el acceso** y se registra un evento de **ingreso** o **salida**. Si no, se **deniega** y se registra el intento.
 - **Pasos:** Elegir/capturar imagen → Enviar → Ver resultado (permitido/denegado y motivo).
 
-### 4.2 Registrar empleado
+### 4.2 Registrar persona (empleado o visitante)
 
-- **URL:** http://127.0.0.1:8000/registro-empleado  
-- **Qué hace:** Alta de una persona como empleado con foto para reconocimiento facial.
-- **Pasos:** Completar nombre, documento, cargo, área (opcionales), subir **foto con un rostro visible** → Enviar. El sistema genera el embedding facial. Si el documento ya existe, se muestra error.
+- **URL:** http://127.0.0.1:8000/registro  
+- **Qué hace:** Alta de una persona (empleado o visitante) con foto para reconocimiento facial.
+- **Pasos:** Completar datos (nombre, documento, tipo de persona, cargo/área si aplica), subir **foto con un rostro visible** → Enviar. El sistema genera el embedding facial. Si el documento ya existe, se puede mostrar error según implementación.
 
-### 4.3 Registrar visitante
+### 4.3 Visitante y autorización de visita
 
-- **URL:** http://127.0.0.1:8000/registro-visitante  
-- **Qué hace:** Alta de un visitante con foto, empresa, motivo de visita y opcionalmente empleado visitado.
-- **Pasos:** Completar nombre, documento, **empresa**, **motivo de visita**, subir foto → Enviar. Luego se puede crear una **autorización de visita** para que pueda ingresar en un rango de fechas.
+- **URL:** http://127.0.0.1:8000/visitante  
+- **Qué hace:** Registro de visitante y creación de **autorización de visita** (vigente entre fecha inicio y fecha fin) para que pueda ingresar en ese rango.
+- **Pasos:** Completar datos del visitante y/o seleccionar persona (visitante), fecha inicio y fecha fin → Crear autorización. La autorización vigente es tenida en cuenta en la validación de acceso.
 
-### 4.4 Autorización de visita
+### 4.4 Configuración
 
-- **URL:** http://127.0.0.1:8000/autorizacion-visita  
-- **Qué hace:** Crea una autorización **vigente** para un visitante entre fecha inicio y fecha fin.
-- **Pasos:** Seleccionar persona (visitante), fecha inicio y fecha fin → Crear. La autorización debe estar vigente para que la validación de acceso permita el ingreso del visitante (según reglas del negocio).
+- **URL:** http://127.0.0.1:8000/configuracion  
+- **Qué hace:** Configuración del sistema (umbrales, parámetros, etc., según implementación).
 
-### 4.5 Registrar salida
+### 4.5 Registrar salida (desde pantalla de acceso)
 
-- **URL:** http://127.0.0.1:8000/registrar-salida  
+- **URL:** http://127.0.0.1:8000/acceso (misma pantalla que validar entrada).  
 - **Qué hace:** Registra la **salida** de una persona identificada por reconocimiento facial.
 - **Pasos:** Subir/capturar imagen → Enviar. El sistema identifica a la persona y registra el evento de salida.
 
 ### 4.6 Listado de personas
+
+Las siguientes pantallas (4.6 en adelante) pueden estar en rutas propias o integradas en las páginas actuales; ver [URLs de acceso](./urls-acceso.md) y [bitácora](./bitacora-desarrollo.md).
 
 - **URL:** http://127.0.0.1:8000/listado-personas  
 - **Qué hace:** Lista empleados y/o visitantes con búsqueda por nombre o documento y filtros por tipo y estado.
