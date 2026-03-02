@@ -62,7 +62,7 @@ Listado de URLs para acceder a la aplicación con la API en ejecución en **http
 
 | Método | URL | Descripción |
 |--------|-----|-------------|
-| POST | http://127.0.0.1:8000/api/v1/usuarios/login | Login (JSON: usuario, contraseña → JWT) |
+| POST | http://127.0.0.1:8000/api/v1/usuarios/login | Login (JSON: `username`, `password` → JWT) |
 | GET | http://127.0.0.1:8000/api/v1/usuarios | Listar usuarios (por implementar) |
 | POST | http://127.0.0.1:8000/api/v1/usuarios | Crear usuario (por implementar) |
 

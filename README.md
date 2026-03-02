@@ -17,22 +17,20 @@ Este sistema permite gestionar el acceso físico a las instalaciones de la empre
 
 ## 📚 Documentación
 
-La documentación completa del proyecto se encuentra en la carpeta [`docs/`](./docs/):
+Toda la documentación está en **[`docs/`](./docs/)**. Punto de entrada único:
 
-- **[📑 Índice de Documentación](./docs/00-indice.md)** - Guía de navegación y mapa de documentos
-- **[🏢 Contexto Empresarial](./docs/01-contexto-empresarial.md)** - Información sobre STI S.A.S. y el contexto del proyecto
-- **[💼 Caso de Negocio](./docs/02-caso-de-negocio.md)** - Justificación y beneficios de la inversión
-- **[📊 Definición del Proyecto](./docs/08-definicion-proyecto.md)** - Objetivos, alcance y cronograma del proyecto
-- **[📋 Requerimientos (SRS)](./docs/03-requerimientos-srs.md)** - Especificación completa de requerimientos funcionales y no funcionales
-- **[🏗️ Arquitectura del Sistema](./docs/04-arquitectura.md)** - Diseño arquitectónico y componentes
-- **[🗄️ Modelo de Datos](./docs/05-modelo-datos.md)** - Esquema de base de datos y relaciones
-- **[👥 Historias de Usuario](./docs/06-historias-usuario.md)** - Backlog ágil con historias de usuario
-- **[🔄 Procesos BPMN](./docs/07-procesos-bpmn.md)** - Flujos de negocio de ingreso y salida
-- **[📋 Tareas por HU](./docs/09-tareas-por-hu.md)** - Tareas de desarrollo por historia de usuario
-- **[📌 Orden desarrollo y features](./docs/orden-desarrollo-features.md)** - Orden para desarrollar y registrar features (Git / backlog)
-- **[📘 Guía de Uso de Git](./docs/guia-git.md)** - Flujo de trabajo con Git (ramas, ambientes, commits, sincronización)
+- **[📑 Índice de documentación](./docs/00-indice.md)** — mapa de todos los documentos y guía de lectura por rol (desarrollador, profesor, analista).
 
-**💡 Recomendación**: Comienza por el [Índice de Documentación](./docs/00-indice.md) para una guía completa de lectura.
+El índice agrupa los documentos en:
+
+| Grupo | Contenido |
+|-------|-----------|
+| **Negocio y proyecto** | Contexto empresarial, caso de negocio, definición del proyecto, requerimientos (SRS), arquitectura, modelo de datos, historias de usuario, procesos BPMN, tareas por HU. |
+| **Desarrollo y operación** | Orden de desarrollo y features, bitácora de desarrollo, URLs de acceso, Guía de Git. |
+| **MLOps y pipeline** | [Plan y roadmap](./docs/plan-roadmap.md) (Fases 0–5), [flujo MLOps](./docs/mlops-flujo.md), [monitoreo en producción](./docs/mlops-monitoreo-produccion.md), [despliegue con Docker](./docs/despliegue-docker.md). |
+| **Guías de uso** | [Guía de uso de la aplicación](./docs/guia-uso-aplicacion.md) (pantallas y flujos desde el navegador). |
+
+**Entrenamiento ML (clasificador MNIST, MLFlow, Comet):** ver **[`training/README.md`](./training/README.md)**. Para ejecutar todo con Docker: **[Despliegue Docker](./docs/despliegue-docker.md)**.
 
 ## 🗄️ Base de datos para este ejercicio
 
@@ -57,7 +55,7 @@ SCA-EMPX/
 │   │   ├── api/
 │   │   │   └── v1/
 │   │   │       └── routes/
-│   │   │           ├── acceso.py       # validate-access, register-exit
+│   │   │           ├── acceso.py       # validar acceso, registrar salida
 │   │   │           ├── personas.py     # CRUD personas (empleados/visitantes)
 │   │   │           ├── visitas.py      # autorizaciones de visita
 │   │   │           ├── events.py       # historial de eventos
@@ -140,15 +138,19 @@ Flujo: **petición** → `api/` → `services/` → `db/` (SQLite) y/o `ml/` →
 
 7. **Login**: `POST /api/v1/usuarios/login` con body `{"username": "admin", "password": "admin"}`. Respuesta: `{"access_token": "...", "token_type": "bearer"}`. Usar el token en cabecera `Authorization: Bearer <token>` para rutas protegidas.
 
-8. **Páginas disponibles**:
+8. **Páginas disponibles** (servidas por la API en `http://localhost:8000`):
 
    | URL | Descripción |
    |-----|-------------|
-   | `/ui/index.html` | Página principal |
-   | `/ui/registro.html` | Registro de empleados y visitantes |
-   | `/ui/acceso.html` | Validar acceso / registrar salida (reconocimiento facial) |
-   | `/ui/visitante.html` | Autorización de visita |
-   | `/ui/configuracion.html` | Configuración del sistema |
+   | `/` | Página principal (dashboard) |
+   | `/registro` | Registro de empleados y visitantes (captura facial) |
+   | `/acceso` | Validar acceso / registrar salida (reconocimiento facial) |
+   | `/visitante` | Autorización de visita |
+   | `/configuracion` | Configuración del sistema |
+   | `/docs` | Documentación interactiva de la API (Swagger) |
+   | `/health` | Health check (JSON) para despliegue |
+
+   Listado completo de URLs: [docs/urls-acceso.md](./docs/urls-acceso.md).
 
 ## 🚀 Estado del Proyecto
 
@@ -171,6 +173,8 @@ Flujo: **petición** → `api/` → `services/` → `db/` (SQLite) y/o `ml/` →
 | 14 | hu-12-reporte-accesos | HU-12 | ⏳ Pendiente |
 
 Ver detalle completo en [docs/bitacora-desarrollo.md](./docs/bitacora-desarrollo.md).
+
+**Roadmap de monitoreo ML (Fases 0–5):** ver [docs/plan-roadmap.md](./docs/plan-roadmap.md) para el plan de MLFlow, Comet, MLOps, Docker y pipeline de monitoreo.
 
 ## 📝 Licencia
 
