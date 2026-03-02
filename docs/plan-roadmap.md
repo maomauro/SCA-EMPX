@@ -10,6 +10,7 @@
 
 | Si quieres… | Ve a la sección |
 |-------------|------------------|
+| **Crear la rama** antes de cada fase y actualizar local/remoto | [Estrategia de ramas](#13-estrategia-de-ramas-una-rama-por-fase) |
 | Ver el orden de las fases (recomendado para la entrega) | [Orden del roadmap](#23-orden-del-roadmap-recomendado) |
 | Seguir el plan **paso a paso** desde el inicio | [Parte 2: Roadmap completo](#2-roadmap-completo-paso-a-paso) |
 | Ver qué debe cumplir la **Guía de Monitoreo ML-IA** | [Coherencia con la Guía](#21-coherencia-con-la-guía-monitoreo-ml-ia) |
@@ -23,7 +24,8 @@
 1. **Parte 1: Contexto y estado actual**
    - 1.1 Resumen ejecutivo
    - 1.2 Punto de retorno seguro (git tag)
-   - 1.3 Validación del plan (auditoría 2 mar 2026)
+   - 1.3 Estrategia de ramas (una rama por fase)
+   - 1.4 Validación del plan (auditoría 2 mar 2026)
 
 2. **Parte 2: Roadmap completo — Paso a paso**
    - 2.1 Coherencia con la Guía Monitoreo ML-IA
@@ -49,21 +51,87 @@
 - **Seis bloqueadores técnicos** (modelos faltantes, pipelines ML inconsistentes, endpoints duplicados, Python 3.13, dependencias ML sin grupo modular, favicon faltante).
 - **Objetivo MLOps:** pipeline de monitoreo del entrenamiento de modelos IA-ML (Docker, MLFlow, Comet ML, MLOps).
 
-Las correcciones recientes ya resolvieron parte del punto 1 (modelos); el resto del plan sigue vigente. Ver [1.3 Validación](#13-validación-del-plan-2-marzo-2026) para el estado actual de cada bloqueador.
+Las correcciones recientes ya resolvieron parte del punto 1 (modelos); el resto del plan sigue vigente. Ver [1.4 Validación](#14-validación-del-plan-2-marzo-2026) para el estado actual de cada bloqueador.
 
 ---
 
 ## 1.2 Punto de retorno seguro
 
-Antes de cambios grandes, crear un tag para poder volver atrás:
+Antes de cambios grandes, crear un tag desde la rama `develop`:
 
 ```bash
+git checkout develop
 git tag pre-refactor-2026-03-01
 ```
 
+**Confirmado:** ya ejecutaste `git tag pre-refactor-2026-03-01` desde `develop`. Ese tag queda como punto de retorno.
+
 ---
 
-## 1.3 Validación del plan (2 marzo 2026)
+## 1.3 Estrategia de ramas (una rama por fase)
+
+Antes de iniciar cada fase, se crea una **rama independiente** desde `develop`. Así se mantiene el historial ordenado y se actualiza tanto el Git local como el remoto por tema.
+
+### Ramas por fase
+
+| Fase | Nombre de la rama | Uso |
+|------|-------------------|-----|
+| 0 | `feature/fase-0-modelos-implementaciones` | Base: modelos e implementaciones, script de clasificador. |
+| 1 | `feature/fase-1-mlflow` | Instrumentación MLFlow, métricas y gráficas. |
+| 2 | `feature/fase-2-comet-ml` | Instrumentación Comet ML en el mismo entrenamiento. |
+| 3 | `feature/fase-3-mlops` | MLOps: versionado, pipeline reproducible, CI/CD. |
+| 4 | `feature/fase-4-docker` | Dockerfile y docker-compose. |
+| 5 | `feature/fase-5-pipeline-monitoreo` | Integración del pipeline de monitoreo. |
+
+### Flujo por fase (repetir para cada fase)
+
+**1. Crear la rama desde `develop` y cambiarse a ella:**
+
+```bash
+git checkout develop
+git pull origin develop
+git checkout -b feature/fase-0-modelos-implementaciones
+```
+
+*(Sustituir el nombre de la rama por la de la fase que toque: `feature/fase-1-mlflow`, `feature/fase-2-comet-ml`, etc.)*
+
+**2. Trabajar en la fase:** commits locales en esa rama.
+
+```bash
+git add .
+git commit -m "Fase 0: descripción breve de lo hecho"
+```
+
+**3. Subir la rama al remoto:**
+
+```bash
+git push -u origin feature/fase-0-modelos-implementaciones
+```
+
+*(En fases siguientes, si la rama ya tiene upstream: `git push`.)*
+
+**4. Al terminar la fase (opcional):** integrar en `develop` y seguir con la siguiente.
+
+```bash
+git checkout develop
+git pull origin develop
+git merge feature/fase-0-modelos-implementaciones -m "Merge Fase 0: modelos e implementaciones"
+git push origin develop
+```
+
+**5. Siguiente fase:** volver al paso 1 creando la nueva rama desde `develop`.
+
+### Resumen rápido de comandos por fase
+
+| Acción | Comando |
+|--------|--------|
+| Empezar fase N | `git checkout develop` → `git pull` → `git checkout -b feature/fase-N-nombre` |
+| Subir trabajo | `git add .` → `git commit -m "..."` → `git push -u origin feature/fase-N-nombre` |
+| Integrar en develop | `git checkout develop` → `git merge feature/fase-N-nombre` → `git push origin develop` |
+
+---
+
+## 1.4 Validación del plan (2 marzo 2026)
 
 Auditoría cruzada con el código y con `docs/informe-coherencia-implementacion.md`. Resumen:
 
