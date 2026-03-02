@@ -1,15 +1,4 @@
-name: Mirror to Azure Repos
-
-on:
-  push:
-    branches:
-      - '**'             # dispara en cualquier rama
-  schedule:
-    - cron: "0 * * * *"  # corre cada hora (UTC)
-
-jobs:
-  mirror:
-    runs-on: ubuntu-latest
+runs-on: ubuntu-latest
 
     steps:
     - name: Checkout (full history)
@@ -30,7 +19,7 @@ jobs:
       run: |
         set -e
 
-        # 1) Configurar remoto 'mirror' con la URL LIMPIA (sin credenciales en la URL)
+        # 1) Configurar remoto 'mirror' con la URL LIMPIA
         if ! git remote | grep -q '^mirror$'; then
           git remote add mirror "$AZURE_REPO_URL"
         else
@@ -38,14 +27,14 @@ jobs:
         fi
 
         # 2) Construir el header Authorization: Basic base64(usuario:PAT)
-        #    -w0 no existe en macOS; por eso usamos "o base64" sin -w0 como fallback
         AUTH=$(printf "%s:%s" "$AZURE_USER" "$AZURE_PAT" | base64 -w0 2>/dev/null || printf "%s:%s" "$AZURE_USER" "$AZURE_PAT" | base64)
 
         echo "Validando acceso a Azure Repos..."
         git -c http.extraHeader="Authorization: Basic $AUTH" ls-remote "$AZURE_REPO_URL" > /dev/null
 
-        echo "Empujando TODAS las ramas..."
-        git -c http.extraHeader="Authorization: Basic $AUTH" push mirror --all
+        echo "Empujando TODAS las ramas (FORZADO para sincronizar historias)..."
+        # Se agrega --force para resolver el error [rejected] develop -> develop
+        git -c http.extraHeader="Authorization: Basic $AUTH" push mirror --all --force
 
         echo "Empujando etiquetas..."
-        git -c http.extraHeader="Authorization: Basic $AUTH" push mirror --tags
+        git -c http.extraHeader="Authorization: Basic $AUTH" push mirror --tags --force
