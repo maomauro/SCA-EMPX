@@ -1,4 +1,4 @@
-# Training — Fase 0 + Fase 1 (MLFlow) + Fase 2 (Comet ML)
+# Training — Fase 0 + Fase 1 (MLFlow) + Fase 2 (Comet ML) + Fase 3 (MLOps)
 
 Script de entrenamiento de un **modelo de clasificación** para cumplir la Guía de Monitoreo ML-IA y el roadmap (Fases 0 → 5).
 
@@ -30,7 +30,23 @@ uv run python training/train_classifier.py --no-comet
 uv run python training/train_classifier.py --no-mlflow --no-comet
 ```
 
+**Pipeline reproducible (Fase 3):** usar un archivo de configuración para fijar hiperparámetros y reproducir el mismo entrenamiento:
+
+```bash
+uv run python training/train_classifier.py --config training/config_default.json
+```
+
+El JSON puede definir `epochs`, `batch_size`, `lr`, `val_ratio`, `seed`, `out`, `mlflow_uri`, `comet_project`. Cualquier opción que no esté en el archivo usa el valor por defecto del script.
+
 La primera vez se descargará MNIST en `./data`. Los runs de MLFlow se guardan en `./mlruns` (por defecto).
+
+---
+
+## Fase 3 — Convención de versionado
+
+- **Datos:** se usa la etiqueta `data_version` (por defecto `mnist-v1`). Si cambias el dataset o su preprocesado, actualiza `DATA_VERSION` en `train_classifier.py` y documenta el cambio.
+- **Modelo:** la versión del modelo queda identificada por el **run_id** de MLFlow y, si usas Model Registry, por el nombre y la versión registrada (p. ej. `mnist-classifier/1`).
+- En cada run se registran en MLFlow (y Comet) los parámetros `data_version` y `training_version` y las tags homónimas para filtrar y auditar.
 
 ---
 
@@ -101,4 +117,5 @@ Al final: mensaje de MLFlow (`mlflow ui`) y, si Comet se usó, mensaje con el en
 
 ## Fases siguientes
 
-- **Fases 3-5:** MLOps, Docker, pipeline de monitoreo.
+- **Fase 3 (MLOps):** versionado, config reproducible, CI/CD y documentación del flujo — ver `docs/mlops-flujo.md` y `docs/mlops-monitoreo-produccion.md`.
+- **Fases 4-5:** Docker, pipeline de monitoreo.
