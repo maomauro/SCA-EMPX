@@ -25,10 +25,10 @@ def crear_autorizacion(
         raise ValueError("persona_no_encontrada")
 
     tipo = db.query(TipoPersona).filter(TipoPersona.id_tipo_persona == persona.id_tipo_persona).first()
-    if not tipo or tipo.nombre_tipo != "visitante_temporal":
+    if not tipo or tipo.tipo != "Visitante":
         raise ValueError("solo_visitantes")
 
-    if persona.estado != "activo":
+    if not persona.activo:
         raise ValueError("persona_inactiva")
 
     aut = Autorizacion(

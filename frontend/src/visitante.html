@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Visitante — SCA-EMPX</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:system-ui,sans-serif;background:#f8fafc;color:#1e293b}
+    header{background:#1e293b;color:#fff;padding:1rem 2rem}
+    header h1{font-size:1.1rem}
+    nav{background:#fff;border-bottom:1px solid #e2e8f0;padding:.75rem 2rem;display:flex;gap:.5rem;flex-wrap:wrap}
+    nav a{padding:.4rem .9rem;border-radius:6px;text-decoration:none;font-size:.85rem;font-weight:500;background:#f1f5f9;color:#334155}
+    nav a:hover,nav a.active{background:#1e293b;color:#fff}
+    main{max-width:800px;margin:2rem auto;padding:0 1rem;display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+    @media(max-width:600px){main{grid-template-columns:1fr}}
+    .card{background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:1.5rem}
+    h2{font-size:1rem;font-weight:600;margin-bottom:1rem;color:#475569}
+    label{display:block;font-size:.82rem;font-weight:500;color:#64748b;margin-bottom:.25rem;margin-top:.75rem}
+    input,select,textarea{width:100%;padding:.45rem .6rem;border:1px solid #cbd5e1;border-radius:6px;font-size:.9rem}
+    input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
+    textarea{resize:vertical;min-height:80px}
+    .btn{display:block;width:100%;padding:.5rem;border:none;border-radius:6px;font-size:.9rem;font-weight:500;cursor:pointer;margin-top:.75rem}
+    .btn-primary{background:#1e293b;color:#fff}
+    .btn-primary:hover{background:#334155}
+    .btn-blue{background:#2563eb;color:#fff}
+    .btn-blue:hover{background:#1d4ed8}
+    .msg{margin-top:.75rem;padding:.6rem;border-radius:6px;font-size:.85rem}
+    .msg-ok{background:#dcfce7;color:#16a34a}
+    .msg-err{background:#fee2e2;color:#dc2626}
+    .msg-info{background:#eff6ff;color:#2563eb}
+    #cam-wrap{background:#0f172a;border-radius:8px;overflow:hidden;aspect-ratio:4/3;position:relative}
+    video{width:100%;height:100%;object-fit:cover;display:block}
+    canvas{display:none}
+    .badge-encontrado{background:#dcfce7;color:#16a34a;padding:.5rem;border-radius:6px;font-size:.85rem;margin-top:.5rem}
+    .badge-nuevo{background:#fef9c3;color:#854d0e;padding:.5rem;border-radius:6px;font-size:.85rem;margin-top:.5rem}
+    .badge-empleado{background:#fee2e2;color:#dc2626;padding:.75rem 1rem;border-radius:8px;font-size:.88rem;margin-top:.75rem;border:1px solid #fecaca;display:flex;flex-direction:column;gap:.25rem}
+    .badge-empleado strong{font-size:.95rem}
+  </style>
+</head>
+<body>
+<header><h1>SCA-EMPX — Registro de Visitante</h1></header>
+<nav>
+  <a href="/">Dashboard</a>
+  <a href="/registro">Registrar</a>
+  <a href="/acceso">Acceso facial</a>
+  <a href="/visitante" class="active">Visitante</a>
+  <a href="/configuracion">Configuración</a>
+</nav>
+
+<main>
+  <!-- CÁMARA + IDENTIFICACIÓN -->
+  <div class="card">
+    <h2>Identificar visitante</h2>
+    <div id="cam-wrap">
+      <video id="video" autoplay playsinline muted></video>
+    </div>
+    <canvas id="canvas"></canvas>
+    <button class="btn btn-blue" id="btn-identificar">📷 Capturar y buscar</button>
+    <div id="msg-identificar"></div>
+    <div id="badge-estado"></div>
+  </div>
+
+  <!-- FORMULARIO -->
+  <div class="card">
+    <h2>Datos de la visita</h2>
+
+    <label>Tipo de documento</label>
+    <select id="tipo_documento">
+      <option value="CC">CC</option>
+      <option value="CE">CE</option>
+      <option value="PAS">PAS</option>
+    </select>
+
+    <label>Número de documento *</label>
+    <input type="text" id="nro_documento" placeholder="Ej: 1234567890"/>
+
+    <label>Nombres completos *</label>
+    <input type="text" id="nombres" placeholder="Ej: Juan Pérez"/>
+
+    <label>Tipo de persona *</label>
+    <select id="id_tipo_persona">
+      <option value="">— Seleccionar —</option>
+    </select>
+
+    <label>Motivo de la visita *</label>
+    <textarea id="motivo" placeholder="Describe el motivo de la visita…"></textarea>
+
+    <button class="btn btn-primary" id="btn-registrar">Registrar visita</button>
+    <div id="msg-visita"></div>
+  </div>
+</main>
+
+<script>
+  const video    = document.getElementById("video");
+  const canvas   = document.getElementById("canvas");
+  const ctx      = canvas.getContext("2d");
+  let personaEncontrada = null;
+  let fotoCapturada     = null;  // blob del frame cuando el visitante es nuevo
+
+  // ── Cámara ────────────────────────────────────────────────────────────────
+  (async () => {
+    try {
+      const deviceId = localStorage.getItem("sca_camara_deviceId");
+      const videoConstraints = deviceId ? { deviceId: { exact: deviceId } } : true;
+      const stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints });
+      video.srcObject = stream;
+    } catch(e) {
+      document.getElementById("msg-identificar").innerHTML =
+        '<div class="msg msg-err">Sin acceso a cámara</div>';
+    }
+  })();
+
+  // ── Cargar tipos no-empleado ───────────────────────────────────────────────
+  (async () => {
+    const tipos = await fetch("/api/v1/catalogos/tipos-persona").then(r => r.json());
+    const sel = document.getElementById("id_tipo_persona");
+    tipos.filter(t => !t.es_empleado).forEach(t => {
+      const o = document.createElement("option");
+      o.value = t.id_tipo_persona;
+      o.textContent = t.tipo;
+      sel.appendChild(o);
+    });
+  })();
+
+  // ── Capturar e identificar ────────────────────────────────────────────────
+  document.getElementById("btn-identificar").addEventListener("click", async () => {
+    canvas.width  = video.videoWidth  || 640;
+    canvas.height = video.videoHeight || 480;
+    ctx.drawImage(video, 0, 0);
+
+    const blob = await new Promise(res => canvas.toBlob(res, "image/jpeg", 0.85));
+    const fd = new FormData();
+    fd.append("foto", blob, "frame.jpg");
+
+    const msgEl  = document.getElementById("msg-identificar");
+    const badgeEl = document.getElementById("badge-estado");
+    msgEl.innerHTML = '<div class="msg msg-info">Identificando…</div>';
+    badgeEl.innerHTML = "";
+
+    try {
+      const r = await fetch("/api/v1/personas/identificar", { method: "POST", body: fd });
+      const data = await r.json();
+
+      if (data.encontrado) {
+        const p = data.persona;
+
+        // — Empleado detectado: bloquear el formulario —
+        if (p.es_empleado) {
+          personaEncontrada = null;
+          msgEl.innerHTML = "";
+          badgeEl.innerHTML = `
+            <div class="badge-empleado">
+              <strong>🚫 Es un empleado — no aplica para visitas</strong>
+              <span>${p.nombres} · ${p.tipo}</span>
+              <span style="font-size:.78rem;color:#f87171">Los empleados acceden mediante reconocimiento facial en la sección Acceso.</span>
+            </div>`;
+          // Deshabilitar botón y limpiar formulario
+          document.getElementById("btn-registrar").disabled = true;
+          document.getElementById("btn-registrar").style.opacity = "0.4";
+          document.getElementById("btn-registrar").style.cursor  = "not-allowed";
+          document.getElementById("motivo").value = "";
+          return;
+        }
+
+        // — Visitante o contratista reconocido —
+        personaEncontrada = p;
+        // Rehabilitar botón por si estaba bloqueado de una búsqueda previa
+        document.getElementById("btn-registrar").disabled = false;
+        document.getElementById("btn-registrar").style.opacity = "1";
+        document.getElementById("btn-registrar").style.cursor  = "pointer";
+        // Autocompletar formulario
+        document.getElementById("tipo_documento").value = p.tipo_documento;
+        document.getElementById("nro_documento").value  = p.nro_documento;
+        document.getElementById("nombres").value         = p.nombres;
+        // Seleccionar tipo
+        const sel = document.getElementById("id_tipo_persona");
+        for (let o of sel.options) {
+          if (o.textContent === p.tipo) { o.selected = true; break; }
+        }
+        msgEl.innerHTML = "";
+        badgeEl.innerHTML = `<div class="badge-encontrado">✓ Visitante reconocido — ${p.nombres} (sim: ${data.similitud})</div>`;
+      } else {
+        personaEncontrada = null;
+        fotoCapturada     = blob;   // guardar para registrar embedding al crear la persona
+        msgEl.innerHTML = "";
+        badgeEl.innerHTML = '<div class="badge-nuevo">Visitante nuevo — completa el formulario</div>';
+      }
+    } catch(e) {
+      msgEl.innerHTML = '<div class="msg msg-err">Error de conexión</div>';
+    }
+  });
+
+  // ── Registrar visita ──────────────────────────────────────────────────────
+  document.getElementById("btn-registrar").addEventListener("click", async () => {
+    const motivo = document.getElementById("motivo").value.trim();
+    const msgEl  = document.getElementById("msg-visita");
+
+    if (!motivo) {
+      msgEl.innerHTML = '<div class="msg msg-err">El motivo es obligatorio.</div>';
+      return;
+    }
+
+    let idPersona = personaEncontrada?.id_persona;
+
+    // Si no se identificó, crear la persona primero
+    if (!idPersona) {
+      const nro    = document.getElementById("nro_documento").value.trim();
+      const nombres = document.getElementById("nombres").value.trim();
+      const idTipo  = document.getElementById("id_tipo_persona").value;
+
+      if (!nro || !nombres || !idTipo) {
+        msgEl.innerHTML = '<div class="msg msg-err">Completa todos los campos.</div>';
+        return;
+      }
+
+      try {
+        const rp = await fetch("/api/v1/personas/", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({
+            tipo_documento:  document.getElementById("tipo_documento").value,
+            nro_documento:   nro,
+            nombres:         nombres,
+            id_tipo_persona: parseInt(idTipo),
+            id_cargo:        null,
+          }),
+        });
+        const dp = await rp.json();
+        if (!rp.ok) {
+          // Si ya existe, buscar por documento
+          if (rp.status === 409) {
+            const lista = await fetch("/api/v1/personas/").then(r => r.json());
+            const existe = lista.find(p => p.nro_documento === nro);
+            if (existe) idPersona = existe.id_persona;
+            else { msgEl.innerHTML = `<div class="msg msg-err">${dp.detail}</div>`; return; }
+          } else {
+            msgEl.innerHTML = `<div class="msg msg-err">${dp.detail}</div>`; return;
+          }
+        } else {
+          idPersona = dp.id_persona;
+        }
+
+        // ── Registrar embedding facial si tenemos foto capturada ────────────────
+        if (idPersona && fotoCapturada) {
+          try {
+            const fe = new FormData();
+            fe.append("foto", fotoCapturada, "frame.jpg");
+            const re = await fetch(`/api/v1/personas/${idPersona}/registros`, {
+              method: "POST", body: fe,
+            });
+            const de = await re.json();
+            if (!de.ok) {
+              // No bloquear la visita si el embedding falla, solo avisar
+              console.warn("Embedding no guardado:", de.motivo);
+            }
+          } catch(e) { console.warn("Error guardando embedding:", e); }
+          fotoCapturada = null;
+        }
+      } catch(e) {
+        msgEl.innerHTML = '<div class="msg msg-err">Error de conexión.</div>'; return;
+      }
+    }
+
+    // Registrar visita
+    try {
+      const rv = await fetch("/api/v1/visitas/", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ id_persona: idPersona, motivo }),
+      });
+      const dv = await rv.json();
+      if (!rv.ok) {
+        msgEl.innerHTML = `<div class="msg msg-err">${dv.detail}</div>`; return;
+      }
+      msgEl.innerHTML = `<div class="msg msg-ok">✓ Visita registrada para ${dv.nombres}</div>`;
+      document.getElementById("motivo").value = "";
+      personaEncontrada = null;
+    } catch(e) {
+      msgEl.innerHTML = '<div class="msg msg-err">Error de conexión.</div>';
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,141 +1,93 @@
-"""
-Punto de entrada de la API del Sistema de Control de Acceso (SCA-EMPX).
-"""
+"""Punto de entrada — SCA-EMPX API."""
+import logging
+import os
+import threading
 from pathlib import Path
 
-from fastapi import FastAPI
-from fastapi.responses import FileResponse
+# Silenciar logs de TensorFlow/DeepFace ANTES de importarlos
+os.environ["TF_CPP_MIN_LOG_LEVEL"]  = "3"
+os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
+logging.getLogger("tensorflow").setLevel(logging.ERROR)
+logging.getLogger("tf_keras").setLevel(logging.ERROR)
 
-from backend.app.api.v1 import api_router
-from backend.app.db.database import (
-    ensure_registro_acceso_schema,
-    ensure_persona_visitante_columns,
-    ensure_autorizacion_table,
-)
+from fastapi import FastAPI  # noqa: E402
+from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+from fastapi.responses import HTMLResponse  # noqa: E402
+from fastapi.staticfiles import StaticFiles  # noqa: E402
+
+from backend.app.api.v1 import api_router  # noqa: E402
+from backend.app.api.v1.routes.ws import router as ws_router  # noqa: E402
+from backend.app.db.database import init_db  # noqa: E402
+from backend.app.ml.face_model import get_model  # noqa: E402
+
+
+
+# Directorios
+ROOT        = Path(__file__).resolve().parents[2]
+FRONTEND    = ROOT / "frontend" / "src"
+STATIC_DIR  = FRONTEND / "static"
+STATIC_DIR.mkdir(parents=True, exist_ok=True)
 
 app = FastAPI(
-    title="SCA-EMPX API",
-    description="Sistema de Control de Acceso Físico y Registro de Ingresos/Salidas - STI S.A.S.",
-    version="0.1.0",
+    title="SCA-EMPX",
+    description="Sistema de Control de Acceso Físico",
+    version="2.0.0",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
 @app.on_event("startup")
 def startup():
-    """Corrige esquema de registro_acceso en SQLite si la BD es antigua; añade columnas HU-03 a persona si faltan."""
-    ensure_registro_acceso_schema()
-    ensure_persona_visitante_columns()
-    ensure_autorizacion_table()
+    '''Pre-cargar modelo ML en background para que el primer request sea rápido'''
+    init_db()
+    threading.Thread(target=get_model, daemon=True).start()
 
 
+# ── Routers ───────────────────────────────────────────────────────────────────
 app.include_router(api_router, prefix="/api/v1")
+app.include_router(ws_router,  prefix="/ws")
+
+# ── Archivos estáticos (JS, CSS compartidos) ──────────────────────────────────
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
-@app.get("/")
-def root():
-    """Health check (JSON). Para la interfaz con menú use /inicio."""
-    return {"app": "SCA-EMPX", "status": "ok"}
+# ── Páginas HTML — rutas explícitas ──────────────────────────────────────────
+def _page(name: str) -> HTMLResponse:
+    return HTMLResponse((FRONTEND / name).read_text(encoding="utf-8"))
 
 
-@app.get("/inicio")
-def inicio_page():
-    """Página de inicio con menú de navegación a todas las funcionalidades."""
-    path = Path(__file__).parent / "static" / "inicio.html"
-    return FileResponse(path)
+@app.get("/", include_in_schema=False)
+def dashboard():
+    """Retorna el dashboard principal (index.html)."""
+    return _page("index.html")
 
+@app.get("/registro", include_in_schema=False)
+def pg_registro():
+    """Retorna la página de registro facial de personas."""
+    return _page("registro.html")
 
-@app.get("/health")
+@app.get("/acceso", include_in_schema=False)
+def pg_acceso():
+    """Retorna la página de control de acceso (entrada/salida)."""
+    return _page("acceso.html")
+
+@app.get("/visitante", include_in_schema=False)
+def pg_visitante():
+    """Retorna la página de registro de visitas externas."""
+    return _page("visitante.html")
+
+@app.get("/configuracion", include_in_schema=False)
+def pg_config():
+    """Retorna la página de configuración del sistema."""
+    return _page("configuracion.html")
+
+@app.get("/health", include_in_schema=False)
 def health():
-    """Salud para despliegue."""
-    return {"status": "healthy"}
-
-
-@app.get("/validate-access")
-def validate_access_page():
-    """Página de prueba para validar acceso por reconocimiento facial (HU-05)."""
-    path = Path(__file__).parent / "static" / "validate-access.html"
-    return FileResponse(path)
-
-
-@app.get("/registro-empleado")
-def registro_empleado_page():
-    """Página de registro de empleado con foto (HU-01)."""
-    path = Path(__file__).parent / "static" / "registro-empleado.html"
-    return FileResponse(path)
-
-
-@app.get("/registro-visitante")
-def registro_visitante_page():
-    """Página de registro de visitante con foto (HU-03)."""
-    path = Path(__file__).parent / "static" / "registro-visitante.html"
-    return FileResponse(path)
-
-
-@app.get("/autorizacion-visita")
-def autorizacion_visita_page():
-    """Pantalla para generar autorización de visita (HU-04)."""
-    path = Path(__file__).parent / "static" / "autorizacion-visita.html"
-    return FileResponse(path)
-
-
-@app.get("/registrar-salida")
-def registrar_salida_page():
-    """Página para registrar salida por reconocimiento facial (HU-07)."""
-    path = Path(__file__).parent / "static" / "registrar-salida.html"
-    return FileResponse(path)
-
-
-@app.get("/administracion-usuarios")
-def administracion_usuarios_page():
-    """Pantalla de administración de usuarios: login, listado, alta, activar/desactivar (HU-09)."""
-    path = Path(__file__).parent / "static" / "administracion-usuarios.html"
-    return FileResponse(path)
-
-
-@app.get("/listado-personas")
-def listado_personas_page():
-    """Listado de personas con búsqueda y botón Desactivar/Activar (HU-02)."""
-    path = Path(__file__).parent / "static" / "listado-personas.html"
-    return FileResponse(path)
-
-
-@app.get("/historial-accesos")
-def historial_accesos_page():
-    """Pantalla de historial de accesos con filtros y exportación CSV (HU-08)."""
-    path = Path(__file__).parent / "static" / "historial-accesos.html"
-    return FileResponse(path)
-
-
-@app.get("/editar-persona")
-def editar_persona_page():
-    """Pantalla de edición de persona (empleado/visitante). HU-10. Usar ?id= para indicar persona."""
-    path = Path(__file__).parent / "static" / "editar-persona.html"
-    return FileResponse(path)
-
-
-@app.get("/dashboard")
-def dashboard_page():
-    """Dashboard de accesos: métricas y eventos recientes (HU-11). Actualización cada 30 s."""
-    path = Path(__file__).parent / "static" / "dashboard.html"
-    return FileResponse(path)
-
-
-@app.get("/revocar-autorizacion")
-def revocar_autorizacion_page():
-    """Listar autorizaciones vigentes y revocarlas (HU-13)."""
-    path = Path(__file__).parent / "static" / "revocar-autorizacion.html"
-    return FileResponse(path)
-
-
-@app.get("/personas-dentro")
-def personas_dentro_page():
-    """Lista de personas actualmente dentro (HU-14)."""
-    path = Path(__file__).parent / "static" / "personas-dentro.html"
-    return FileResponse(path)
-
-
-@app.get("/reporte-accesos")
-def reporte_accesos_page():
-    """Selector de rango de fechas y formato; descarga reporte CSV o PDF (HU-12)."""
-    path = Path(__file__).parent / "static" / "reporte-accesos.html"
-    return FileResponse(path)
+    """Endpoint de health-check para monitoreo de disponibilidad."""
+    return {"status": "ok"}

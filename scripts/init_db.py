@@ -20,12 +20,12 @@ def seed_tipos_persona(db):
     if db.query(TipoPersona).first() is not None:
         print("  Tipos de persona ya existen, omitiendo.")
         return
-    for nombre, desc in [
-        ("visitante_temporal", "Visitante temporal"),
-        ("empleado_propio", "Empleado propio de la empresa"),
-        ("empleado_externo", "Empleado de empresa externa"),
+    for tipo, desc, es_empleado in [
+        ("Visitante", "Visitante temporal o externo", False),
+        ("Empleado", "Empleado propio de la empresa", True),
+        ("Contratista", "Empleado de empresa externa o contratista", False),
     ]:
-        db.add(TipoPersona(nombre_tipo=nombre, descripcion=desc, estado="activo"))
+        db.add(TipoPersona(tipo=tipo, descripcion=desc, es_empleado=es_empleado))
     db.commit()
     print("  Tipos de persona creados.")
 
