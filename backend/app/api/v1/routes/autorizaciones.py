@@ -18,7 +18,7 @@ def _autorizacion_to_response(r) -> AutorizacionResponse:
         fecha_fin=r.fecha_fin,
         estado=r.estado,
         motivo_revocacion=getattr(r, "motivo_revocacion", None),
-        nombre_completo=r.persona.nombre_completo if r.persona else None,
+        nombre_completo=r.persona.nombres if r.persona else None,
     )
 
 

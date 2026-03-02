@@ -134,6 +134,7 @@ class Persona(Base):
     cargo           = relationship("Cargo", back_populates="personas")
     registros       = relationship("Registro", back_populates="persona", cascade="all, delete-orphan")
     visitas         = relationship("Visita", back_populates="persona", cascade="all, delete-orphan")
+    autorizaciones  = relationship("Autorizacion", back_populates="persona", cascade="all, delete-orphan")
 
 
 class Registro(Base):
@@ -172,6 +173,40 @@ class Registro(Base):
     fecha            = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
 
     persona          = relationship("Persona", back_populates="registros")
+
+
+class Autorizacion(Base):
+    """Autorización de visita con vigencia. HU-04, HU-13.
+
+    Solo aplica a visitantes/contratistas. estado: vigente | vencida | cancelada | revocada.
+    """
+    __tablename__ = "autorizaciones"
+
+    id_autorizacion   = Column(Integer, primary_key=True, autoincrement=True)
+    id_persona        = Column(Integer, ForeignKey("personas.id_persona"), nullable=False)
+    fecha_inicio      = Column(DateTime, nullable=False)
+    fecha_fin         = Column(DateTime, nullable=False)
+    estado            = Column(String(20), nullable=False, default="vigente")
+    motivo_revocacion = Column(Text, nullable=True)
+
+    persona = relationship("Persona", back_populates="autorizaciones")
+
+
+class UsuarioSistema(Base):
+    """Usuarios del sistema (login, roles). HU-09.
+
+    No confundir con Persona: aquí son cuentas para acceder a la aplicación
+    (admin, recepcion, rrhh, seguridad). Cada usuario tiene nombre_usuario único
+    y hash de contraseña.
+    """
+    __tablename__ = "usuarios_sistema"
+
+    id_usuario     = Column(Integer, primary_key=True, autoincrement=True)
+    nombre_usuario = Column(String(100), unique=True, nullable=False)
+    hash_password  = Column(String(255), nullable=False)
+    rol            = Column(String(50), nullable=False, default="recepcion")  # admin | rrhh | recepcion | seguridad
+    estado         = Column(String(20), nullable=False, default="activo")     # activo | inactivo
+    fecha_creacion = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
 
 
 class Visita(Base):
