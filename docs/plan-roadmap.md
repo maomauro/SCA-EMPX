@@ -383,3 +383,4 @@ La Guía se cumple implementando el roadmap completo (Fases 0 a 5). Las **gráfi
 | 6 | favicon.ico → 404 | Sí | Añadir favicon en frontend/src/static. |
 
 ---
+---
