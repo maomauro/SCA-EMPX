@@ -1,5 +1,5 @@
 """
-Script de entrenamiento de un modelo de clasificación — Fase 0 + Fase 1 (MLFlow) + Fase 2 (Comet ML).
+Script de entrenamiento de un modelo de clasificación — Fase 0 + Fase 1 (MLFlow) + Fase 2 (Comet ML) + Fase 3 (MLOps).
 
 Entrena un clasificador sobre MNIST (dígitos 0-9). En cada época calcula:
 - Función de costo (loss) en train y en validación.
@@ -7,17 +7,22 @@ Entrena un clasificador sobre MNIST (dígitos 0-9). En cada época calcula:
 
 Registra en MLFlow y en Comet ML (si COMET_API_KEY está definida): parámetros,
 métricas por época (loss_train, loss_val, acc_train, acc_val, f1_train, f1_val)
-y el modelo. Las gráficas de la Guía se obtienen en la UI de MLFlow (mlflow ui)
-o en el dashboard de Comet.
+y el modelo. Fase 3: versionado (tags data_version, training_version), pipeline
+reproducible vía --config.
 
 Ejecutar desde la raíz del proyecto: uv run python training/train_classifier.py
 """
 from __future__ import annotations
 
 import argparse
+import json
 import os
 from contextlib import contextmanager
 from pathlib import Path
+
+# Convención de versionado (Fase 3.1): datos y pipeline
+DATA_VERSION = "mnist-v1"
+TRAINING_VERSION = "1.0"
 
 import torch
 import torch.nn as nn
@@ -152,19 +157,50 @@ def _noop_context():
 
 # ── Main ─────────────────────────────────────────────────────────────────────
 
+def _load_config(path: Path) -> dict:
+    """Carga un archivo JSON de configuración para reproducibilidad (Fase 3.2)."""
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _apply_config(args: argparse.Namespace, config: dict) -> None:
+    """Sobrescribe args con valores del config (solo claves conocidas)."""
+    key_map = {
+        "epochs": "epochs",
+        "batch_size": "batch_size",
+        "lr": "lr",
+        "val_ratio": "val_ratio",
+        "seed": "seed",
+        "out": "out",
+        "mlflow_uri": "mlflow_uri",
+        "comet_project": "comet_project",
+    }
+    for config_key, attr in key_map.items():
+        if config_key in config and config[config_key] is not None:
+            setattr(args, attr, config[config_key])
+
+
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Entrenar clasificador MNIST (Fase 0 + Fase 1 MLFlow)")
+    parser = argparse.ArgumentParser(description="Entrenar clasificador MNIST (Fase 0-3: MLFlow, Comet, MLOps)")
     parser.add_argument("--epochs", type=int, default=3, help="Número de épocas")
     parser.add_argument("--batch-size", type=int, default=128, help="Tamaño de batch")
     parser.add_argument("--lr", type=float, default=1e-2, help="Learning rate")
     parser.add_argument("--val-ratio", type=float, default=0.1, help="Proporción para validación (0-1)")
     parser.add_argument("--seed", type=int, default=42, help="Semilla aleatoria")
     parser.add_argument("--out", type=str, default="", help="Carpeta para guardar modelo (opcional)")
+    parser.add_argument("--config", type=str, default="", help="Ruta a JSON de config para pipeline reproducible")
     parser.add_argument("--no-mlflow", action="store_true", help="No registrar en MLFlow")
     parser.add_argument("--mlflow-uri", type=str, default="", help="MLFLOW_TRACKING_URI (por defecto: ./mlruns)")
     parser.add_argument("--no-comet", action="store_true", help="No registrar en Comet ML")
     parser.add_argument("--comet-project", type=str, default="sca-empx-mnist", help="Nombre del proyecto en Comet")
     args = parser.parse_args()
+
+    if args.config:
+        cfg_path = Path(args.config)
+        if cfg_path.is_file():
+            _apply_config(args, _load_config(cfg_path))
+        else:
+            raise FileNotFoundError(f"Archivo de config no encontrado: {cfg_path}")
 
     use_mlflow = not args.no_mlflow
     if use_mlflow and args.mlflow_uri:
@@ -224,6 +260,8 @@ def main() -> None:
                 "lr": args.lr,
                 "val_ratio": args.val_ratio,
                 "seed": args.seed,
+                "data_version": DATA_VERSION,
+                "training_version": TRAINING_VERSION,
             })
         except Exception as e:
             print(f"  Comet ML: no se pudo iniciar el experimento ({e}). Continuando sin Comet.")
@@ -243,7 +281,11 @@ def main() -> None:
                 "lr": args.lr,
                 "val_ratio": args.val_ratio,
                 "seed": args.seed,
+                "data_version": DATA_VERSION,
+                "training_version": TRAINING_VERSION,
             })
+            mlflow.set_tag("data_version", DATA_VERSION)
+            mlflow.set_tag("training_version", TRAINING_VERSION)
 
         for epoch in range(1, args.epochs + 1):
             loss_train, acc_train, f1_train = train_epoch(
