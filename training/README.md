@@ -1,4 +1,4 @@
-# Training — Fase 0 + Fase 1 (MLFlow)
+# Training — Fase 0 + Fase 1 (MLFlow) + Fase 2 (Comet ML)
 
 Script de entrenamiento de un **modelo de clasificación** para cumplir la Guía de Monitoreo ML-IA y el roadmap (Fases 0 → 5).
 
@@ -16,19 +16,23 @@ Desde la **raíz del proyecto**:
 uv run python training/train_classifier.py
 ```
 
-Con opciones (MLFlow activado por defecto):
+Con opciones (MLFlow y Comet activados por defecto si hay `COMET_API_KEY`):
 
 ```bash
 uv run python training/train_classifier.py --epochs 5 --batch-size 256 --out training/checkpoints
 ```
 
-Para **no** registrar en MLFlow (solo imprimir métricas):
+Para **no** registrar en MLFlow o en Comet:
 
 ```bash
 uv run python training/train_classifier.py --no-mlflow
+uv run python training/train_classifier.py --no-comet
+uv run python training/train_classifier.py --no-mlflow --no-comet
 ```
 
 La primera vez se descargará MNIST en `./data`. Los runs de MLFlow se guardan en `./mlruns` (por defecto).
+
+---
 
 ## Fase 1 — MLFlow: gráficas para la Guía
 
@@ -43,47 +47,58 @@ El script registra en MLFlow:
 
 ### Ver las gráficas (MLFlow UI)
 
-1. Desde la **raíz del proyecto**, arrancar la interfaz de MLFlow:
-
-   ```bash
-   mlflow ui
-   ```
-
-2. Abrir en el navegador: **http://127.0.0.1:5000** (o el puerto que indique MLFlow).
-
-3. Seleccionar el experimento **mnist-classifier** y un run. En la pestaña **Métricas** aparecen las gráficas con dos trazas (train y val) para:
-   - **loss** (función de costo),
-   - **accuracy**,
-   - **f1**.
-
-4. Capturar o exportar esas tres gráficas para la entrega de la Guía de Monitoreo ML-IA.
+1. Desde la **raíz del proyecto**: `mlflow ui`
+2. Abrir **http://127.0.0.1:5000**
+3. Seleccionar el experimento **mnist-classifier** y un run. En **Métricas** aparecen las tres gráficas (loss, accuracy, f1) con train y val.
+4. Capturar o exportar para la entrega de la Guía.
 
 ### Tracking URI
 
-Por defecto se usa el directorio local `./mlruns`. Para usar un servidor remoto:
+Por defecto: `./mlruns`. Para remoto: `--mlflow-uri http://localhost:5000` o variable `MLFLOW_TRACKING_URI`.
 
-```bash
-export MLFLOW_TRACKING_URI=http://localhost:5000
-uv run python training/train_classifier.py
-```
+---
 
-O con el argumento:
+## Fase 2 — Comet ML: gráficas para la Guía
 
-```bash
-uv run python training/train_classifier.py --mlflow-uri http://localhost:5000
-```
+El script registra en **Comet ML** las **mismas métricas** que en MLFlow (loss, accuracy, f1 en train y validación por época), siempre que esté definida la variable de entorno **`COMET_API_KEY`**.
+
+### Configurar Comet ML
+
+1. Crear cuenta en [comet.com](https://www.comet.com) y obtener tu API key.
+2. Definir la variable de entorno (en la sesión o en `.env`):
+
+   ```bash
+   set COMET_API_KEY=tu_api_key
+   ```
+
+   (En PowerShell; en bash: `export COMET_API_KEY=tu_api_key`.)
+
+3. Ejecutar el entrenamiento como siempre; el script detectará la key y enviará el experimento a Comet.
+
+### Ver las gráficas (Comet)
+
+1. Entrar en **https://www.comet.com** e iniciar sesión.
+2. Abrir el proyecto **sca-empx-mnist** (o el nombre indicado con `--comet-project`).
+3. Seleccionar el experimento del último run. En la pestaña **Charts** (o **Metrics**) aparecen las gráficas de `loss_train`, `loss_val`, `accuracy_train`, `accuracy_val`, `f1_train`, `f1_val` por paso (época).
+4. Capturar o exportar para la entrega de la Guía (alternativa o complemento a MLFlow).
+
+### Opciones Comet
+
+| Opción | Descripción |
+|-------|-------------|
+| `--no-comet` | No registrar en Comet (aunque exista `COMET_API_KEY`). |
+| `--comet-project NOMBRE` | Nombre del proyecto en Comet (por defecto: `sca-empx-mnist`). |
+
+Si **no** defines `COMET_API_KEY`, el script imprime un aviso y continúa sin Comet; MLFlow sigue activo si no usas `--no-mlflow`.
+
+---
 
 ## Salida esperada (consola)
 
-Por cada época se imprime una línea con:
+Por cada época: una línea con `loss_train`, `loss_val`, `acc_train`, `acc_val`, `f1_train`, `f1_val`.
 
-- `loss_train`, `loss_val`
-- `acc_train`, `acc_val`
-- `f1_train`, `f1_val`
-
-Al final, si MLFlow está activo: mensaje indicando que el run se guardó y el comando `mlflow ui`.
+Al final: mensaje de MLFlow (`mlflow ui`) y, si Comet se usó, mensaje con el enlace a comet.com.
 
 ## Fases siguientes
 
-- **Fase 2:** Añadir registro en Comet ML en el mismo script (mismas métricas).
 - **Fases 3-5:** MLOps, Docker, pipeline de monitoreo.
