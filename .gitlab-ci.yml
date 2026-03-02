@@ -1,0 +1,73 @@
+# GitLab CI/CD — Pipeline según presentación: Preparation → Build → Tests → Deploy
+# Archivo .yml para orquestar el pipeline (trigger al push).
+# Runner: usar executor Docker (Shared/Specific Runner con Docker).
+
+default:
+  image: python:3.13-slim
+  cache:
+    key: "${CI_COMMIT_REF_SLUG}-pip"
+    paths: [.pip-cache/]
+
+variables:
+  PIP_CACHE_DIR: ".pip-cache"
+
+stages:
+  - preparation
+  - build
+  - test
+  - deploy
+
+# ——— Preparation: checkout, dependencias ———
+preparation:
+  stage: preparation
+  script:
+    - apt-get update -qq && apt-get install -y -qq git
+    - pip install --upgrade pip
+    - pip install -e ".[dev]"
+  artifacts:
+    paths: [.pip-cache/]
+
+# ——— Build: construir imagen Docker (empaquetar aplicación) ———
+build:
+  stage: build
+  image: docker:24
+  services: [docker:24-dind]
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA -t $CI_REGISTRY_IMAGE:latest .
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
+    - docker push $CI_REGISTRY_IMAGE:latest
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "develop"
+  # GitLab proporciona CI_REGISTRY_IMAGE, CI_REGISTRY_USER, CI_REGISTRY_PASSWORD en el job
+
+# ——— Tests: pytest + smoke test entrenamiento ML ———
+test:
+  stage: test
+  script:
+    - pip install --upgrade pip
+    - pip install -e ".[dev]"
+    - mkdir -p test-results
+    - pytest --junitxml=test-results/junit.xml -v --tb=short
+    - python training/train_classifier.py --epochs 1 --no-comet
+  artifacts:
+    when: always
+    reports:
+      junit: test-results/junit.xml
+  env:
+    PYTHONWARNINGS: "ignore::DeprecationWarning"
+
+# ——— Deploy: desplegar imagen (ejemplo; configurar según entorno) ———
+deploy:
+  stage: deploy
+  image: alpine:latest
+  script:
+    - echo "Deploy: imagen disponible en $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
+    - echo "Configurar deploy real (kubectl, docker pull en servidor, Azure Web App, etc.) en Variables/scripts."
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      when: manual
+  # Variables de entorno (GitLab CI/CD → Variables): REGISTRY, credenciales del entorno de despliegue.
