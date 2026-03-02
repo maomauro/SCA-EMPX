@@ -28,6 +28,9 @@ wheels/
 *.db
 backend/app/db/*.db
 
+# Datos de entrenamiento (MNIST, etc.)
+data/
+
 
 #Ignore vscode AI rules
 .github\instructions\codacy.instructions.md
