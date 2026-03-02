@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      args:
+        APP_VERSION: ${APP_VERSION:-latest}
+        BUILD_DATE: ${BUILD_DATE:-unknown}
+        VCS_REF: ${VCS_REF:-unknown}
+    image: ${DOCKER_REGISTRY:-docker.io}/${DOCKER_USERNAME:-user}/sca-empx-backend:${APP_VERSION:-latest}
+    container_name: sca-backend
+    restart: unless-stopped
+    environment:
+      - DEBUG=${DEBUG:-false}
+      - DATABASE_URL=sqlite:///./backend/app/db/sqlite.db
+      - SECRET_KEY=${SECRET_KEY:-change-me-in-production}
+      - ALGORITHM=${ALGORITHM:-HS256}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
+      - SIMILARITY_THRESHOLD=${SIMILARITY_THRESHOLD:-0.6}
+    volumes:
+      # Volumen persistente para SQLite
+      - sqlite-data:/app/backend/app/db
+      # Volumen para logs (opcional)
+      - backend-logs:/app/logs
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    networks:
+      - sca-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        APP_VERSION: ${APP_VERSION:-latest}
+        BUILD_DATE: ${BUILD_DATE:-unknown}
+        VCS_REF: ${VCS_REF:-unknown}
+    image: ${DOCKER_REGISTRY:-docker.io}/${DOCKER_USERNAME:-user}/sca-empx-frontend:${APP_VERSION:-latest}
+    container_name: sca-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - sca-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  sqlite-data:
+    driver: local
+    name: sca-sqlite-data
+  backend-logs:
+    driver: local
+    name: sca-backend-logs
+
+networks:
+  sca-network:
+    driver: bridge
+    name: sca-network

@@ -16,3 +16,15 @@ wheels/
 # SQLite (no versionar archivos de BD local)
 *.db
 backend/app/db/*.db
+
+# Docker
+*.tar
+docker-compose.override.yml
+.env.docker.local
+
+# Logs
+logs/
+*.log
+
+# Backups
+backups/
