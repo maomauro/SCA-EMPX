@@ -248,6 +248,8 @@ Procesos BPMN
 - **Bitácora de desarrollo (check de actividades, orden, avance)**: [Bitácora de desarrollo](./bitacora-desarrollo.md)
 - **URLs para acceder a la API y páginas (listado completo)**: [URLs de acceso](./urls-acceso.md)
 - **Uso de Git (ramas, commits, ambientes, pull, push)**: [Guía de Uso de Git](./guia-git.md)
+- **Flujo MLOps (entrenamiento, registro, promoción, despliegue)**: [Flujo MLOps](./mlops-flujo.md)
+- **Monitoreo del modelo en producción (métricas y dónde registrarlas)**: [Monitoreo en producción](./mlops-monitoreo-produccion.md)
 
 ---
 
