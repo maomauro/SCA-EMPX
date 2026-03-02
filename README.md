@@ -31,7 +31,6 @@ La documentación completa del proyecto se encuentra en la carpeta [`docs/`](./d
 - **[📋 Tareas por HU](./docs/09-tareas-por-hu.md)** - Tareas de desarrollo por historia de usuario
 - **[📌 Orden desarrollo y features](./docs/orden-desarrollo-features.md)** - Orden para desarrollar y registrar features (Git / backlog)
 - **[📘 Guía de Uso de Git](./docs/guia-git.md)** - Flujo de trabajo con Git (ramas, ambientes, commits, sincronización)
-- **[📱 Guía de Uso de la Aplicación](./docs/guia-uso-aplicacion.md)** - Cómo usar la aplicación (pantallas, flujos, instalación y ejecución)
 
 **💡 Recomendación**: Comienza por el [Índice de Documentación](./docs/00-indice.md) para una guía completa de lectura.
 
@@ -41,8 +40,6 @@ La documentación completa del proyecto se encuentra en la carpeta [`docs/`](./d
 
 ## 🏗️ Estructura del Proyecto
 
-### Estructura actual (raíz del repositorio)
-
 Organización en capas tipo **MVC**: Controller (`api/`), Service (`services/`), Model (`db/` + `schemas/`), **SQLite** en `db/`, y módulo **ML** para reconocimiento facial.
 
 | Capa | Carpeta | Rol |
@@ -50,61 +47,50 @@ Organización en capas tipo **MVC**: Controller (`api/`), Service (`services/`),
 | **Controller** | `backend/app/api/` | Endpoints REST; valida con schemas y llama a services. |
 | **Service** | `backend/app/services/` | Lógica de aplicación; orquesta db y ml. |
 | **Model** | `backend/app/db/` + `schemas/` | SQLite, ORM, migraciones; Pydantic request/response. |
-| **ML** | `backend/app/ml/` | Reconocimiento facial: inferencia, preprocessing. |
-| **Core** | `backend/app/core/` | Config, seguridad, logging. |
+| **ML** | `backend/app/ml/` | Reconocimiento facial (DeepFace / Facenet). |
+| **Core** | `backend/app/core/` | Config, seguridad (JWT), logging. |
 
 ```
 SCA-EMPX/
 ├── backend/
 │   ├── app/
-│   │   ├── api/                     # Controller: endpoints REST
+│   │   ├── api/
 │   │   │   └── v1/
 │   │   │       └── routes/
-│   │   │           ├── personas.py
-│   │   │           ├── access.py
-│   │   │           ├── events.py
-│   │   │           ├── autorizaciones.py
-│   │   │           └── usuarios.py
-│   │   ├── core/                    # Config, seguridad, logging
-│   │   │   ├── config.py
-│   │   │   ├── security.py
-│   │   │   └── logging.py
-│   │   ├── db/                      # Model: SQLite, ORM, migraciones
+│   │   │           ├── acceso.py       # validate-access, register-exit
+│   │   │           ├── personas.py     # CRUD personas (empleados/visitantes)
+│   │   │           ├── visitas.py      # autorizaciones de visita
+│   │   │           ├── events.py       # historial de eventos
+│   │   │           ├── catalogos.py    # tipos de persona
+│   │   │           ├── config.py       # configuración dinámica
+│   │   │           └── ws.py           # WebSocket feed en tiempo real
+│   │   ├── core/
+│   │   │   └── config.py
+│   │   ├── db/
 │   │   │   ├── database.py
 │   │   │   ├── models.py
 │   │   │   └── migrations/
-│   │   ├── schemas/                 # Pydantic request/response
-│   │   ├── services/                # Lógica de aplicación
-│   │   ├── ml/                      # Reconocimiento facial
-│   │   │   ├── inference.py
-│   │   │   └── preprocessing/
+│   │   ├── ml/
+│   │   │   └── face_model.py           # DeepFace Facenet embeddings
 │   │   └── main.py
 │   └── tests/
-├── docs/
-│   ├── 00-indice.md
-│   ├── 01-contexto-empresarial.md
-│   ├── 02-caso-de-negocio.md
-│   ├── 03-requerimientos-srs.md
-│   ├── 04-arquitectura.md
-│   ├── 05-modelo-datos.md
-│   ├── 06-historias-usuario.md
-│   ├── 07-procesos-bpmn.md
-│   ├── 08-definicion-proyecto.md
-│   ├── 09-tareas-por-hu.md
-│   ├── orden-desarrollo-features.md
-│   └── guia-git.md
+├── docs/                               # Documentación completa del proyecto
 ├── frontend/
 │   └── src/
-│       └── index.html
+│       ├── index.html                  # Página principal / nav
+│       ├── registro.html               # Registro empleado y visitante
+│       ├── acceso.html                 # Validar acceso / registrar salida
+│       ├── visitante.html              # Autorización de visita
+│       ├── configuracion.html          # Configuración del sistema
+│       └── static/
+│           └── ws-client.js            # Cliente WebSocket
 ├── scripts/
-│   ├── init_db.py
-│   └── README.md
+│   ├── init_db.py                      # Crear tablas y usuario admin
+│   ├── clear_personas.py               # Limpiar personas para pruebas
+│   └── fix_registro_acceso_table.py    # Migración correctiva tabla acceso
 ├── tests/
-├── main.py                          # Punto de entrada (arranca API)
+├── main.py                             # Punto de entrada (arranca uvicorn)
 ├── pyproject.toml
-├── .python-version
-├── .gitignore
-├── uv.lock
 └── README.md
 ```
 
@@ -148,15 +134,43 @@ Flujo: **petición** → `api/` → `services/` → `db/` (SQLite) y/o `ml/` →
    ```bash
    uv run python main.py
    ```
-   La API queda en `http://0.0.0.0:8000`. **Interfaz con menú:** abrir **http://localhost:8000/inicio** para la página de inicio y navegación entre todas las pantallas. Documentación interactiva: `http://localhost:8000/docs`.
+   La API queda en `http://0.0.0.0:8000`.
+   - UI principal: `http://localhost:8000/ui/index.html`
+   - Documentación interactiva (Swagger): `http://localhost:8000/docs`
 
 7. **Login**: `POST /api/v1/usuarios/login` con body `{"username": "admin", "password": "admin"}`. Respuesta: `{"access_token": "...", "token_type": "bearer"}`. Usar el token en cabecera `Authorization: Bearer <token>` para rutas protegidas.
 
-8. **Validar acceso (HU-05)**: `POST /api/v1/access/validate` con imagen (form-data, campo `file`). O abrir en el navegador `http://localhost:8000/validate-access` para subir una foto. Reconocimiento facial usa **DeepFace (Facenet)**; al registrar personas (HU-01) debe usarse el mismo modelo para generar embeddings.
+8. **Páginas disponibles**:
+
+   | URL | Descripción |
+   |-----|-------------|
+   | `/ui/index.html` | Página principal |
+   | `/ui/registro.html` | Registro de empleados y visitantes |
+   | `/ui/acceso.html` | Validar acceso / registrar salida (reconocimiento facial) |
+   | `/ui/visitante.html` | Autorización de visita |
+   | `/ui/configuracion.html` | Configuración del sistema |
 
 ## 🚀 Estado del Proyecto
 
-**Fase actual**: Setup MVP implementado (estructura, SQLite, auth básica). Siguiente: feature HU-05 (validar acceso facial).
+| Paso | Feature | HU | Estado |
+|------|---------|----|--------|
+| 0 | setup-mvp | — | ✅ Hecho |
+| 1 | hu-05-validar-acceso-facial | HU-05 | ✅ Hecho |
+| 2 | hu-01-registrar-empleado | HU-01 | ✅ Hecho |
+| 3 | hu-03-registrar-visitante | HU-03 | ✅ Hecho |
+| 4 | hu-04-autorizacion-visita | HU-04 | ✅ Hecho |
+| 5 | hu-06-registro-evento-entrada | HU-06 | ✅ Hecho |
+| 6 | hu-07-registro-evento-salida | HU-07 | ✅ Hecho |
+| 7 | hu-09-gestionar-usuarios | HU-09 | ⏳ Pendiente |
+| 8 | hu-02-desactivar-empleado | HU-02 | ⏳ Pendiente |
+| 9 | hu-08-historial-accesos | HU-08 | ⏳ Pendiente |
+| 10 | hu-10-actualizar-empleado | HU-10 | ⏳ Pendiente |
+| 11 | hu-11-dashboard-accesos | HU-11 | ⏳ Pendiente |
+| 12 | hu-13-revocar-autorizacion | HU-13 | ⏳ Pendiente |
+| 13 | hu-14-personas-dentro | HU-14 | ⏳ Pendiente |
+| 14 | hu-12-reporte-accesos | HU-12 | ⏳ Pendiente |
+
+Ver detalle completo en [docs/bitacora-desarrollo.md](./docs/bitacora-desarrollo.md).
 
 ## 📝 Licencia
 

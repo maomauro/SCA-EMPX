@@ -8,11 +8,26 @@ wheels/
 
 # Virtual environments
 .venv
+.venv/**
+.cache
+.cache/**
+.claude
+.github
+.pytest_cache
+.ruff_cache
+
 
 # Environment and secrets
 .env
 .env.local
+.zip
+
+
 
 # SQLite (no versionar archivos de BD local)
 *.db
 backend/app/db/*.db
+
+
+#Ignore vscode AI rules
+.github\instructions\codacy.instructions.md

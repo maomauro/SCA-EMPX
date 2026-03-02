@@ -1,21 +1,44 @@
-"""
-Conexión y sesión SQLite. Referencia: docs/05-modelo-datos.md.
-"""
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker, declarative_base
+"""Configuración de la conexión a la base de datos, sesión SQLAlchemy y datos de fábrica.
 
-from backend.app.core.config import DATABASE_URL
+Este módulo centraliza:
+- La creación del motor SQLAlchemy apuntando a la URL definida en ``config``.
+- La fábrica de sesiones ``SessionLocal`` usada por los endpoints vía ``get_db``.
+- ``init_db``: crea las tablas si no existen y siembra los catálogos iniciales.
+- ``reset_db``: limpia personas, registros y visitas dejando los catálogos intactos.
+- ``_seed``: inserta los datos de fábrica de forma idempotente.
 
-# SQLite: check_same_thread=False para uso con FastAPI (múltiples requests)
+Uso típico en el arranque de la aplicación::
+
+    from backend.app.db.database import init_db
+    init_db()
+"""
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+from backend.app.config.config import DATABASE_URL
+from backend.app.db.models import Base, Area, Cargo, TipoPersona, Persona, Registro, Visita  # noqa: F401
+
+
 connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
 engine = create_engine(DATABASE_URL, connect_args=connect_args)
-
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
 
 
 def get_db():
-    """Dependencia FastAPI: sesión por request; cierra al terminar."""
+    """Generador de sesiones de base de datos para inyección de dependencias FastAPI.
+
+    Abre una sesión, la cede al endpoint y garantiza su cierre al finalizar la
+    solicitud, independientemente de si ocurrió una excepción.
+
+    Yields:
+        Session: Sesión SQLAlchemy lista para consultas y transacciones.
+
+    Example::
+
+        @router.get("/items")
+        def list_items(db: Session = Depends(get_db)):
+            return db.query(Item).all()
+    """
     db = SessionLocal()
     try:
         yield db
@@ -24,67 +47,104 @@ def get_db():
 
 
 def init_db():
-    """Crea todas las tablas en la BD (para script init_db)."""
-    from backend.app.db import models  # noqa: F401 - registra modelos
+    """Crea todas las tablas del esquema y siembra los catálogos iniciales.
+
+    Llama a ``Base.metadata.create_all`` (no destruye tablas existentes) y
+    luego a ``_seed`` para insertar los datos de fábrica si las tablas están
+    vacías. Es seguro ejecutarlo en cada arranque de la aplicación.
+    """
     Base.metadata.create_all(bind=engine)
+    _seed()
 
 
-def ensure_registro_acceso_schema():
+def reset_db():
+    """Restablece la base de datos a su estado de fábrica.
+
+    Elimina todos los registros de las tablas transaccionales en el orden
+    correcto para respetar las restricciones de llave foránea:
+    ``Registro`` → ``Visita`` → ``Persona``.
+
+    Las tablas de catálogo (``areas``, ``cargos``, ``tipos_persona``) **no**
+    se modifican.
+
+    Note:
+        Esta operación es irreversible. Úsala solo en entornos de desarrollo
+        o cuando se requiera un reinicio total de los datos operativos.
     """
-    En SQLite, si la tabla registro_acceso tiene id_registro como BIGINT
-    no se autoincrementa y falla NOT NULL. Recrea la tabla con INTEGER.
-    Se llama al arranque de la app para auto-corregir BDs antiguas.
+    db = SessionLocal()
+    try:
+        db.query(Registro).delete()
+        db.query(Visita).delete()
+        db.query(Persona).delete()
+        db.commit()
+    finally:
+        db.close()
+
+
+def _seed():
+    """Inserta los catálogos de fábrica si las tablas correspondientes están vacías.
+
+    Siembra en orden para satisfacer las dependencias de FK:
+
+    1. **TipoPersona**: Empleado, Visitante, Contratista.
+    2. **Area**: Tecnología, Recursos Humanos, Operaciones.
+    3. **Cargo**: tres cargos por área (nueve en total).
+
+    Cada bloque verifica si ya existe al menos un registro antes de insertar,
+    por lo que es seguro llamar a esta función múltiples veces (idempotente).
+
+    Note:
+        Esta función es de uso interno; invócala a través de ``init_db``.
     """
-    if not DATABASE_URL.startswith("sqlite"):
-        return
-    from backend.app.db import models  # noqa: F401
-    from backend.app.db.models import RegistroAcceso
-    needs_fix = False
-    with engine.connect() as conn:
-        try:
-            r = conn.execute(
-                text("SELECT type FROM pragma_table_info('registro_acceso') WHERE name='id_registro'")
-            )
-            row = r.fetchone()
-            if row:
-                col_type = (row[0] or "").upper()
-                needs_fix = "BIGINT" in col_type
-        except Exception:
-            pass  # Tabla no existe, create_all se encargará
-    if needs_fix:
-        RegistroAcceso.__table__.drop(engine, checkfirst=True)
-        RegistroAcceso.__table__.create(engine)
+    db = SessionLocal()
+    try:
+        # ── Tipos de persona ──────────────────────────────────────────────
+        if db.query(TipoPersona).first() is None:
+            tipos = [
+                TipoPersona(
+                    tipo="Empleado",
+                    descripcion="Empleado directo de la empresa",
+                    es_empleado=True),
+                TipoPersona(
+                    tipo="Visitante",
+                    descripcion="Visitante externo",
+                    es_empleado=False),
+                TipoPersona(
+                    tipo="Contratista",
+                    descripcion="Personal de empresa contratista",
+                    es_empleado=False),
+            ]
+            db.add_all(tipos)
+            db.flush()
 
+        # ── Áreas ─────────────────────────────────────────────────────────
+        if db.query(Area).first() is None:
+            areas_data = ["Tecnología", "Recursos Humanos", "Operaciones"]
+            areas = [Area(nombre=n) for n in areas_data]
+            db.add_all(areas)
+            db.flush()
 
-def ensure_persona_visitante_columns():
-    """
-    Añade columnas HU-03 (motivo_visita, id_empleado_visitado) a persona si no existen.
-    """
-    if not DATABASE_URL.startswith("sqlite"):
-        return
-    with engine.connect() as conn:
-        r = conn.execute(text("SELECT name FROM pragma_table_info('persona')"))
-        names = {row[0] for row in r.fetchall()}
-        if "motivo_visita" not in names:
-            conn.execute(text("ALTER TABLE persona ADD COLUMN motivo_visita VARCHAR(500)"))
-        if "id_empleado_visitado" not in names:
-            conn.execute(text("ALTER TABLE persona ADD COLUMN id_empleado_visitado INTEGER"))
-        conn.commit()
+            # ── Cargos (3 por área) ───────────────────────────────────────
+            cargos_por_area = {
+                "Tecnología":[
+                    "Desarrollador",
+                    "Analista de Sistemas",
+                    "Arquitecto de Software"],
+                "Recursos Humanos": [
+                    "Gestor de Talento",
+                    "Coordinador RRHH",
+                    "Analista de Nómina"],
+                "Operaciones": [
+                    "Supervisor",
+                    "Operador de Planta",
+                    "Técnico de Mantenimiento"],
+            }
+            area_map: dict[str, Area] = {str(a.nombre): a for a in areas}
+            for area_nombre, cargos in cargos_por_area.items():
+                area = area_map[area_nombre]
+                for cargo_nombre in cargos:
+                    db.add(Cargo(nombre=cargo_nombre, id_area=area.id_area))
 
-
-def ensure_autorizacion_table():
-    """Crea la tabla autorizacion (HU-04) si no existe; añade motivo_revocacion (HU-13) si falta."""
-    if not DATABASE_URL.startswith("sqlite"):
-        return
-    from backend.app.db import models  # noqa: F401
-    from backend.app.db.models import Autorizacion
-    with engine.connect() as conn:
-        r = conn.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name='autorizacion'"))
-        if r.fetchone() is None:
-            Autorizacion.__table__.create(engine)
-        else:
-            r2 = conn.execute(text("SELECT name FROM pragma_table_info('autorizacion')"))
-            names = {row[0] for row in r2.fetchall()}
-            if "motivo_revocacion" not in names:
-                conn.execute(text("ALTER TABLE autorizacion ADD COLUMN motivo_revocacion VARCHAR(500)"))
-        conn.commit()
+        db.commit()
+    finally:
+        db.close()
