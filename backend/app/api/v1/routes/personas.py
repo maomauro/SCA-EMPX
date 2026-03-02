@@ -1,221 +1,304 @@
-"""Rutas personas (empleados y visitantes). HU-01, HU-02, HU-03, HU-10, HU-14."""
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query
+"""
+Endpoints de gestión de personas.
+
+Permite crear personas, listarlas, obtener detalle, identificarlas por cara
+y añadir embeddings faciales de registro.
+
+Rutas:
+    POST /personas/                  → Crea una persona sin fotos.
+    GET  /personas/                  → Lista personas activas (filtro opcional por tipo).
+    GET  /personas/{id}              → Detalle de una persona.
+    POST /personas/identificar       → Identifica persona por imagen (visitante recurrente).
+    GET  /personas/buscar-por-cara   → Placeholder informativo.
+    POST /personas/{id}/registros    → Añade un embedding de registro a la galería.
+"""
+from typing import Optional
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
-from sqlalchemy import or_, func
+from pydantic import BaseModel
 
 from backend.app.db.database import get_db
-from backend.app.db.models import Persona, TipoPersona, RegistroAcceso
-from backend.app.services.persona_service import registrar_empleado, registrar_visitante
-from backend.app.schemas.persona import PersonaRegistroResponse, PersonaListItem, PersonaDetail, PersonaUpdate, PersonaDentro
+from backend.app.db.models import Persona, Registro, TipoPersona
+from backend.app.ml.face_model import (
+    get_embedding_from_bytes, embedding_to_bytes, bytes_to_embedding,
+    find_best_match,
+)
+from backend.app.config.config import FACE_SIMILARITY_THRESHOLD, MAX_EMBEDDINGS_PER_PERSONA
 
 router = APIRouter()
 
-TIPO_EMPLEADO = "empleado_propio"
-TIPO_VISITANTE = "visitante_temporal"
+
+# ── Schemas inline ────────────────────────────────────────────────────────────
+
+class PersonaCreate(BaseModel):
+    """Schema de entrada para crear una persona.
+
+    Attributes:
+        tipo_documento:  Tipo de documento (``CC`` | ``CE`` | ``PAS`` | ``NIT``).
+        nro_documento:   Número de documento único.
+        nombres:         Nombre completo.
+        id_tipo_persona: FK al catálogo ``tipos_persona``.
+        id_cargo:        FK al catálogo ``cargos``; requerido si es empleado.
+    """
+    tipo_documento:  str
+    nro_documento:   str
+    nombres:         str
+    id_tipo_persona: int
+    id_cargo:        Optional[int] = None
 
 
-def _map_registro_errors(e: ValueError) -> None:
-    msg = str(e)
-    if msg == "documento_duplicado":
-        raise HTTPException(status_code=409, detail="Ya existe una persona con ese documento.")
-    if msg == "rostro_no_detectado":
-        raise HTTPException(
-            status_code=400,
-            detail="No se detectó un rostro en la imagen. Use una foto con un único rostro visible.",
-        )
-    if msg == "foto_requerida":
-        raise HTTPException(status_code=400, detail="Se requiere una foto.")
-    if msg == "tipo_persona_no_configurado":
-        raise HTTPException(
-            status_code=500,
-            detail="Tipo de persona no configurado. Ejecute init_db.",
-        )
-    raise HTTPException(status_code=400, detail=msg)
+class PersonaOut(BaseModel):
+    """Schema de salida con datos completos de una persona.
+
+    Attributes:
+        id_persona:      Identificador único.
+        tipo_documento:  Tipo de documento.
+        nro_documento:   Número de documento.
+        nombres:         Nombre completo.
+        id_tipo_persona: FK al tipo de persona.
+        tipo:            Nombre del tipo (Empleado / Visitante / Contratista).
+        id_cargo:        FK al cargo; ``None`` para no-empleados.
+        cargo:           Nombre del cargo o ``None``.
+        area:            Nombre del área o ``None``.
+        n_embeddings:    Cantidad de embeddings de registro almacenados.
+        activo:          ``False`` si la persona está bloqueada.
+    """
+    id_persona:      int
+    tipo_documento:  str
+    nro_documento:   str
+    nombres:         str
+    id_tipo_persona: int
+    tipo:            str
+    id_cargo:        Optional[int]
+    cargo:           Optional[str]
+    area:            Optional[str]
+    n_embeddings:    int
+    activo:          bool
+
+    class Config:
+        from_attributes = True
 
 
-@router.get("/", response_model=list[PersonaListItem])
-def listar_personas(
-    tipo: str | None = None,
-    estado: str | None = Query(None, description="activo | inactivo | todos"),
-    q: str | None = Query(None, description="Búsqueda por nombre o documento"),
+def _persona_out(p: Persona) -> dict:
+    """Serializa un objeto ``Persona`` ORM a diccionario de respuesta.
+
+    Args:
+        p: Instancia ORM de ``Persona`` con relaciones cargadas.
+
+    Returns:
+        Diccionario con todos los campos de ``PersonaOut`` más ``es_empleado``.
+    """
+    n = len([r for r in p.registros if r.evento == "registro"])
+    return {
+        "id_persona":      p.id_persona,
+        "tipo_documento":  p.tipo_documento,
+        "nro_documento":   p.nro_documento,
+        "nombres":         p.nombres,
+        "id_tipo_persona": p.id_tipo_persona,
+        "tipo":            p.tipo_persona.tipo if p.tipo_persona else "",
+        "es_empleado":     p.tipo_persona.es_empleado if p.tipo_persona else False,
+        "id_cargo":        p.id_cargo,
+        "cargo":           p.cargo.nombre if p.cargo else None,
+        "area":            p.cargo.area.nombre if p.cargo and p.cargo.area else None,
+        "n_embeddings":    n,
+        "activo":          p.activo,
+    }
+
+
+# ── Endpoints ─────────────────────────────────────────────────────────────────
+
+@router.post("/")
+def crear_persona(body: PersonaCreate, db: Session = Depends(get_db)):
+    """Registra una nueva persona en el sistema sin capturas faciales.
+
+    Los embeddings se agregan en pasos posteriores vía
+    ``POST /personas/{id}/registros``.
+
+    Args:
+        body: Datos de la persona a registrar.
+        db:   Sesión de base de datos.
+
+    Returns:
+        Diccionario con los datos de la persona creada.
+
+    Raises:
+        HTTPException: 409 si el documento ya existe.
+        HTTPException: 400 si el tipo de persona no existe.
+        HTTPException: 400 si es empleado y no tiene cargo.
+    """
+    if db.query(Persona).filter(Persona.nro_documento == body.nro_documento).first():
+        raise HTTPException(409, "Ya existe una persona con ese documento.")
+    tipo = db.query(TipoPersona).filter(TipoPersona.id_tipo_persona == body.id_tipo_persona).first()
+    if not tipo:
+        raise HTTPException(400, "Tipo de persona no válido.")
+    if tipo.es_empleado and not body.id_cargo:
+        raise HTTPException(400, "Los empleados deben tener un cargo asignado.")
+
+    p = Persona(
+        tipo_documento=body.tipo_documento,
+        nro_documento=body.nro_documento,
+        nombres=body.nombres.strip(),
+        id_tipo_persona=body.id_tipo_persona,
+        id_cargo=body.id_cargo,
+    )
+    db.add(p)
+    db.commit()
+    db.refresh(p)
+    return _persona_out(p)
+
+
+@router.get("/")
+def listar_personas(tipo: Optional[str] = None, db: Session = Depends(get_db)):
+    """Retorna la lista de personas activas, opcionalmente filtrada por tipo.
+
+    Args:
+        tipo: Nombre del tipo de persona (``'Empleado'``, ``'Visitante'``,
+              ``'Contratista'``). Si es ``None`` retorna todos los tipos.
+        db:   Sesión de base de datos.
+
+    Returns:
+        Lista de diccionarios ordenada alfabéticamente por ``nombres``.
+    """
+    q = db.query(Persona).filter(Persona.activo.is_(True))
+    if tipo:
+        q = q.join(TipoPersona).filter(TipoPersona.tipo == tipo)
+    return [_persona_out(p) for p in q.order_by(Persona.nombres).all()]
+
+
+@router.get("/buscar-por-cara")
+async def buscar_por_cara(db: Session = Depends(get_db)):
+    """Placeholder — la identificación por cara se hace vía POST con imagen."""
+    return {"detail": "Enviar imagen vía POST /personas/identificar"}
+
+
+@router.post("/identificar")
+def identificar_por_cara(
+    foto: UploadFile = File(...),
     db: Session = Depends(get_db),
 ):
+    """Identifica una persona a partir de su imagen facial.
+
+    Extrae el embedding de la imagen, lo compara contra la galería y
+    retorna la persona más similar si supera ``FACE_SIMILARITY_THRESHOLD``.
+    Usado para autocompletar el formulario de visitante recurrente.
+
+    Args:
+        foto: Imagen del rostro a identificar (JPEG o PNG).
+        db:   Sesión de base de datos.
+
+    Returns:
+        ``{"encontrado": False}`` si no hay match, o dict con ``similitud``
+        y ``persona`` si se identificó correctamente.
+
+    Raises:
+        HTTPException: 400 si no se detectó rostro en la imagen.
     """
-    Lista personas. tipo=empleado|visitante. estado=activo|inactivo|todos (default activo). q=búsqueda nombre/documento. HU-02, HU-03.
-    """
-    query = db.query(Persona).join(TipoPersona, Persona.id_tipo_persona == TipoPersona.id_tipo_persona)
-    if tipo in ("empleado_propio", "empleado"):
-        query = query.filter(TipoPersona.nombre_tipo == "empleado_propio")
-    elif tipo in ("visitante_temporal", "visitante"):
-        query = query.filter(TipoPersona.nombre_tipo == "visitante_temporal")
-    if estado == "inactivo":
-        query = query.filter(Persona.estado == "inactivo")
-    elif estado != "todos":
-        query = query.filter(Persona.estado == "activo")
-    if q and q.strip():
-        term = "%" + q.strip() + "%"
-        query = query.filter(or_(Persona.nombre_completo.ilike(term), Persona.documento.ilike(term)))
-    personas = query.order_by(Persona.nombre_completo).all()
-    return [
-        PersonaListItem(id_persona=p.id_persona, nombre_completo=p.nombre_completo, documento=p.documento, estado=p.estado)
-        for p in personas
-    ]
+    img_bytes = foto.file.read()
+    emb = get_embedding_from_bytes(img_bytes)
+    if emb is None:
+        raise HTTPException(400, "No se detectó un rostro en la imagen.")
+
+    candidatos = _get_candidatos(db)
+    match = find_best_match(emb, candidatos, threshold=FACE_SIMILARITY_THRESHOLD)
+    if match is None:
+        return {"encontrado": False}
+
+    id_persona, sim = match
+    p = db.query(Persona).filter(Persona.id_persona == id_persona).first()
+    return {"encontrado": True, "similitud": sim, "persona": _persona_out(p)}
 
 
-@router.get("/dentro", response_model=list[PersonaDentro])
-def listar_personas_dentro(db: Session = Depends(get_db)):
+@router.get("/{id_persona}")
+def obtener_persona(id_persona: int, db: Session = Depends(get_db)):
+    """Retorna el detalle completo de una persona por su ID.
+
+    Args:
+        id_persona: Identificador de la persona.
+        db:         Sesión de base de datos.
+
+    Returns:
+        Diccionario con todos los campos de la persona.
+
+    Raises:
+        HTTPException: 404 si la persona no existe.
     """
-    Lista personas actualmente dentro: último evento = ingreso permitido. HU-14.
-    Devuelve id_persona, nombre_completo y fecha_hora del ingreso.
+    p = db.query(Persona).filter(Persona.id_persona == id_persona).first()
+    if not p:
+        raise HTTPException(404, "Persona no encontrada.")
+    return _persona_out(p)
+
+
+@router.post("/{id_persona}/registros")
+def agregar_embedding_registro(
+    id_persona: int,
+    foto: UploadFile = File(...),
+    db: Session = Depends(get_db),
+):
+    """Añade un embedding facial de tipo ``'registro'`` a la galería de la persona.
+
+    El frontend llama este endpoint repetidamente durante la captura inicial
+    de fotos. Se detiene cuando se alcanza ``MAX_EMBEDDINGS_PER_PERSONA``.
+
+    Args:
+        id_persona: Identificador de la persona.
+        foto:       Frame capturado durante el registro (JPEG o PNG).
+        db:         Sesión de base de datos.
+
+    Returns:
+        ``{"ok": True, "n_embeddings": <total>}`` si se guardó correctamente.
+        ``{"ok": False, "motivo": ..., "n_embeddings": <total>}`` si no se pudo
+        guardar (límite alcanzado o rostro no detectado).
+
+    Raises:
+        HTTPException: 404 si la persona no existe.
     """
-    subq = (
-        db.query(RegistroAcceso.id_persona, func.max(RegistroAcceso.fecha_hora).label("max_fecha"))
-        .group_by(RegistroAcceso.id_persona)
-        .subquery()
+    p = db.query(Persona).filter(Persona.id_persona == id_persona).first()
+    if not p:
+        raise HTTPException(404, "Persona no encontrada.")
+
+    # Contar embeddings de registro actuales
+    n_actuales = db.query(Registro).filter(
+        Registro.id_persona == id_persona,
+        Registro.evento == "registro",
+    ).count()
+
+    if n_actuales >= MAX_EMBEDDINGS_PER_PERSONA:
+        return {"ok": False, "motivo": "limite_alcanzado", "n_embeddings": n_actuales}
+
+    img_bytes = foto.file.read()
+    emb = get_embedding_from_bytes(img_bytes)
+    if emb is None:
+        return {"ok": False, "motivo": "rostro_no_detectado", "n_embeddings": n_actuales}
+
+    reg = Registro(
+        id_persona=id_persona,
+        evento="registro",
+        tipo_acceso=None,
+        embedding_facial=embedding_to_bytes(emb),
+        similitud=None,
     )
+    db.add(reg)
+    db.commit()
+
+    return {"ok": True, "n_embeddings": n_actuales + 1}
+
+
+# ── Helper interno ────────────────────────────────────────────────────────────
+
+def _get_candidatos(db: Session) -> list[tuple[int, any]]:
+    """Carga la galería de embeddings de referencia de todas las personas activas.
+
+    Args:
+        db: Sesión activa de SQLAlchemy.
+
+    Returns:
+        Lista de tuplas ``(id_persona, embedding_array)`` con todos los
+        embeddings de tipo ``'registro'`` de personas con ``activo=True``.
+    """
     rows = (
-        db.query(RegistroAcceso, Persona)
-        .join(Persona, RegistroAcceso.id_persona == Persona.id_persona)
-        .join(subq, (RegistroAcceso.id_persona == subq.c.id_persona) & (RegistroAcceso.fecha_hora == subq.c.max_fecha))
-        .filter(RegistroAcceso.tipo_movimiento == "ingreso", RegistroAcceso.resultado == "permitido")
-        .order_by(RegistroAcceso.fecha_hora.desc())
+        db.query(Registro)
+        .join(Persona, Registro.id_persona == Persona.id_persona)
+        .filter(Persona.activo.is_(True), Registro.evento == "registro")
         .all()
     )
-    return [
-        PersonaDentro(
-            id_persona=r.id_persona,
-            nombre_completo=p.nombre_completo or "",
-            fecha_hora_entrada=r.fecha_hora,
-        )
-        for r, p in rows
-    ]
-
-
-@router.get("/{persona_id:int}", response_model=PersonaDetail)
-def obtener_persona(persona_id: int, db: Session = Depends(get_db)):
-    """
-    Obtiene el detalle de una persona por ID. HU-10 (formulario de edición).
-    """
-    persona = db.query(Persona).filter(Persona.id_persona == persona_id).first()
-    if not persona:
-        raise HTTPException(status_code=404, detail="Persona no encontrada.")
-    tipo_nombre = persona.tipo_persona.nombre_tipo if persona.tipo_persona else "empleado_propio"
-    return PersonaDetail(
-        id_persona=persona.id_persona,
-        nombre_completo=persona.nombre_completo,
-        documento=persona.documento,
-        tipo_documento=persona.tipo_documento or "CC",
-        cargo=persona.cargo,
-        area=persona.area,
-        telefono=persona.telefono,
-        email=persona.email,
-        estado=persona.estado,
-        tipo=tipo_nombre,
-    )
-
-
-@router.post("/", response_model=PersonaRegistroResponse)
-def registrar_persona(
-    nombre_completo: str = Form(..., min_length=1),
-    documento: str = Form(..., min_length=1),
-    tipo: str = Form(TIPO_EMPLEADO, description="empleado_propio | visitante_temporal"),
-    tipo_documento: str = Form("CC"),
-    cargo: str = Form(""),
-    area: str = Form(""),
-    empresa: str = Form(""),
-    motivo_visita: str = Form(""),
-    id_empleado_visitado: str = Form(""),
-    foto: UploadFile = File(..., description="Foto (rostro visible, JPEG/PNG)"),
-    db: Session = Depends(get_db),
-):
-    """
-    Registra persona (empleado o visitante) con foto. Genera embedding Facenet.
-    Para visitante: enviar tipo=visitante_temporal, empresa y motivo_visita. Opcional id_empleado_visitado.
-    Documento único (409). Requiere un rostro en la foto (400 si no se detecta).
-    """
-    if not foto.content_type or not foto.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="El archivo debe ser una imagen (JPEG, PNG, etc.)")
-
-    image_bytes = foto.file.read()
-    if len(image_bytes) == 0:
-        raise HTTPException(status_code=400, detail="Imagen vacía")
-
-    tipo = (tipo or TIPO_EMPLEADO).strip()
-    calidad_resp: float | None = None
-    if tipo == TIPO_VISITANTE:
-        if not (empresa or "").strip():
-            raise HTTPException(status_code=400, detail="Para visitante se requiere empresa.")
-        if not (motivo_visita or "").strip():
-            raise HTTPException(status_code=400, detail="Para visitante se requiere motivo_visita.")
-        try:
-            persona, reco, _ = registrar_visitante(
-                db,
-                nombre_completo=nombre_completo,
-                documento=documento,
-                empresa=empresa.strip(),
-                motivo_visita=motivo_visita.strip(),
-                tipo_documento=tipo_documento or "CC",
-                id_empleado_visitado=int(id_empleado_visitado) if (id_empleado_visitado or "").strip().isdigit() else None,
-                image_bytes=image_bytes,
-            )
-        except ValueError as e:
-            _map_registro_errors(e)
-    else:
-        try:
-            persona, reco, calidad_resp = registrar_empleado(
-                db,
-                nombre_completo=nombre_completo,
-                documento=documento,
-                cargo=cargo or None,
-                area=area or None,
-                tipo_documento=tipo_documento or "CC",
-                image_bytes=image_bytes,
-            )
-        except ValueError as e:
-            _map_registro_errors(e)
-
-    return PersonaRegistroResponse(
-        id_persona=persona.id_persona,
-        nombre_completo=persona.nombre_completo,
-        documento=persona.documento,
-        estado=persona.estado,
-        calidad_embedding=calidad_resp,
-    )
-
-
-@router.patch("/{persona_id:int}", response_model=PersonaRegistroResponse)
-def actualizar_persona(
-    persona_id: int,
-    body: PersonaUpdate,
-    db: Session = Depends(get_db),
-):
-    """
-    Actualiza datos de una persona. HU-02 (estado), HU-10 (nombre, cargo, área, contacto).
-    Solo se actualizan los campos enviados. Las personas inactivas son rechazadas en validación (HU-05).
-    """
-    persona = db.query(Persona).filter(Persona.id_persona == persona_id).first()
-    if not persona:
-        raise HTTPException(status_code=404, detail="Persona no encontrada.")
-    if body.estado is not None and body.estado not in ("activo", "inactivo"):
-        raise HTTPException(status_code=400, detail="estado debe ser 'activo' o 'inactivo'.")
-    if body.nombre_completo is not None:
-        persona.nombre_completo = body.nombre_completo.strip() or persona.nombre_completo
-    if body.cargo is not None:
-        persona.cargo = body.cargo.strip() if body.cargo else None
-    if body.area is not None:
-        persona.area = body.area.strip() if body.area else None
-    if body.telefono is not None:
-        persona.telefono = body.telefono.strip() if body.telefono else None
-    if body.email is not None:
-        persona.email = body.email.strip() if body.email else None
-    if body.estado is not None:
-        persona.estado = body.estado
-    db.commit()
-    db.refresh(persona)
-    return PersonaRegistroResponse(
-        id_persona=persona.id_persona,
-        nombre_completo=persona.nombre_completo,
-        documento=persona.documento,
-        estado=persona.estado,
-        calidad_embedding=None,
-    )
+    return [(r.id_persona, bytes_to_embedding(r.embedding_facial)) for r in rows]

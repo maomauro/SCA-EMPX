@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Acceso facial — SCA-EMPX</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:system-ui,sans-serif;background:#0f172a;color:#f8fafc;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+    header{background:#1e293b;padding:.75rem 1.5rem;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+    header h1{font-size:1rem;font-weight:700}
+    header nav a{color:#94a3b8;text-decoration:none;font-size:.8rem;margin-left:1rem}
+    header nav a:hover{color:#fff}
+    .main{flex:1;display:grid;grid-template-columns:1fr 300px;gap:0;min-height:0}
+    @media(max-width:700px){.main{grid-template-columns:1fr}}
+    /* Cámara: ocupa todo el espacio disponible, aspect-ratio preservado */
+    .cam-wrap{position:relative;background:#000;overflow:hidden;display:flex;align-items:center;justify-content:center}
+    video{width:100%;height:100%;object-fit:contain;display:block}
+    /* canvas de captura: oculto */
+    #canvas{display:none}
+    /* canvas de overlay: encima del video, cubre todo */
+    #overlay-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+    .overlay{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;
+             padding:.75rem 1rem 1rem;background:linear-gradient(transparent 50%,rgba(0,0,0,.8))}
+    .resultado{padding:.75rem 1rem;border-radius:8px;font-size:.95rem;font-weight:700;text-align:center;
+               margin-bottom:.4rem;transition:all .3s;white-space:pre-line;line-height:1.4}
+    .res-ok  {background:rgba(22,163,74,.9);color:#fff}
+    .res-deny{background:rgba(220,38,38,.9);color:#fff}
+    .res-idle{background:rgba(30,41,59,.8);color:#94a3b8;font-weight:400;font-size:.9rem}
+    .res-warn{background:rgba(220,38,38,.9);color:#fff}
+    .estado-detector{font-size:.75rem;color:#94a3b8;text-align:center}
+    /* Panel lateral */
+    .panel{background:#1e293b;padding:1.25rem;overflow-y:auto;border-left:1px solid #334155}
+    .panel h2{font-size:.85rem;font-weight:600;color:#64748b;margin-bottom:.75rem;text-transform:uppercase;letter-spacing:.05em}
+    #ws-feed ul{max-height:none}
+    .toggle-wrap{margin-bottom:1rem}
+    .toggle-label{font-size:.8rem;color:#94a3b8;display:flex;align-items:center;gap:.5rem;cursor:pointer}
+    input[type=checkbox]{width:auto}
+  </style>
+</head>
+<body>
+<header>
+  <h1>SCA-EMPX — Control de Acceso</h1>
+  <nav>
+    <a href="/">Dashboard</a>
+    <a href="/registro">Registrar</a>
+    <a href="/visitante">Visitante</a>
+    <a href="/configuracion">Config</a>
+  </nav>
+</header>
+
+<div class="main">
+  <!-- CÁMARA -->
+  <div class="cam-wrap">
+    <video id="video" autoplay playsinline muted></video>
+    <canvas id="canvas"></canvas>
+    <canvas id="overlay-canvas"></canvas>
+    <div class="overlay">
+      <div class="resultado res-idle" id="resultado">Cámara iniciando…</div>
+      <div class="estado-detector" id="estado">Esperando rostro…</div>
+    </div>
+  </div>
+
+  <!-- PANEL LATERAL -->
+  <div class="panel">
+    <h2>Configuración</h2>
+    <label class="toggle-label">
+      <input type="checkbox" id="chk-activo" checked/>
+      Detección activa
+    </label>
+
+    <br/>
+    <h2>Últimos eventos</h2>
+    <div id="ws-feed"></div>
+  </div>
+</div>
+
+<script src="/static/ws-client.js"></script>
+<script>
+  // ── Config ────────────────────────────────────────────────────────────────
+  const DETECT_WAIT_MS = 1000;   // tiempo estable antes de enviar al backend
+  const COOLDOWN_MS    = 4000;   // pausa tras respuesta del backend
+  const FRAME_INTERVAL = 200;    // ms entre frames de análisis
+  const JPEG_QUALITY   = 0.80;
+
+  // ── Refs DOM ──────────────────────────────────────────────────────────────
+  const video         = document.getElementById("video");
+  const canvas        = document.getElementById("canvas");
+  const overlayCanvas = document.getElementById("overlay-canvas");
+  const ctx           = canvas.getContext("2d");
+  const octx          = overlayCanvas.getContext("2d");
+  const resultado     = document.getElementById("resultado");
+  const estado        = document.getElementById("estado");
+  const chkActivo     = document.getElementById("chk-activo");
+
+  initWsFeed("ws-feed");
+
+  // ── Estado ────────────────────────────────────────────────────────────────
+  let rostroDesdeMs = null;   // timestamp desde el que hay rostro estable
+  let validando     = false;
+  let enCooldown    = false;
+  let hayRostro     = false;  // ¿el último frame tenía rostro?
+
+  // ── Ajustar overlay-canvas al tamaño real del video ───────────────────────
+  function syncOverlaySize() {
+    overlayCanvas.width  = video.offsetWidth  || video.videoWidth  || 640;
+    overlayCanvas.height = video.offsetHeight || video.videoHeight || 480;
+  }
+  new ResizeObserver(syncOverlaySize).observe(video);
+
+  // ── Dibujar / borrar cuadrito ─────────────────────────────────────────────
+  function drawFaceBox(color, label) {
+    syncOverlaySize();
+    const w = overlayCanvas.width;
+    const h = overlayCanvas.height;
+    octx.clearRect(0, 0, w, h);
+
+    // Cuadro centrado (aproximado — sin detector de puntos faciales)
+    const boxW = w * 0.38;
+    const boxH = h * 0.55;
+    const x    = (w - boxW) / 2;
+    const y    = (h - boxH) / 2.2;
+
+    octx.strokeStyle = color;
+    octx.lineWidth   = 3;
+    octx.shadowColor = color;
+    octx.shadowBlur  = 10;
+    octx.strokeRect(x, y, boxW, boxH);
+
+    // Etiqueta encima del cuadro
+    octx.shadowBlur  = 0;
+    octx.fillStyle   = color;
+    octx.font        = "bold 14px system-ui";
+    octx.textAlign   = "center";
+    octx.fillText(label, w / 2, y - 8);
+  }
+
+  function clearFaceBox() {
+    octx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+  }
+
+  // ── Iniciar cámara ────────────────────────────────────────────────────────
+  (async () => {
+    try {
+      const deviceId = localStorage.getItem("sca_camara_deviceId");
+      const constraints = deviceId
+        ? { deviceId: { exact: deviceId }, width: 640, height: 480 }
+        : { width: 640, height: 480, facingMode: "user" };
+      const stream = await navigator.mediaDevices.getUserMedia({ video: constraints });
+      video.srcObject = stream;
+      video.addEventListener("loadeddata", () => {
+        syncOverlaySize();
+        setResultado("Listo. Acércate a la cámara.", "idle");
+        setInterval(tick, FRAME_INTERVAL);
+      });
+    } catch(e) {
+      setResultado("Sin acceso a cámara: " + e.message, "deny");
+    }
+  })();
+
+  // ── Loop de detección ─────────────────────────────────────────────────────
+  async function tick() {
+    if (!chkActivo.checked || validando || enCooldown) return;
+    if (video.readyState < 2) return;
+
+    // Capturar frame en canvas oculto
+    canvas.width  = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0);
+
+    // Heurística rápida de "hay cara": medir varianza de píxeles en zona central
+    // (evita llamadas innecesarias al backend cuando no hay nadie)
+    const detected = quickFaceHeuristic();
+
+    if (!detected) {
+      // Sin rostro: resetear estado
+      if (hayRostro) {
+        hayRostro     = false;
+        rostroDesdeMs = null;
+        clearFaceBox();
+        estado.textContent = "Esperando rostro…";
+      }
+      return;
+    }
+
+    // ── FASE 1 → rostro presente ──────────────────────────────────────────
+    if (!hayRostro) {
+      hayRostro     = true;
+      rostroDesdeMs = Date.now();
+    }
+
+    const tiempoEstable = Date.now() - rostroDesdeMs;
+    const pct           = Math.min(Math.round((tiempoEstable / DETECT_WAIT_MS) * 100), 100);
+
+    // ── FASE 2 → cuadrito verde mientras espera ───────────────────────────
+    drawFaceBox("#22c55e", `Rostro detectado ${pct < 100 ? pct + "%" : "✓"}`);
+    estado.textContent = pct < 100 ? `Verificando… ${pct}%` : "Consultando base de datos…";
+
+    if (tiempoEstable >= DETECT_WAIT_MS) {
+      // ── FASE 3 → enviar al backend ────────────────────────────────────
+      const blob = await new Promise(res => canvas.toBlob(res, "image/jpeg", JPEG_QUALITY));
+      if (blob) await validarAcceso(blob);
+    }
+  }
+
+  // ── Heurística rápida: ¿hay cara en el centro del frame? ─────────────────
+  // Mide si la zona central del frame tiene suficiente varianza de color
+  // para distinguir "alguien frente a cámara" de "fondo vacío".
+  function quickFaceHeuristic() {
+    const w = canvas.width;
+    const h = canvas.height;
+    if (!w || !h) return false;
+
+    const zx = Math.floor(w * 0.30);
+    const zy = Math.floor(h * 0.20);
+    const zw = Math.floor(w * 0.40);
+    const zh = Math.floor(h * 0.50);
+
+    let data;
+    try { data = ctx.getImageData(zx, zy, zw, zh).data; }
+    catch(e) { return true; } // si hay error (CORS canvas) asumir que hay rostro
+
+    let sum = 0, sumSq = 0;
+    const step = 8; // muestrear cada 8 píxeles (rápido)
+    let count   = 0;
+    for (let i = 0; i < data.length; i += 4 * step) {
+      const lum = 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
+      sum   += lum;
+      sumSq += lum * lum;
+      count++;
+    }
+    if (count === 0) return false;
+    const mean = sum / count;
+    const variance = (sumSq / count) - (mean * mean);
+    return variance > 180; // umbral empírico: fondo uniforme < 80, cara > 200
+  }
+
+  // ── Validar acceso en backend ─────────────────────────────────────────────
+  async function validarAcceso(blob) {
+    validando = true;
+    rostroDesdeMs = null;
+
+    const fd = new FormData();
+    fd.append("foto", blob, "frame.jpg");
+
+    try {
+      const r    = await fetch("/api/v1/acceso/validar", { method: "POST", body: fd });
+      const data = await r.json();
+
+      if (data.motivo === "rostro_no_detectado") {
+        // El backend no encontró cara — fue falso positivo de la heurística
+        hayRostro = false;
+        clearFaceBox();
+        setResultado("Listo. Acércate a la cámara.", "idle");
+        estado.textContent = "Esperando rostro…";
+        validando = false;
+        return;  // sin cooldown, seguir inmediatamente
+      }
+
+      // ── FASE 4 ────────────────────────────────────────────────────────
+      if (data.permitido && data.persona?.es_empleado) {
+        // 4.1 — Empleado identificado → ACCESO CORRECTO
+        const icono = data.tipo_acceso === "entrada" ? "▲" : "▼";
+        drawFaceBox("#22c55e", "✓ " + data.persona.nombres);
+        setResultado(
+          `✓ ACCESO CORRECTO\n${icono} ${data.tipo_acceso.toUpperCase()} — ${data.persona.nombres}`,
+          "ok"
+        );
+        estado.textContent = data.tipo_acceso === "entrada" ? "Bienvenido/a" : "Hasta luego";
+
+      } else if (data.permitido && data.persona?.visitante_de_salida) {
+        // Visitante/contratista saliendo — visita cerrada automáticamente
+        drawFaceBox("#f97316", "▼ " + data.persona.nombres);
+        setResultado(
+          `▼ SALIDA REGISTRADA\n¡Gracias por su visita, ${data.persona.nombres}!`,
+          "warn"
+        );
+        estado.textContent = "Hasta pronto";
+
+      } else if (data.permitido && data.persona) {
+        // Visitante/contratista reconocido recién ingresando o sin visita abierta
+        const icono = data.tipo_acceso === "entrada" ? "▲" : "▼";
+        drawFaceBox("#22c55e", `${icono} ${data.persona.nombres}`);
+        setResultado(
+          `${icono} ${data.tipo_acceso.toUpperCase()} — ${data.persona.nombres}\n${data.persona.tipo}`,
+          "ok"
+        );
+        estado.textContent = data.tipo_acceso === "entrada" ? "Bienvenido/a" : "Hasta luego";
+
+      } else {
+        // 4.2 — No identificado o no autorizado
+        drawFaceBox("#ef4444", "No identificado");
+        setResultado(
+          "✗ Favor registrar su visita en recepción\n" +
+          (data.motivo === "sin_personas_registradas" ? "Sin personas registradas en el sistema" : "Persona no identificada"),
+          "deny"
+        );
+        estado.textContent = "Diríjase al módulo de visitantes";
+      }
+
+    } catch(e) {
+      clearFaceBox();
+      setResultado("Error de conexión", "deny");
+      estado.textContent = "";
+    }
+
+    // Cooldown
+    enCooldown = true;
+    setTimeout(() => {
+      enCooldown    = false;
+      validando     = false;
+      hayRostro     = false;
+      rostroDesdeMs = null;
+      clearFaceBox();
+      setResultado("Listo. Acércate a la cámara.", "idle");
+      estado.textContent = "Esperando rostro…";
+    }, COOLDOWN_MS);
+  }
+
+  function setResultado(msg, tipo) {
+    resultado.textContent = msg;
+    resultado.className   = "resultado res-" + tipo;
+  }
+</script>
+</body>
+</html>
