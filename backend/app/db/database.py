@@ -16,7 +16,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from backend.app.config.config import DATABASE_URL
-from backend.app.db.models import Base, Area, Cargo, TipoPersona, Persona, Registro, Visita  # noqa: F401
+from backend.app.db.models import Base, Area, Cargo, TipoPersona, Persona, Registro, Visita, Autorizacion  # noqa: F401
 
 
 connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
@@ -62,7 +62,7 @@ def reset_db():
 
     Elimina todos los registros de las tablas transaccionales en el orden
     correcto para respetar las restricciones de llave foránea:
-    ``Registro`` → ``Visita`` → ``Persona``.
+    ``Registro`` → ``Visita`` → ``Autorizacion`` → ``Persona``.
 
     Las tablas de catálogo (``areas``, ``cargos``, ``tipos_persona``) **no**
     se modifican.
@@ -75,6 +75,7 @@ def reset_db():
     try:
         db.query(Registro).delete()
         db.query(Visita).delete()
+        db.query(Autorizacion).delete()
         db.query(Persona).delete()
         db.commit()
     finally:

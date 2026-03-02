@@ -122,7 +122,7 @@ Flujo: **petición** → `api/` → `services/` → `db/` (SQLite) y/o `ml/` →
    ```
    (o `pip install -e .` si no usas uv.)
 
-4. **Variables de entorno** (opcional): copiar `.env.example` a `.env` y ajustar. Por defecto la BD es `sqlite:///./backend/app/db/sqlite.db`.
+4. **Variables de entorno** (opcional): copiar `.env.example` a `.env` y ajustar. Por defecto la BD es `sqlite:///./backend/app/db/sca.db` (véase `backend/app/config/config.py`).
 
 5. **Inicializar la base de datos** (crear tablas y usuario admin):
    ```bash
@@ -135,7 +135,7 @@ Flujo: **petición** → `api/` → `services/` → `db/` (SQLite) y/o `ml/` →
    uv run python main.py
    ```
    La API queda en `http://0.0.0.0:8000`.
-   - UI principal: `http://localhost:8000/ui/index.html`
+   - UI principal: `http://localhost:8000/` (dashboard); `/registro`, `/acceso`, `/visitante`, `/configuracion`
    - Documentación interactiva (Swagger): `http://localhost:8000/docs`
 
 7. **Login**: `POST /api/v1/usuarios/login` con body `{"username": "admin", "password": "admin"}`. Respuesta: `{"access_token": "...", "token_type": "bearer"}`. Usar el token en cabecera `Authorization: Bearer <token>` para rutas protegidas.

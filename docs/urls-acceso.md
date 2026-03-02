@@ -8,13 +8,12 @@ Listado de URLs para acceder a la aplicación con la API en ejecución en **http
 
 | URL | Descripción |
 |-----|-------------|
-| http://127.0.0.1:8000/ | Health check (JSON) |
-| http://127.0.0.1:8000/health | Estado para despliegue |
-| http://127.0.0.1:8000/validate-access | Validar acceso por reconocimiento facial (HU-05) |
-| http://127.0.0.1:8000/registro-empleado | Registrar empleado con foto (HU-01) |
-| http://127.0.0.1:8000/registro-visitante | Registrar visitante con foto (HU-03) |
-| http://127.0.0.1:8000/autorizacion-visita | Generar autorización de visita (HU-04) |
-| http://127.0.0.1:8000/registrar-salida | Registrar salida por reconocimiento facial (HU-07) |
+| http://127.0.0.1:8000/ | Página principal (dashboard) |
+| http://127.0.0.1:8000/health | Health check (JSON) para despliegue |
+| http://127.0.0.1:8000/registro | Registrar persona (empleado/visitante) con captura facial |
+| http://127.0.0.1:8000/acceso | Validar acceso por reconocimiento facial — entrada/salida (HU-05, HU-06, HU-07) |
+| http://127.0.0.1:8000/visitante | Registro de visitante y autorización de visita |
+| http://127.0.0.1:8000/configuracion | Configuración del sistema |
 
 ---
 
@@ -33,23 +32,24 @@ Listado de URLs para acceder a la aplicación con la API en ejecución en **http
 
 | Método | URL | Descripción |
 |--------|-----|-------------|
-| GET | http://127.0.0.1:8000/api/v1/personas | Listar personas (opcional: `?tipo=empleado` o `?tipo=visitante`) |
-| POST | http://127.0.0.1:8000/api/v1/personas | Registrar persona (empleado o visitante; multipart + foto) |
-| PATCH | http://127.0.0.1:8000/api/v1/personas/{id} | Actualizar persona (por implementar) |
+| GET | http://127.0.0.1:8000/api/v1/personas | Listar personas (opcional: `?tipo=Empleado`, `?tipo=Visitante`, `?tipo=Contratista`) |
+| POST | http://127.0.0.1:8000/api/v1/personas | Crear persona (JSON: tipo_documento, nro_documento, nombres, id_tipo_persona, id_cargo opcional) |
+| GET | http://127.0.0.1:8000/api/v1/personas/{id} | Obtener detalle de una persona |
+| POST | http://127.0.0.1:8000/api/v1/personas/{id}/registros | Añadir embedding facial de registro (multipart: foto) |
+| POST | http://127.0.0.1:8000/api/v1/personas/identificar | Identificar persona por imagen (visitante recurrente) |
 
 ### Acceso
 
 | Método | URL | Descripción |
 |--------|-----|-------------|
-| POST | http://127.0.0.1:8000/api/v1/access/validate | Validar acceso (imagen → permitido/denegado + registro entrada) |
-| POST | http://127.0.0.1:8000/api/v1/access/register-exit | Registrar salida (imagen → identificar → registro salida) |
+| POST | http://127.0.0.1:8000/api/v1/acceso/validar | Validar acceso facial (imagen → permitido/denegado, registro entrada o salida automático) |
 
 ### Eventos
 
 | Método | URL | Descripción |
 |--------|-----|-------------|
 | GET | http://127.0.0.1:8000/api/v1/events | Listar eventos (`?tipo=ingreso`, `?tipo=salida`, `?limit=50`, `?offset=0`) |
-| POST | http://127.0.0.1:8000/api/v1/events/exit | Stub (por implementar; usar `/access/register-exit`) |
+| POST | http://127.0.0.1:8000/api/v1/events/exit | Stub (por implementar; entrada/salida se registran vía `/acceso/validar`) |
 
 ### Autorizaciones
 
