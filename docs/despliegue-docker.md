@@ -2,6 +2,8 @@
 
 Este documento describe cómo construir y ejecutar SCA-EMPX con **Docker** y **Docker Compose**: API FastAPI, servidor MLFlow y entorno de entrenamiento.
 
+**Pipeline CI/CD (archivo .yml para despliegue):** El proyecto incluye **`.gitlab-ci.yml`** en la raíz, que define el pipeline GitLab (Preparation → Build → Tests → Deploy). Si usas GitLab, cada push dispara ese pipeline; la etapa *Build* construye la imagen Docker y la sube al Container Registry; *Deploy* se puede configurar con Variables de GitLab. Para Azure DevOps se usa **`azure-pipelines.yml`** (tests y smoke test ML).
+
 ---
 
 ## Arquitectura del despliegue: cómo se reparte todo
