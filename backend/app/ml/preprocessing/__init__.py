@@ -1,0 +1,1 @@
+# Preprocesamiento de imagen/rostro
