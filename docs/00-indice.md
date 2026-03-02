@@ -250,6 +250,7 @@ Procesos BPMN
 - **Uso de Git (ramas, commits, ambientes, pull, push)**: [Guía de Uso de Git](./guia-git.md)
 - **Flujo MLOps (entrenamiento, registro, promoción, despliegue)**: [Flujo MLOps](./mlops-flujo.md)
 - **Monitoreo del modelo en producción (métricas y dónde registrarlas)**: [Monitoreo en producción](./mlops-monitoreo-produccion.md)
+- **Despliegue con Docker (API, MLFlow, entrenamiento)**: [Despliegue Docker](./despliegue-docker.md)
 
 ---
 
