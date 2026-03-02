@@ -1,0 +1,51 @@
+# Fase 4 — Docker Compose: API, MLFlow y entorno de entrenamiento
+# Uso: docker compose up -d    (api + mlflow)
+#      docker compose run --rm train   (entrenamiento con acceso a MLFlow y Comet)
+
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite:///./backend/app/db/sca.db
+      - SECRET_KEY=${SECRET_KEY:-cambiar-en-produccion}
+      - DEBUG=${DEBUG:-false}
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    volumes:
+      - api_db:/app/backend/app/db
+    depends_on:
+      - mlflow
+    restart: unless-stopped
+
+  mlflow:
+    build: .
+    command: ["mlflow", "server", "--host", "0.0.0.0", "--port", "5000"]
+    ports:
+      - "5000:5000"
+    environment:
+      - MLFLOW_TRACKING_URI=http://127.0.0.1:5000
+    volumes:
+      - mlruns:/app/mlruns
+    restart: unless-stopped
+
+  # Servicio para ejecutar entrenamiento bajo demanda (no se levanta con up)
+  # Ejemplo: docker compose run --rm -e COMET_API_KEY=xxx train
+  #          docker compose run --rm train --epochs 3 --config training/config_default.json
+  train:
+    build: .
+    command: ["python", "training/train_classifier.py", "--mlflow-uri", "http://mlflow:5000", "--epochs", "3"]
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - COMET_API_KEY=${COMET_API_KEY:-}
+    volumes:
+      - training_data:/app/data
+    profiles:
+      - train
+    depends_on:
+      - mlflow
+
+volumes:
+  api_db:
+  mlruns:
+  training_data:

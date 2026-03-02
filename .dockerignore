@@ -1,0 +1,32 @@
+# Git y entornos
+.git
+.venv
+.venv/
+.cache
+.claude
+.github
+.pytest_cache
+.ruff_cache
+
+# Python
+__pycache__
+*.py[oc]
+*.egg-info
+build
+dist
+wheels
+
+# Datos y artefactos (no empaquetar en imagen)
+data/
+mlruns/
+*.db
+backend/app/db/*.db
+
+# Secrets y env
+.env
+.env.*
+*.log
+
+# Documentación y tests (opcional: quitar si se quieren en imagen)
+# docs/
+# backend/tests/
