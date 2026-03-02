@@ -31,6 +31,9 @@ backend/app/db/*.db
 # Datos de entrenamiento (MNIST, etc.)
 data/
 
+# MLFlow (runs y artefactos locales)
+mlruns/
+
 
 #Ignore vscode AI rules
 .github\instructions\codacy.instructions.md
