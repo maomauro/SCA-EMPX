@@ -1,16 +1,20 @@
 """
-Script de entrenamiento de un modelo de clasificación — Fase 0.
+Script de entrenamiento de un modelo de clasificación — Fase 0 + Fase 1 (MLFlow).
 
 Entrena un clasificador sobre MNIST (dígitos 0-9). En cada época calcula:
 - Función de costo (loss) en train y en validación.
 - Dos métricas de desempeño (Accuracy y F1-score) en train y en validación.
 
-Listo para ser instrumentado con MLFlow (Fase 1) y Comet ML (Fase 2).
+Registra en MLFlow: parámetros, métricas por época (loss_train, loss_val,
+acc_train, acc_val, f1_train, f1_val) y el modelo. Las gráficas de la Guía
+se obtienen en la UI de MLFlow (mlflow ui).
+
 Ejecutar desde la raíz del proyecto: uv run python training/train_classifier.py
 """
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
 from pathlib import Path
 
 import torch
@@ -18,6 +22,8 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, random_split
 from torchvision import transforms
 from torchvision.datasets import MNIST
+
+import mlflow
 
 
 # ── Modelo ───────────────────────────────────────────────────────────────────
@@ -130,17 +136,29 @@ def eval_epoch(
     return total_loss / n, total_acc / n, total_f1 / n
 
 
+@contextmanager
+def _noop_context():
+    """Context manager que no hace nada (cuando MLFlow está desactivado)."""
+    yield
+
+
 # ── Main ─────────────────────────────────────────────────────────────────────
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Entrenar clasificador MNIST (Fase 0)")
+    parser = argparse.ArgumentParser(description="Entrenar clasificador MNIST (Fase 0 + Fase 1 MLFlow)")
     parser.add_argument("--epochs", type=int, default=3, help="Número de épocas")
     parser.add_argument("--batch-size", type=int, default=128, help="Tamaño de batch")
     parser.add_argument("--lr", type=float, default=1e-2, help="Learning rate")
     parser.add_argument("--val-ratio", type=float, default=0.1, help="Proporción para validación (0-1)")
     parser.add_argument("--seed", type=int, default=42, help="Semilla aleatoria")
     parser.add_argument("--out", type=str, default="", help="Carpeta para guardar modelo (opcional)")
+    parser.add_argument("--no-mlflow", action="store_true", help="No registrar en MLFlow")
+    parser.add_argument("--mlflow-uri", type=str, default="", help="MLFLOW_TRACKING_URI (por defecto: ./mlruns)")
     args = parser.parse_args()
+
+    use_mlflow = not args.no_mlflow
+    if use_mlflow and args.mlflow_uri:
+        mlflow.set_tracking_uri(args.mlflow_uri)
 
     torch.manual_seed(args.seed)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -173,32 +191,62 @@ def main() -> None:
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
-    print("Fase 0 — Entrenamiento clasificador MNIST")
-    print(f"  Device: {device}  Épocas: {args.epochs}  Batch: {args.batch_size}")
+    print("Fase 0 + Fase 1 (MLFlow) — Entrenamiento clasificador MNIST")
+    print(f"  Device: {device}  Épocas: {args.epochs}  Batch: {args.batch_size}  MLFlow: {use_mlflow}")
     print("  Métricas: loss (cost), accuracy, F1-macro (train y validación)")
     print("-" * 70)
 
-    for epoch in range(1, args.epochs + 1):
-        loss_train, acc_train, f1_train = train_epoch(
-            model, loader_train, criterion, optimizer, device, num_classes
-        )
-        loss_val, acc_val, f1_val = eval_epoch(
-            model, loader_val, criterion, device, num_classes
-        )
-        print(
-            f"Epoch {epoch:2d}  "
-            f"loss_train={loss_train:.4f}  loss_val={loss_val:.4f}  "
-            f"acc_train={acc_train:.4f}  acc_val={acc_val:.4f}  "
-            f"f1_train={f1_train:.4f}  f1_val={f1_val:.4f}"
-        )
+    run_kwargs = {}
+    if use_mlflow:
+        mlflow.set_experiment("mnist-classifier")
+        run_kwargs["run_name"] = f"run_epochs{args.epochs}_bs{args.batch_size}"
+
+    with mlflow.start_run(**run_kwargs) if use_mlflow else _noop_context():
+        if use_mlflow:
+            mlflow.log_params({
+                "epochs": args.epochs,
+                "batch_size": args.batch_size,
+                "lr": args.lr,
+                "val_ratio": args.val_ratio,
+                "seed": args.seed,
+            })
+
+        for epoch in range(1, args.epochs + 1):
+            loss_train, acc_train, f1_train = train_epoch(
+                model, loader_train, criterion, optimizer, device, num_classes
+            )
+            loss_val, acc_val, f1_val = eval_epoch(
+                model, loader_val, criterion, device, num_classes
+            )
+            print(
+                f"Epoch {epoch:2d}  "
+                f"loss_train={loss_train:.4f}  loss_val={loss_val:.4f}  "
+                f"acc_train={acc_train:.4f}  acc_val={acc_val:.4f}  "
+                f"f1_train={f1_train:.4f}  f1_val={f1_val:.4f}"
+            )
+            if use_mlflow:
+                mlflow.log_metrics({
+                    "loss_train": loss_train,
+                    "loss_val": loss_val,
+                    "accuracy_train": acc_train,
+                    "accuracy_val": acc_val,
+                    "f1_train": f1_train,
+                    "f1_val": f1_val,
+                }, step=epoch)
+
+        if use_mlflow:
+            mlflow.pytorch.log_model(model.cpu(), "model", registered_model_name="mnist-classifier")
+            if device.type == "cuda":
+                model.to(device)
+            print(f"\nMLFlow: run guardado. Ver gráficas con: mlflow ui (desde la raíz del proyecto)")
 
     if args.out:
         out_path = Path(args.out)
         out_path.mkdir(parents=True, exist_ok=True)
         torch.save(model.state_dict(), out_path / "mnist_classifier.pt")
-        print(f"\nModelo guardado en {out_path / 'mnist_classifier.pt'}")
+        print(f"Modelo guardado en {out_path / 'mnist_classifier.pt'}")
 
-    print("\nListo. En Fase 1 se añadirá MLFlow para registrar estas métricas por época.")
+    print("\nListo. Fase 2: añadir Comet ML en el mismo script.")
 
 
 if __name__ == "__main__":
