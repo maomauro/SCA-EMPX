@@ -66,3 +66,10 @@ steps:
     summaryFileLocation: '$(COVERAGE_XML)'
     reportDirectory: '$(System.DefaultWorkingDirectory)'
   displayName: "Publicar cobertura"
+
+# Fase 3.4 — Smoke test de entrenamiento ML (1 época, sin Comet para no requerir API key)
+- script: |
+    python training/train_classifier.py --epochs 1 --no-comet
+  displayName: "Smoke test entrenamiento ML"
+  env:
+    PYTHONWARNINGS: "ignore::DeprecationWarning"
