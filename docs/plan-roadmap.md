@@ -1,7 +1,8 @@
 # Plan: Roadmap General SCA-EMPX
 
 **Fecha:** 1 de marzo de 2026 · **Estado:** DRAFT — Pendiente validación  
-**Rama:** `docs/plan-roadmap`
+**Rama:** `docs/plan-roadmap`  
+**Contexto:** Ejercicio educativo y aplicado — el docente solicita la implementación de **todo**: modelos/base, MLFlow, Comet ML, MLOps, Docker y pipeline de monitoreo.
 
 ---
 
@@ -9,11 +10,11 @@
 
 | Si quieres… | Ve a la sección |
 |-------------|------------------|
-| Ver todo el plan de un vistazo | [Índice](#índice) |
+| Ver el orden de las fases (recomendado para la entrega) | [Orden del roadmap](#23-orden-del-roadmap-recomendado) |
+| Seguir el plan **paso a paso** desde el inicio | [Parte 2: Roadmap completo](#2-roadmap-completo-paso-a-paso) |
+| Ver qué debe cumplir la **Guía de Monitoreo ML-IA** | [Coherencia con la Guía](#21-coherencia-con-la-guía-monitoreo-ml-ia) |
 | Entender el estado actual del proyecto | [Parte 1: Contexto](#parte-1-contexto-y-estado-actual) |
-| **Cumplir la Guía de Monitoreo ML-IA** (entrega académica) | [Parte 2: Ruta Guía ML-IA](#22-ruta-guía-monitoreo-ml-ia-entrega-académica) |
-| Ejecutar el roadmap completo paso a paso | [Parte 2: Roadmap completo](#23-roadmap-completo-fases-a-e) |
-| Ver el orden recomendado de las fases | [Resumen visual del roadmap](#3-resumen-visual-del-roadmap) |
+| Detalle de tareas por fase | [Anexo A](#anexo-a-detalle-de-fases-0-a-5) |
 
 ---
 
@@ -24,15 +25,16 @@
    - 1.2 Punto de retorno seguro (git tag)
    - 1.3 Validación del plan (auditoría 2 mar 2026)
 
-2. **Parte 2: Qué hacer — Paso a paso**
-   - 2.1 Objetivo general
-   - 2.2 Ruta Guía Monitoreo ML-IA (entrega académica)
-   - 2.3 Roadmap completo (Fases A → E)
+2. **Parte 2: Roadmap completo — Paso a paso**
+   - 2.1 Coherencia con la Guía Monitoreo ML-IA
+   - 2.2 Objetivo del ejercicio
+   - 2.3 Orden del roadmap recomendado (Fases 0 → 5)
+   - 2.4 Resumen de cada fase
 
 3. **Resumen visual del roadmap**
 
 4. **Anexos**
-   - A. Detalle de cada fase (A, B, C, D, E)
+   - A. Detalle de cada fase (0, 1, 2, 3, 4, 5)
    - B. Requisitos y checklist de la Guía ML-IA
    - C. Tabla de validación de bloqueadores
 
@@ -78,187 +80,194 @@ Tabla completa en [Anexo C](#anexo-c-validación-de-bloqueadores).
 
 ---
 
-# Parte 2: Qué hacer — Paso a paso
+# 2. Roadmap completo — Paso a paso
 
-## 2.1 Objetivo general
-
-Tener un **pipeline de monitoreo del entrenamiento de modelos IA-ML** que integre:
-
-- Contenedorización (Docker)
-- Experimentación y registro (MLFlow y/o Comet ML)
-- Prácticas MLOps (versionado, pipeline reproducible, monitoreo)
+Este plan está pensado como **ejercicio educativo y aplicado**. El docente pide implementar **todo** lo siguiente: base de modelos e implementaciones, MLFlow, Comet ML, MLOps, Docker y pipeline de monitoreo. Ninguna de estas fases es opcional para la entrega.
 
 ---
 
-## 2.2 Ruta Guía Monitoreo ML-IA (entrega académica)
+## 2.1 Coherencia con la Guía Monitoreo ML-IA
 
-**Objetivo:** Cumplir la *Guía Monitoreo en Proyectos de ML-IA* (clasificación, función de costo + 2 métricas, dos trazas train/val).
+La **Guía de Monitoreo en Proyectos de ML-IA** exige:
 
-### Paso 1 — Modelo de clasificación
+- Un **modelo de clasificación** con entrenamiento instrumentado.
+- **Una gráfica** de la función de costo (train y validación, dos trazas).
+- **Dos gráficas** de métricas de desempeño (Accuracy, Precision, F1 o Recall), cada una con train y validación (dos trazas).
 
-- Elegir un **modelo de clasificación** (red neuronal, Random Forest, XGBoost, etc.) y un dataset (MNIST, CIFAR, facial por identidades, etc.).
+**Cómo se cumple con este roadmap:**
 
-### Paso 2 — Instrumentar el entrenamiento
+1. **Fase 0** deja lista la base (modelo e implementación coherente) para entrenar.
+2. **Fases 1 y 2** (MLFlow y Comet ML) son donde se instrumenta el entrenamiento: se registran en **ambas** herramientas la función de costo y las dos métricas (train y val) por época. Las UIs de MLFlow y Comet generan las tres gráficas que pide la Guía.
+3. **Fases 3, 4 y 5** (MLOps, Docker, Pipeline) completan el ejercicio: versionado, contenedorización y un flujo único de monitoreo.
 
-En cada época registrar:
-
-- **Función de costo:** `loss_train`, `loss_val`
-- **Métrica 1 (p. ej. Accuracy):** `accuracy_train`, `accuracy_val`
-- **Métrica 2 (p. ej. F1):** `f1_train`, `f1_val`
-
-### Paso 3 — Usar MLFlow o Comet ML
-
-- Instalar `mlflow` o `comet-ml` y configurar (tracking URI o API key).
-- En el loop de entrenamiento: `mlflow.log_metric("loss_train", valor, step=epoch)`, e igual para las demás métricas.
-- Las UIs de MLFlow/Comet generan las gráficas con dos trazas (train vs val) por métrica.
-
-### Paso 4 — Verificar entregables
-
-| # | Entregable | Cómo verificarlo |
-|---|------------|------------------|
-| 1 | Gráfica de **función de costo** (train + validación) | Captura desde MLFlow/Comet: loss vs época, dos curvas. |
-| 2 | Gráfica de **primera métrica** de desempeño (train + validación) | Captura: p. ej. accuracy vs época, dos curvas. |
-| 3 | Gráfica de **segunda métrica** de desempeño (train + validación) | Captura: p. ej. F1 vs época, dos curvas. |
-
-Requisitos detallados y checklist en [Anexo B](#anexo-b-requisitos-y-checklist-guía-ml-ia).
-
-**Fases del plan que cubren esta ruta:** B (MLFlow) y/o C (Comet ML); opcionalmente E para integrar todo.
+**Checklist de entrega (Guía):** Ver [Anexo B](#anexo-b-requisitos-y-checklist-guía-ml-ia). Antes de entregar, confirmar: (1) gráfica de costo train+val, (2) primera gráfica de métrica train+val, (3) segunda gráfica de métrica train+val.
 
 ---
 
-## 2.3 Roadmap completo (Fases A → E)
+## 2.2 Objetivo del ejercicio
 
-Orden recomendado para seguir **paso a paso**:
+Construir un **pipeline de monitoreo del entrenamiento de modelos IA-ML** que integre de forma aplicada:
 
-```
-Fase A (Docker) → Fase B (MLFlow) → [Fase C (Comet) opcional] → Fase D (MLOps) → Fase E (Integración)
-```
+- Base sólida de **modelos e implementaciones** (entrenamiento de un clasificador).
+- **MLFlow** para experimentación y registro de métricas y modelos.
+- **Comet ML** para experimentación y visualización de las mismas métricas.
+- **MLOps** para versionado, reproducibilidad y monitoreo.
+- **Docker** para contenerizar la aplicación y el entorno de entrenamiento.
+- **Pipeline** final que una todo y permita ver el monitoreo de punta a punta.
 
-### Resumen de cada fase
+---
+
+## 2.3 Orden del roadmap recomendado
+
+El orden sugerido es **lineal**: primero se resuelve la base, luego las herramientas de monitoreo, después las prácticas MLOps, luego la contenedorización y por último la integración en un solo pipeline.
+
+| Orden | Fase | Nombre | Qué se hace |
+|-------|------|--------|-------------|
+| **0** | Base | Modelos e implementaciones | Resolver bloqueadores que afecten al entrenamiento (modelos de BD, coherencia del código de ML). Tener un script de entrenamiento de un **modelo de clasificación** que funcione localmente. |
+| **1** | MLFlow | Experimentación y registro | Instalar y configurar MLFlow. Instrumentar el entrenamiento: registrar en cada época loss y dos métricas (train y val). Registrar el modelo. |
+| **2** | Comet ML | Experimentación y visualización | Instalar y configurar Comet ML. En el **mismo** script de entrenamiento, registrar las mismas métricas en Comet. Obtener las gráficas (costo + 2 métricas) también desde Comet. |
+| **3** | MLOps | Prácticas y automatización | Versionado de datos y modelo, pipeline de entrenamiento reproducible, monitoreo en producción, CI/CD para ML. |
+| **4** | Docker | Contenerización | Dockerfile y docker-compose para la app y, si aplica, para el entorno de entrenamiento y MLFlow. |
+| **5** | Pipeline | Integración | Un solo flujo que ejecute entrenamiento registrando en MLFlow y Comet, con dashboard y criterios para elegir el modelo a desplegar. Documentar el pipeline de monitoreo de punta a punta. |
+
+**Resumen en una línea:**  
+**Fase 0 (base) → Fase 1 (MLFlow) → Fase 2 (Comet ML) → Fase 3 (MLOps) → Fase 4 (Docker) → Fase 5 (Pipeline).**
+
+---
+
+## 2.4 Resumen de cada fase
 
 | Fase | Nombre | En una frase |
 |------|--------|----------------|
-| **A** | Docker | Contenerizar la app (Dockerfile + docker-compose). |
-| **B** | MLFlow | Registrar experimentos, métricas y modelos (tracking + UI). |
-| **C** | Comet ML | Experimentación y gráficas (alternativa o complemento a MLFlow). |
-| **D** | MLOps | Versionado, pipeline reproducible, monitoreo en producción, CI/CD. |
-| **E** | Pipeline de monitoreo | Unificar todo: entrenamiento + dashboard + criterios de promoción. |
+| **0** | Modelos e implementaciones | Dejar coherente la base: modelos de BD y código de entrenamiento de un clasificador. |
+| **1** | MLFlow | Registrar experimentos, métricas (costo + 2 de desempeño) y modelo; usar la UI para las gráficas. |
+| **2** | Comet ML | Registrar en Comet las mismas métricas del entrenamiento; usar el dashboard para las gráficas. |
+| **3** | MLOps | Versionado, pipeline reproducible, monitoreo en producción, CI/CD para ML. |
+| **4** | Docker | Contenerizar la aplicación y el entorno de entrenamiento (Dockerfile + docker-compose). |
+| **5** | Pipeline de monitoreo | Integrar todo: un flujo único que entrene, registre en MLFlow y Comet, y documente el monitoreo. |
 
-El **detalle de tareas y entregables** de cada fase está en [Anexo A](#anexo-a-detalle-de-fases-a-b-c-d-e).
-
-### Orden paso a paso (lista)
-
-1. **Fase A — Docker:** Crear `Dockerfile` y `docker-compose.yml`; documentar uso.
-2. **Fase B — MLFlow:** Instalar MLFlow, configurar tracking, instrumentar el script de entrenamiento (métricas por época).
-3. **Fase C — Comet ML (opcional):** Instalar Comet, configurar API key, registrar métricas en el mismo entrenamiento; decidir si se usa solo MLFlow, solo Comet o ambos.
-4. **Fase D — MLOps:** Versionado de datos/modelo, script de entrenamiento reproducible, monitoreo en producción, CI/CD para ML.
-5. **Fase E — Integración:** Un solo flujo de entrenamiento que registre en MLFlow/Comet, dashboard para decidir modelo a desplegar, documentación del pipeline.
+El **detalle de tareas y entregables** de cada fase está en [Anexo A](#anexo-a-detalle-de-fases-0-a-5).
 
 ---
 
 # 3. Resumen visual del roadmap
 
 ```
-                    ┌─────────────────────────────────────────────────────────┐
-                    │           OBJETIVO: Pipeline de monitoreo IA-ML           │
-                    └─────────────────────────────────────────────────────────┘
-                                              │
-        ┌─────────────────────────────────────┼─────────────────────────────────────┐
-        ▼                 ▼                   ▼                   ▼                 ▼
-   ┌─────────┐      ┌──────────┐        ┌──────────┐       ┌─────────┐       ┌─────────┐
-   │ Fase A  │ ──► │  Fase B  │ ──►    │  Fase C  │  ──►  │ Fase D  │ ──►   │ Fase E  │
-   │ Docker  │     │ MLFlow   │        │ Comet ML │       │ MLOps   │       │Pipeline │
-   └─────────┘     └──────────┘        └──────────┘       └─────────┘       └─────────┘
-        │                 │                   │                   │                 │
-        ▼                 ▼                   ▼                   ▼                 ▼
-   Contenedores    Experimentos         Visualización      Versionado +      Monitoreo
-   y despliegue    y métricas           y comparación      CI/CD + prod      end-to-end
+  ┌──────────────────────────────────────────────────────────────────────────────────────────┐
+  │              OBJETIVO: Pipeline de monitoreo de entrenamiento IA-ML (Guía)                 │
+  └──────────────────────────────────────────────────────────────────────────────────────────┘
+                                          │
+  ┌─────────┐    ┌──────────┐    ┌──────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐
+  │ Fase 0  │ ─► │ Fase 1   │ ─► │ Fase 2   │ ─► │ Fase 3  │ ─► │ Fase 4  │ ─► │ Fase 5  │
+  │ Base    │    │ MLFlow   │    │ Comet ML │    │ MLOps   │    │ Docker  │    │Pipeline │
+  │ Modelos │    │          │    │          │    │         │    │         │    │         │
+  └─────────┘    └──────────┘    └──────────┘    └─────────┘    └─────────┘    └─────────┘
+       │               │               │               │               │               │
+       ▼               ▼               ▼               ▼               ▼               ▼
+  Clasificador    Métricas +      Métricas +      Versionado     Contenedores    Monitoreo
+  listo para      registro       gráficas        + CI/CD        y despliegue    end-to-end
+  entrenar        (UI gráficas)   (dashboard)    + producción
 ```
 
-**Ruta corta (solo Guía ML-IA):** Fase B (o C) → checklist Anexo B → entregar gráficas.
+**Para la Guía:** Las gráficas de la entrega (costo + 2 métricas, train y val) se obtienen en **Fase 1 (MLFlow)** y **Fase 2 (Comet ML)**. El resto de fases completa el ejercicio aplicado.
 
 ---
 
 # Anexos
 
-## Anexo A: Detalle de fases A, B, C, D, E
+## Anexo A: Detalle de fases 0 a 5
 
-### Fase A — Docker
+### Fase 0 — Modelos e implementaciones (base)
 
-**Objetivo:** Contenerizar SCA-EMPX para despliegue reproducible.
+**Objetivo:** Dejar una base coherente para el entrenamiento: resolver bloqueadores que afecten al modelo y tener un script de entrenamiento de un **modelo de clasificación** que funcione localmente.
 
 | Paso | Tarea |
 |------|--------|
-| A.1 | Definir `Dockerfile`: Python 3.12+, dependencias (uv/pip), puerto 8000, comando uvicorn. |
-| A.2 | Crear `docker-compose.yml`: servicio `api`; opcional `mlflow` y BD. |
-| A.3 | Volúmenes y variables de entorno (SQLite, `SECRET_KEY`, `DATABASE_URL`). |
-| A.4 | Documentar: build, `docker compose up`, variables necesarias. |
-| A.5 | (Opcional) Imagen multi-stage para reducir tamaño. |
+| 0.1 | Revisar y, si hace falta, corregir modelos de BD y coherencia del código de ML (según [Anexo C](#anexo-c-validación-de-bloqueadores)). |
+| 0.2 | Definir el **modelo de clasificación** y el dataset (ej.: red neuronal sobre MNIST/CIFAR, clasificador facial por identidad, etc.). |
+| 0.3 | Implementar script de entrenamiento: loop por épocas, cálculo de pérdida y al menos dos métricas de desempeño (Accuracy, Precision, F1, Recall) en train y en validación. |
+| 0.4 | Verificar que el entrenamiento corre de punta a punta y que se obtienen loss y métricas por época (aún sin MLFlow/Comet). |
+
+**Entregables:** Base de código coherente; script de entrenamiento de un clasificador que calcule loss y 2 métricas en train y val.
+
+---
+
+### Fase 1 — MLFlow
+
+**Objetivo:** Registrar experimentos, métricas (función de costo + dos de desempeño) y modelo; usar la UI de MLFlow para las gráficas que pide la Guía.
+
+| Paso | Tarea |
+|------|--------|
+| 1.1 | Instalar `mlflow` (dependencia o grupo `[mlops]` en el proyecto). |
+| 1.2 | Configurar MLFlow Tracking Server (local o contenedor) y definir `MLFLOW_TRACKING_URI`. |
+| 1.3 | En el script de entrenamiento: `mlflow.start_run()`, registrar parámetros (`log_params`), y en cada época registrar `loss_train`, `loss_val` y las dos métricas en train y val (`log_metric(..., step=epoch)`). |
+| 1.4 | Registrar el modelo con `mlflow.<flavor>.log_model()` (PyTorch, scikit-learn, ONNX, etc.). |
+| 1.5 | Ejecutar un entrenamiento, abrir la UI de MLFlow y verificar las tres gráficas: costo (train/val), métrica 1 (train/val), métrica 2 (train/val). |
+
+**Entregables:** Servidor MLFlow accesible; script de entrenamiento instrumentado con MLFlow; capturas o exportación de las gráficas para la Guía.
+
+---
+
+### Fase 2 — Comet ML
+
+**Objetivo:** Registrar en Comet ML las mismas métricas del entrenamiento y usar el dashboard para las gráficas (cumplimiento de la Guía también desde Comet).
+
+| Paso | Tarea |
+|------|--------|
+| 2.1 | Instalar `comet-ml`; configurar `COMET_API_KEY` y proyecto/workspace. |
+| 2.2 | En el **mismo** script de entrenamiento (junto con MLFlow), inicializar experimento Comet (`comet_ml.Experiment`) y registrar en cada época: loss train/val y las dos métricas train/val. |
+| 2.3 | Registrar hiperparámetros y artefactos (checkpoints o modelo) en Comet. |
+| 2.4 | Ejecutar un entrenamiento, abrir el dashboard de Comet y verificar las tres gráficas (costo + 2 métricas, cada una con train y val). |
+
+**Entregables:** Integración Comet en el script de entrenamiento; documentación de configuración; gráficas desde Comet para la entrega si se desea.
+
+---
+
+### Fase 3 — MLOps
+
+**Objetivo:** Aplicar prácticas MLOps: versionado, pipeline reproducible, monitoreo en producción y CI/CD para ML.
+
+| Paso | Tarea |
+|------|--------|
+| 3.1 | Definir convención de versionado para datos y modelo; integrar con MLFlow (tags o Model Registry). |
+| 3.2 | Tener un pipeline de entrenamiento reproducible: script o job que cargue datos/config, entrene y registre en MLFlow y Comet. |
+| 3.3 | Definir métricas de monitoreo en producción (latencia, errores, distribución de scores) y dónde registrarlas. |
+| 3.4 | Configurar CI/CD para ML: tests y, si aplica, job de entrenamiento o evaluación vs baseline. |
+| 3.5 | Documentar el flujo: entrenamiento → registro → criterios de promoción → despliegue. |
+
+**Entregables:** Pipeline de entrenamiento documentado y ejecutable; criterios de promoción de modelo; guía de monitoreo.
+
+---
+
+### Fase 4 — Docker
+
+**Objetivo:** Contenerizar la aplicación y el entorno de entrenamiento para despliegue y reproducibilidad.
+
+| Paso | Tarea |
+|------|--------|
+| 4.1 | Definir `Dockerfile` para la API FastAPI: Python 3.12+, dependencias, puerto 8000, comando uvicorn. |
+| 4.2 | Crear `docker-compose.yml`: servicio `api`; servicios para MLFlow y, si aplica, BD. |
+| 4.3 | Configurar volúmenes y variables de entorno (SQLite/datos, `SECRET_KEY`, `DATABASE_URL`, `MLFLOW_TRACKING_URI`, etc.). |
+| 4.4 | Asegurar que el script de entrenamiento (o una imagen dedicada) pueda ejecutarse dentro de Docker con acceso a MLFlow y Comet. |
+| 4.5 | Documentar: build, `docker compose up`, variables necesarias. |
 
 **Entregables:** `Dockerfile`, `docker-compose.yml`, documentación (README o `docs/despliegue-docker.md`).
 
 ---
 
-### Fase B — MLFlow
+### Fase 5 — Pipeline de monitoreo (integración)
 
-**Objetivo:** Registrar experimentos, métricas, artefactos y modelo (model registry).
-
-| Paso | Tarea |
-|------|--------|
-| B.1 | Instalar `mlflow` (dependencia o grupo `[mlops]`). |
-| B.2 | Configurar MLFlow Tracking Server; definir `MLFLOW_TRACKING_URI`. |
-| B.3 | En el código de entrenamiento: `mlflow.start_run()`, `log_params`, `log_metrics` por época, artefactos. |
-| B.4 | Registrar modelo con `mlflow.<flavor>.log_model()` (PyTorch, ONNX, etc.). |
-| B.5 | (Opcional) Servicio MLFlow en `docker-compose`. |
-
-**Entregables:** Servidor MLFlow accesible; script de entrenamiento instrumentado; documentación.
-
----
-
-### Fase C — Comet ML
-
-**Objetivo:** Experimentación y visualización (alternativa o complemento a MLFlow).
+**Objetivo:** Un solo flujo de monitoreo que integre base, MLFlow, Comet ML, MLOps y Docker; documentar el pipeline de punta a punta.
 
 | Paso | Tarea |
 |------|--------|
-| C.1 | Instalar `comet-ml`; configurar `COMET_API_KEY` y proyecto. |
-| C.2 | En el entrenamiento: `comet_ml.Experiment`, registrar hiperparámetros y métricas por época. |
-| C.3 | Registrar artefactos (checkpoints, modelos) e imágenes si aplica. |
-| C.4 | Decidir: solo MLFlow, solo Comet o ambos; documentar. |
+| 5.1 | Definir el flujo único de entrenamiento: entrada (datos/config), salida (modelo registrado + métricas), registro en MLFlow y en Comet. |
+| 5.2 | Usar los dashboards de MLFlow y Comet para comparar runs y decidir qué modelo promover. |
+| 5.3 | Definir criterios y umbrales (pérdida, accuracy u otras métricas) para marcar runs como exitosos o en revisión. |
+| 5.4 | Ejecutar el pipeline completo dentro de Docker (entrenamiento + registro en MLFlow y Comet). |
+| 5.5 | Documentar el pipeline de monitoreo de punta a punta: qué se monitorea, dónde se visualiza, cómo se elige el modelo a desplegar. |
 
-**Entregables:** Integración Comet; documentación; criterio MLFlow vs Comet.
-
----
-
-### Fase D — MLOps
-
-**Objetivo:** Ciclo de vida trazable: versionado, pipeline reproducible, monitoreo en producción.
-
-| Paso | Tarea |
-|------|--------|
-| D.1 | Versionado de datos y modelo (convención + MLFlow/tags). |
-| D.2 | Pipeline de entrenamiento reproducible (script/job que entrene y registre). |
-| D.3 | Monitoreo en producción (latencia, errores, distribución de scores). |
-| D.4 | CI/CD para ML (tests, smoke train o evaluación vs baseline). |
-| D.5 | Documentar flujo: entrenamiento → registro → despliegue. |
-
-**Entregables:** Pipeline documentado y ejecutable; criterios de promoción; guía de monitoreo.
-
----
-
-### Fase E — Pipeline de monitoreo (integración)
-
-**Objetivo:** Un solo flujo de monitoreo que integre Docker, MLFlow/Comet y MLOps.
-
-| Paso | Tarea |
-|------|--------|
-| E.1 | Flujo de entrenamiento único: entrada (datos/config), salida (modelo + métricas), registro en MLFlow/Comet. |
-| E.2 | Dashboard (MLFlow/Comet) para comparar runs y elegir modelo. |
-| E.3 | Criterios y umbrales (pérdida, accuracy, etc.); opcional: alertas. |
-| E.4 | Ejecutar el pipeline en Docker (imagen `api` o `train`). |
-| E.5 | Documentar pipeline de monitoreo de punta a punta. |
-
-**Entregables:** Pipeline end-to-end; documentación; opcional runbook.
+**Entregables:** Pipeline de monitoreo end-to-end ejecutable; documentación del pipeline; runbook si aplica.
 
 ---
 
@@ -266,7 +275,9 @@ El **detalle de tareas y entregables** de cada fase está en [Anexo A](#anexo-a-
 
 **Referencia:** Guía *Monitoreo en Proyectos de ML-IA* (Desarrollo de Proyectos de IA).
 
-### Requisitos
+La Guía se cumple implementando el roadmap completo (Fases 0 a 5). Las **gráficas** que se entregan se obtienen en **Fase 1 (MLFlow)** y **Fase 2 (Comet ML)**; en ambas herramientas se registran las mismas métricas (costo + 2 de desempeño, train y val).
+
+### Requisitos de la Guía
 
 | Requisito | Descripción |
 |-----------|-------------|
@@ -279,16 +290,16 @@ El **detalle de tareas y entregables** de cada fase está en [Anexo A](#anexo-a-
 
 | # | Entregable | Verificación |
 |---|------------|--------------|
-| 1 | Gráfica **función de costo** (train + validación) | Captura MLFlow/Comet: loss vs época, dos curvas. |
+| 1 | Gráfica **función de costo** (train + validación) | Captura desde MLFlow y/o Comet: loss vs época, dos curvas. |
 | 2 | Gráfica **primera métrica** (train + validación) | Captura: métrica vs época, dos curvas. |
 | 3 | Gráfica **segunda métrica** (train + validación) | Captura: métrica vs época, dos curvas. |
 
-### Implementación mínima
+### Cómo se implementa en el roadmap
 
-1. Modelo de clasificación + dataset.
-2. Por época: calcular y registrar loss y 2 métricas en train y en val.
-3. Usar MLFlow o Comet: `log_metric("loss_train", ...)`, `"loss_val"`, y lo mismo para las 2 métricas.
-4. Abrir UI (MLFlow o Comet), exportar o capturar las 3 gráficas.
+1. **Fase 0:** Modelo de clasificación + script que calcula loss y 2 métricas en train y val por época.
+2. **Fase 1 (MLFlow):** Registrar en cada época `loss_train`, `loss_val`, `accuracy_train`, `accuracy_val`, `f1_train`, `f1_val` (o las 2 métricas elegidas). La UI de MLFlow genera las 3 gráficas.
+3. **Fase 2 (Comet ML):** Registrar las mismas métricas en Comet en el mismo script. El dashboard de Comet genera las 3 gráficas.
+4. Capturar o exportar las gráficas desde MLFlow o Comet (o ambas) para la entrega.
 
 ---
 
