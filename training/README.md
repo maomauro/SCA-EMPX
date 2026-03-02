@@ -115,7 +115,21 @@ Por cada época: una línea con `loss_train`, `loss_val`, `acc_train`, `acc_val`
 
 Al final: mensaje de MLFlow (`mlflow ui`) y, si Comet se usó, mensaje con el enlace a comet.com.
 
+## Ejecutar entrenamiento en Docker (Fase 4)
+
+Con Docker Compose levantado (`docker compose up -d`):
+
+```bash
+docker compose run --rm train
+docker compose run --rm train --epochs 5 --config training/config_default.json
+```
+
+Ver **docs/despliegue-docker.md** para build, variables de entorno y uso de Comet.
+
+---
+
 ## Fases siguientes
 
 - **Fase 3 (MLOps):** versionado, config reproducible, CI/CD y documentación del flujo — ver `docs/mlops-flujo.md` y `docs/mlops-monitoreo-produccion.md`.
-- **Fases 4-5:** Docker, pipeline de monitoreo.
+- **Fase 4 (Docker):** ver `docs/despliegue-docker.md`.
+- **Fase 5:** Pipeline de monitoreo de punta a punta.
