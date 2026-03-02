@@ -1,146 +1,204 @@
 """
-Modelos ORM para SQLite. Referencia: docs/05-modelo-datos.md.
+Modelos ORM — SQLite.
+
+Esquema:
+  areas → cargos → personas → tipos_persona
+  personas → registros  (embeddings faciales + eventos)
+  personas → visitas     (historial de visitas con motivo)
 """
-from datetime import datetime
+from datetime import datetime, timezone
+
 from sqlalchemy import (
-    Column, Integer, String, Text, Float, DateTime, ForeignKey,
-    Enum as SQLEnum, LargeBinary,
+    Boolean, Column, DateTime, Float, ForeignKey,
+    Integer, LargeBinary, String, Text,
 )
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import declarative_base, relationship
 
-from backend.app.db.database import Base
-
-import enum
+Base = declarative_base()
 
 
-class EstadoPersona(str, enum.Enum):
-    activo = "activo"
-    inactivo = "inactivo"
+# ── Catálogos ────────────────────────────────────────────────────────────────
+
+class Area(Base):
+    """Catálogo de áreas organizacionales de la empresa.
+
+    Representa las divisiones o departamentos internos (p. ej. Recursos Humanos,
+    TI, Producción). Es el nivel más alto de la jerarquía organizacional dentro
+    del sistema; cada cargo pertenece a exactamente un área.
+
+    Attributes:
+        id_area: Llave primaria autoincremental.
+        nombre:  Nombre único del área (máx. 100 caracteres).
+        cargos:  Cargos asociados a esta área.
+    """
+    __tablename__ = "areas"
+
+    id_area    = Column(Integer, primary_key=True, autoincrement=True)
+    nombre     = Column(String(100), unique=True, nullable=False)
+
+    cargos     = relationship("Cargo", back_populates="area")
 
 
-class EstadoReconocimiento(str, enum.Enum):
-    activo = "activo"
-    inactivo = "inactivo"
+class Cargo(Base):
+    """Catálogo de cargos o puestos de trabajo dentro de un área.
 
+    Un cargo agrupa a los empleados que desempeñan el mismo rol (p. ej.
+    Analista de Datos, Supervisor de Planta). Solo aplica a personas cuyo
+    ``TipoPersona.es_empleado`` sea ``True``; visitantes y contratistas
+    dejan ``id_cargo`` en ``NULL``.
 
-class TipoMovimiento(str, enum.Enum):
-    ingreso = "ingreso"
-    salida = "salida"
+    Attributes:
+        id_cargo: Llave primaria autoincremental.
+        nombre:   Nombre del cargo (máx. 100 caracteres).
+        id_area:  FK al área a la que pertenece este cargo.
+        area:     Relación hacia el área padre.
+        personas: Empleados que ocupan este cargo.
+    """
+    __tablename__ = "cargos"
 
+    id_cargo   = Column(Integer, primary_key=True, autoincrement=True)
+    nombre     = Column(String(100), nullable=False)
+    id_area    = Column(Integer, ForeignKey("areas.id_area"), nullable=False)
 
-class ResultadoAcceso(str, enum.Enum):
-    permitido = "permitido"
-    denegado = "denegado"
+    area       = relationship("Area", back_populates="cargos")
+    personas   = relationship("Persona", back_populates="cargo")
 
-
-class MetodoIdentificacion(str, enum.Enum):
-    documento = "documento"
-    reconocimiento_facial = "reconocimiento_facial"
-
-
-class RolUsuario(str, enum.Enum):
-    admin = "admin"
-    rrhh = "rrhh"
-    recepcion = "recepcion"
-    seguridad = "seguridad"
-
-
-# --- Catálogos ---
 
 class TipoPersona(Base):
-    __tablename__ = "tipo_persona"
+    """Catálogo de clasificaciones de personas que interactúan con el sistema.
+
+    Define si una persona es empleado interno, visitante externo o contratista.
+    El flag ``es_empleado`` determina si se le exige un cargo asignado y si sus
+    accesos se registran como eventos laborales.
+
+    Valores semilla esperados:
+        - ``Empleado``   (``es_empleado=True``)
+        - ``Visitante``  (``es_empleado=False``)
+        - ``Contratista``(``es_empleado=False``)
+
+    Attributes:
+        id_tipo_persona: Llave primaria autoincremental.
+        tipo:            Nombre único del tipo (máx. 50 caracteres).
+        descripcion:     Descripción opcional del tipo.
+        es_empleado:     ``True`` si el tipo corresponde a personal interno.
+        personas:        Personas clasificadas con este tipo.
+    """
+    __tablename__ = "tipos_persona"
 
     id_tipo_persona = Column(Integer, primary_key=True, autoincrement=True)
-    nombre_tipo = Column(String(50), unique=True, nullable=False)
-    descripcion = Column(String(200), nullable=True)
-    estado = Column(String(20), nullable=False, default="activo")
+    tipo            = Column(String(50), unique=True, nullable=False)   # Empleado | Visitante | Contratista
+    descripcion     = Column(String(200), nullable=True)
+    es_empleado     = Column(Boolean, nullable=False, default=False)
+
+    personas        = relationship("Persona", back_populates="tipo_persona")
 
 
-# --- Entidades principales ---
+# ── Entidades principales ─────────────────────────────────────────────────────
 
 class Persona(Base):
-    __tablename__ = "persona"
+    """Entidad central que representa a cualquier individuo registrado en el sistema.
 
-    id_persona = Column(Integer, primary_key=True, autoincrement=True)
-    id_tipo_persona = Column(Integer, ForeignKey("tipo_persona.id_tipo_persona"), nullable=False)
-    nombre_completo = Column(String(200), nullable=False)
-    documento = Column(String(50), unique=True, nullable=False)
-    tipo_documento = Column(String(10), nullable=False, default="CC")
-    telefono = Column(String(20), nullable=True)
-    email = Column(String(200), nullable=True)
-    empresa = Column(String(200), nullable=True)
-    motivo_visita = Column(String(500), nullable=True)  # HU-03 visitante
-    id_empleado_visitado = Column(Integer, ForeignKey("persona.id_persona"), nullable=True)  # HU-03 opcional
-    cargo = Column(String(100), nullable=True)
-    area = Column(String(100), nullable=True)
-    estado = Column(String(20), nullable=False, default="activo")
-    fecha_registro = Column(DateTime, nullable=False, default=datetime.utcnow)
-    fecha_actualizacion = Column(DateTime, nullable=True, onupdate=datetime.utcnow)
-    creado_por = Column(Integer, nullable=True)  # FK a usuario_sistema.id_usuario (evita ciclo en create_all)
+    Almacena la identidad documental y organizacional de empleados, visitantes
+    y contratistas. El reconocimiento facial se resuelve a través de los
+    embeddings almacenados en ``Registro``. Un mismo individuo puede tener
+    múltiples registros faciales para mejorar la precisión del modelo.
 
-    tipo_persona = relationship("TipoPersona", backref="personas")
-    empleado_visitado = relationship("Persona", remote_side=[id_persona], foreign_keys=[id_empleado_visitado])
-    reconocimiento_facial = relationship("ReconocimientoFacial", back_populates="persona", uselist=False)
-    registros_acceso = relationship("RegistroAcceso", back_populates="persona")
+    Attributes:
+        id_persona:      Llave primaria autoincremental.
+        tipo_documento:  Tipo de documento de identidad
+                         (``CC`` | ``CE`` | ``PAS`` | ``NIT``).
+        nro_documento:   Número de documento único por persona.
+        nombres:         Nombre completo (máx. 200 caracteres).
+        id_tipo_persona: FK al tipo de persona (empleado, visitante, etc.).
+        id_cargo:        FK al cargo; ``NULL`` para no-empleados.
+        fecha_registro:  Timestamp UTC de creación del registro.
+        activo:          ``False`` bloquea el acceso sin eliminar el historial.
+        tipo_persona:    Relación hacia el tipo de persona.
+        cargo:           Relación hacia el cargo asignado.
+        registros:       Embeddings y eventos de acceso asociados.
+        visitas:         Historial de visitas (solo no-empleados).
+    """
+    __tablename__ = "personas"
 
+    id_persona      = Column(Integer, primary_key=True, autoincrement=True)
+    tipo_documento  = Column(String(10), nullable=False, default="CC")   # CC | CE | PAS | NIT
+    nro_documento   = Column(String(50), unique=True, nullable=False)
+    nombres         = Column(String(200), nullable=False)
+    id_tipo_persona = Column(Integer, ForeignKey("tipos_persona.id_tipo_persona"), nullable=False)
+    # Solo aplica si es_empleado=True en su tipo; null para visitantes/contratistas sin cargo
+    id_cargo        = Column(Integer, ForeignKey("cargos.id_cargo"), nullable=True)
+    fecha_registro  = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    activo          = Column(Boolean, nullable=False, default=True)
 
-class ReconocimientoFacial(Base):
-    __tablename__ = "reconocimiento_facial"
-
-    id_reconocimiento = Column(Integer, primary_key=True, autoincrement=True)
-    id_persona = Column(Integer, ForeignKey("persona.id_persona"), nullable=False)
-    embedding = Column(LargeBinary, nullable=False)  # BLOB: vector serializado
-    foto_referencia = Column(String(500), nullable=True)
-    calidad_embedding = Column(Float, nullable=True)
-    modelo_version = Column(String(50), nullable=False, default="face_recognition_v1")
-    estado = Column(String(20), nullable=False, default="activo")
-    fecha_creacion = Column(DateTime, nullable=False, default=datetime.utcnow)
-    fecha_actualizacion = Column(DateTime, nullable=True, onupdate=datetime.utcnow)
-
-    persona = relationship("Persona", back_populates="reconocimiento_facial")
-
-
-class RegistroAcceso(Base):
-    __tablename__ = "registro_acceso"
-
-    id_registro = Column(Integer, primary_key=True, autoincrement=True)
-    id_persona = Column(Integer, ForeignKey("persona.id_persona"), nullable=False)
-    tipo_movimiento = Column(String(20), nullable=False)  # ingreso | salida
-    metodo_identificacion = Column(String(30), nullable=False, default="reconocimiento_facial")
-    fecha_hora = Column(DateTime, nullable=False, default=datetime.utcnow)
-    resultado = Column(String(20), nullable=False)  # permitido | denegado
-    motivo_denegacion = Column(String(500), nullable=True)
-    similarity_score = Column(Float, nullable=True)
-    observaciones = Column(Text, nullable=True)
-
-    persona = relationship("Persona", back_populates="registros_acceso")
+    tipo_persona    = relationship("TipoPersona", back_populates="personas")
+    cargo           = relationship("Cargo", back_populates="personas")
+    registros       = relationship("Registro", back_populates="persona", cascade="all, delete-orphan")
+    visitas         = relationship("Visita", back_populates="persona", cascade="all, delete-orphan")
 
 
-class Autorizacion(Base):
-    """Autorización de visita para un visitante. HU-04, HU-13."""
-    __tablename__ = "autorizacion"
+class Registro(Base):
+    """Embedding facial y log de eventos de acceso de una persona.
 
-    id_autorizacion = Column(Integer, primary_key=True, autoincrement=True)
-    id_persona = Column(Integer, ForeignKey("persona.id_persona"), nullable=False)
-    fecha_inicio = Column(DateTime, nullable=False)
-    fecha_fin = Column(DateTime, nullable=False)
-    estado = Column(String(20), nullable=False, default="vigente")  # vigente | vencida | cancelada | revocada
-    motivo_revocacion = Column(String(500), nullable=True)  # HU-13
-    fecha_creacion = Column(DateTime, nullable=False, default=datetime.utcnow)
+    Cada fila corresponde a un frame procesado por el modelo de reconocimiento
+    facial. Tiene dos roles según el campo ``evento``:
 
-    persona = relationship("Persona", backref="autorizaciones")
+    - ``'registro'``: capturado durante el alta de la persona; forma la galería
+      de referencia usada para identificación posterior.
+    - ``'acceso'``: capturado al momento de una entrada o salida; incluye el
+      score de similitud coseno contra la galería.
+
+    El embedding se serializa como un arreglo de 512 valores ``float32``
+    en orden *little-endian* (2048 bytes totales).
+
+    Attributes:
+        id_registro:      Llave primaria autoincremental.
+        id_persona:       FK a la persona identificada.
+        evento:           Tipo de evento: ``'registro'`` o ``'acceso'``.
+        tipo_acceso:      Dirección del acceso: ``'entrada'``, ``'salida'``
+                          o ``NULL`` cuando ``evento='registro'``.
+        embedding_facial: Vector 512-d serializado (512 × float32 = 2048 bytes).
+        similitud:        Score coseno del match; ``NULL`` en eventos de alta.
+        fecha:            Timestamp UTC del evento.
+        persona:          Relación hacia la persona propietaria del registro.
+    """
+    __tablename__ = "registros"
+
+    id_registro      = Column(Integer, primary_key=True, autoincrement=True)
+    id_persona       = Column(Integer, ForeignKey("personas.id_persona"), nullable=False)
+    evento           = Column(String(20), nullable=False)        # registro | acceso
+    tipo_acceso      = Column(String(10), nullable=True)         # entrada | salida | null
+    embedding_facial = Column(LargeBinary, nullable=False)       # 512 x float32 = 2048 bytes
+    similitud        = Column(Float, nullable=True)              # score coseno (solo en acceso)
+    fecha            = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+
+    persona          = relationship("Persona", back_populates="registros")
 
 
-class UsuarioSistema(Base):
-    __tablename__ = "usuario_sistema"
+class Visita(Base):
+    """Historial de visitas de personas no-empleadas (visitantes y contratistas).
 
-    id_usuario = Column(Integer, primary_key=True, autoincrement=True)
-    nombre_usuario = Column(String(50), unique=True, nullable=False)
-    hash_password = Column(String(255), nullable=False)
-    id_persona = Column(Integer, ForeignKey("persona.id_persona"), nullable=True)
-    rol = Column(String(20), nullable=False)  # admin, rrhh, recepcion, seguridad
-    estado = Column(String(20), nullable=False, default="activo")
-    fecha_creacion = Column(DateTime, nullable=False, default=datetime.utcnow)
-    ultimo_acceso = Column(DateTime, nullable=True)
+    Registra cada ingreso a las instalaciones indicando el motivo de la visita
+    y el rango horario. Si la persona ya tiene embeddings en la galería, el
+    sistema la identifica automáticamente y solo solicita el motivo; de lo
+    contrario se captura su información documental en el flujo de registro.
 
-    persona = relationship("Persona", backref="usuario_sistema", foreign_keys="UsuarioSistema.id_persona")
+    ``fecha_salida`` se rellena cuando la persona abandona las instalaciones;
+    mientras sea ``NULL`` la visita se considera activa.
+
+    Attributes:
+        id_visita:    Llave primaria autoincremental.
+        id_persona:   FK a la persona que realiza la visita.
+        motivo:       Descripción del propósito de la visita (texto libre).
+        fecha:        Timestamp UTC de ingreso.
+        fecha_salida: Timestamp UTC de salida; ``NULL`` si la visita sigue activa.
+        persona:      Relación hacia la persona visitante.
+    """
+    __tablename__ = "visitas"
+
+    id_visita    = Column(Integer, primary_key=True, autoincrement=True)
+    id_persona   = Column(Integer, ForeignKey("personas.id_persona"), nullable=False)
+    motivo       = Column(Text, nullable=False)
+    fecha        = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    fecha_salida = Column(DateTime, nullable=True)
+
+    persona     = relationship("Persona", back_populates="visitas")

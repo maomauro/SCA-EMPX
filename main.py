@@ -10,6 +10,8 @@ def main():
         host="0.0.0.0",
         port=8000,
         reload=True,
+        reload_dirs=["backend", "frontend"],
+        reload_excludes=["*.pyc", "__pycache__", "*.db"],
     )
 
 

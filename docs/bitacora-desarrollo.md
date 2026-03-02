@@ -24,14 +24,14 @@ Documento para **registrar el avance** del desarrollo del proyecto: check de act
 | 4    | feature/hu-04-autorizacion-visita    | HU-04 | Hecho       | 2026-02                      |
 | 5    | feature/hu-06-registro-evento-entrada| HU-06 | Hecho       | 2026-02                      |
 | 6    | feature/hu-07-registro-evento-salida | HU-07 | Hecho       | 2026-02                      |
-| 7    | feature/hu-09-gestionar-usuarios     | HU-09 | Hecho       | 2026-02                      |
-| 8    | feature/hu-02-desactivar-empleado   | HU-02 | Hecho       | 2026-02                      |
-| 9    | feature/hu-08-historial-accesos      | HU-08 | Hecho       | 2026-02                      |
-| 10   | feature/hu-10-actualizar-empleado    | HU-10 | Hecho       | 2026-02                      |
-| 11   | feature/hu-11-dashboard-accesos      | HU-11 | Hecho       | 2026-02                      |
-| 12   | feature/hu-13-revocar-autorizacion   | HU-13 | Hecho       | 2026-02                      |
-| 13   | feature/hu-14-personas-dentro        | HU-14 | Hecho       | 2026-02                      |
-| 14   | feature/hu-12-reporte-accesos       | HU-12 | Hecho       | 2026-02                      |
+| 7    | feature/hu-09-gestionar-usuarios     | HU-09 | Pendiente   | —                            |
+| 8    | feature/hu-02-desactivar-empleado   | HU-02 | Pendiente   | —                            |
+| 9    | feature/hu-08-historial-accesos      | HU-08 | Pendiente   | —                            |
+| 10   | feature/hu-10-actualizar-empleado    | HU-10 | Pendiente   | —                            |
+| 11   | feature/hu-11-dashboard-accesos      | HU-11 | Pendiente   | —                            |
+| 12   | feature/hu-13-revocar-autorizacion   | HU-13 | Pendiente   | —                            |
+| 13   | feature/hu-14-personas-dentro        | HU-14 | Pendiente   | —                            |
+| 14   | feature/hu-12-reporte-accesos       | HU-12 | Pendiente   | —                            |
 
 *Actualizar "Estado" (Pendiente / En curso / Hecho) y "Fecha" al avanzar.*
 
@@ -170,122 +170,16 @@ Documento para **registrar el avance** del desarrollo del proyecto: check de act
 
 | # | Actividad | Check | Notas |
 |---|-----------|--------|-------|
-| 1 | Tabla usuario_sistema (username, password_hash, rol, estado) | [x] | Ya existía en setup-mvp |
-| 2 | Registro/login básico (JWT o sesión); middleware auth para rutas protegidas | [x] | POST /login; get_current_user, require_admin en dependencies |
-| 3 | POST /api/usuarios crear; GET /api/usuarios listar | [x] | GET/POST /api/v1/usuarios (auth); PATCH /api/v1/usuarios/{id} estado (solo admin) |
-| 4 | Pantalla administración: listado, alta, activar/desactivar | [x] | GET /administracion-usuarios (login, listado, alta, Activar/Desactivar) |
+| 1 | Tabla usuario_sistema (username, password_hash, rol, estado) | [ ] | |
+| 2 | Registro/login básico (JWT o sesión); middleware auth para rutas protegidas | [ ] | |
+| 3 | POST /api/usuarios crear; GET /api/usuarios listar | [ ] | |
+| 4 | Pantalla administración: listado, alta, activar/desactivar | [ ] | |
 
 *MVP: puede limitarse a un usuario administrador y login simple.*
 
 **Fecha inicio:** ___________  
-**Fecha fin:** 2026-02  
-**Notas:** Crear/desactivar solo rol admin; nombre_usuario único; roles: admin, rrhh, recepcion, seguridad.
-
----
-
-## Paso 8 – HU-02: Desactivar empleado
-
-**Rama:** `feature/hu-02-desactivar-empleado`
-
-| # | Actividad | Check | Notas |
-|---|-----------|--------|-------|
-| 1 | PATCH /api/personas/{id} con cuerpo { "estado": "inactivo" } | [x] | PATCH /api/v1/personas/{id} con PersonaUpdateEstado (activo/inactivo) |
-| 2 | Validación de acceso (HU-05) rechace personas con estado inactivo | [x] | access_service ya filtra Persona.estado == "activo" |
-| 3 | Pantalla/listado de personas con búsqueda por nombre o documento | [x] | GET /api/v1/personas?estado=todos&q=...; GET /listado-personas |
-| 4 | Botón/acción "Desactivar" que llame a PATCH y muestre confirmación | [x] | listado-personas.html: Desactivar/Activar por fila |
-
-**Fecha fin:** 2026-02  
-**Notas:** GET personas admite estado=activo|inactivo|todos y q (búsqueda); PersonaListItem incluye estado.
-
----
-
-## Paso 9 – HU-08: Historial de accesos
-
-**Rama:** `feature/hu-08-historial-accesos`
-
-| # | Actividad | Check | Notas |
-|---|-----------|--------|-------|
-| 1 | GET /api/v1/events con query params: persona_id, documento, fecha_desde, fecha_hasta, tipo, resultado, limit, offset | [x] | Orden fecha_hora desc; máx 100 por página |
-| 2 | Paginación (limit/offset) y orden por fecha_hora descendente | [x] | DEFAULT_LIMIT 50, MAX_LIMIT 100 |
-| 3 | GET /api/v1/events/export?formato=csv con mismos filtros | [x] | PlainTextResponse CSV; limit máx 5000 |
-| 4 | Pantalla historial: filtros (persona, fechas), tabla de eventos, botón Exportar CSV | [x] | /historial-accesos; historial-accesos.html |
-
-**Fecha fin:** 2026-02  
-**Notas:** Filtro fecha_hasta corregido (fin del día). Frontend usa /api/v1/events y /api/v1/events/export con mismos parámetros.
-
----
-
-## Paso 10 – HU-10: Actualizar información de empleado
-
-**Rama:** `feature/hu-10-actualizar-empleado`
-
-| # | Actividad | Check | Notas |
-|---|-----------|--------|-------|
-| 1 | PATCH /api/v1/personas/{id} para actualizar nombre, cargo, área, telefono, email, estado | [x] | PersonaUpdate (todos opcionales); compat con HU-02 (solo estado) |
-| 2 | GET /api/v1/personas/{id} para detalle (formulario de edición) | [x] | PersonaDetail con tipo |
-| 3 | Pantalla /editar-persona?id= con formulario que llama a PATCH | [x] | editar-persona.html |
-| 4 | En listado de personas: enlace Editar que abre detalle/edición | [x] | listado-personas.html: enlace a /editar-persona?id= |
-
-**Fecha fin:** 2026-02  
-**Notas:** Documento no editable en edición (evitar conflictos de unicidad). tipo_contrato no existe en modelo; se usan cargo, área, telefono, email.
-
----
-
-## Paso 11 – HU-11: Dashboard de accesos
-
-**Rama:** `feature/hu-11-dashboard-accesos`
-
-| # | Actividad | Check | Notas |
-|---|-----------|--------|-------|
-| 1 | GET /api/v1/events/recientes?minutos=10 para últimos eventos | [x] | minutos 1–120, limit hasta 100 |
-| 2 | GET /api/v1/events/estadisticas: total_dentro, accesos_hoy, denegaciones_hoy | [x] | total_dentro = último evento ingreso permitido por persona |
-| 3 | Pantalla dashboard: tarjetas métricas + lista eventos recientes; actualización cada 30 s | [x] | /dashboard; dashboard.html |
-
-**Fecha fin:** 2026-02  
-**Notas:** Fechas en UTC. “Hoy” y “recientes” usan datetime.utcnow().
-
----
-
-## Paso 12 – HU-13: Revocar autorización
-
-**Rama:** `feature/hu-13-revocar-autorizacion`
-
-| # | Actividad | Check | Notas |
-|---|-----------|--------|-------|
-| 1 | PATCH /api/v1/autorizaciones/{id} con estado=revocada; motivo opcional | [x] | Solo si estado actual es vigente; motivo_revocacion en BD |
-| 2 | GET /api/v1/autorizaciones?estado=vigente para listar activas | [x] | Query param estado opcional |
-| 3 | Pantalla: listar autorizaciones activas por persona; botón Revocar | [x] | /revocar-autorizacion; selector vigentes/todas/revocadas |
-
-**Fecha fin:** 2026-02  
-**Notas:** Modelo Autorizacion: estado revocada, columna motivo_revocacion. ensure_autorizacion_table añade columna si falta.
-
----
-
-## Paso 13 – HU-14: Personas dentro
-
-**Rama:** `feature/hu-14-personas-dentro`
-
-| # | Actividad | Check | Notas |
-|---|-----------|--------|-------|
-| 1 | GET /api/v1/personas/dentro: personas con último evento = ingreso permitido | [x] | PersonaDentro: id_persona, nombre_completo, fecha_hora_entrada |
-| 2 | Pantalla: lista "Personas actualmente dentro" con nombre y hora de entrada | [x] | /personas-dentro; actualización cada 60 s |
-
-**Fecha fin:** 2026-02  
-**Notas:** Misma lógica que total_dentro del dashboard (último evento por persona = ingreso permitido).
-
----
-
-## Paso 14 – HU-12: Reporte de accesos
-
-**Rama:** `feature/hu-12-reporte-accesos`
-
-| # | Actividad | Check | Notas |
-|---|-----------|--------|-------|
-| 1 | GET /api/v1/reportes/accesos con fecha_desde, fecha_hasta, formato=csv o pdf | [x] | Filtros opcionales: tipo, persona_id, documento, resultado; máx 2000 filas |
-| 2 | Pantalla: selector rango fechas y formato; botón descargar PDF/CSV | [x] | /reporte-accesos; reporte-accesos.html |
-
-**Fecha fin:** 2026-02  
-**Notas:** PDF con fpdf2: resumen (total, permitidos, denegados, personas únicas) y tabla (hasta 100 filas). CSV con mismo detalle que events/export.
+**Fecha fin:** ___________  
+**Notas:** ___________________________________________
 
 ---
 
@@ -293,13 +187,13 @@ Documento para **registrar el avance** del desarrollo del proyecto: check de act
 
 | Paso | HU / feature | Actividades principales | Check global |
 |------|--------------|-------------------------|--------------|
-| 8 | HU-02 Desactivar empleado | PATCH personas/{id} inactivo; validación rechace inactivos; pantalla listado + Desactivar | [x] |
-| 9 | HU-08 Historial accesos | GET /api/eventos filtros + paginación; export CSV; pantalla consulta | [x] |
-| 10 | HU-10 Actualizar empleado | PATCH personas/{id}; pantalla detalle/edición | [x] |
-| 11 | HU-11 Dashboard accesos | GET eventos recientes + estadísticas; pantalla métricas + actualización periódica | [x] |
-| 12 | HU-13 Revocar autorización | PATCH autorizaciones/{id} revocada; pantalla listar activas + revocar | [x] |
-| 13 | HU-14 Personas dentro | GET /api/personas/dentro; pantalla lista “actualmente dentro” | [x] |
-| 14 | HU-12 Reporte accesos | GET reportes + filtros; export PDF/CSV; pantalla selector + descarga | [x] |
+| 8 | HU-02 Desactivar empleado | PATCH personas/{id} inactivo; validación rechace inactivos; pantalla listado + Desactivar | [ ] |
+| 9 | HU-08 Historial accesos | GET /api/eventos filtros + paginación; export CSV; pantalla consulta | [ ] |
+| 10 | HU-10 Actualizar empleado | PATCH personas/{id}; pantalla detalle/edición | [ ] |
+| 11 | HU-11 Dashboard accesos | GET eventos recientes + estadísticas; pantalla métricas + actualización periódica | [ ] |
+| 12 | HU-13 Revocar autorización | PATCH autorizaciones/{id} revocada; pantalla listar activas + revocar | [ ] |
+| 13 | HU-14 Personas dentro | GET /api/personas/dentro; pantalla lista “actualmente dentro” | [ ] |
+| 14 | HU-12 Reporte accesos | GET reportes + filtros; export PDF/CSV; pantalla selector + descarga | [ ] |
 
 *Desarrollar cada paso en su rama; integrar en `develop`; luego siguiente rama desde `develop`.*
 
@@ -315,14 +209,6 @@ Anotar aquí hitos, decisiones, bloqueos o cambios de orden con fecha.
 | 2026-02 | HU-01, HU-03, HU-04 implementados. Bitácora actualizada: Pasos 2, 3, 4 marcados Hecho; tareas con check y notas. |
 | 2026-02 | HU-06 implementado: event_service.register_entrada, GET /api/v1/events (tipo, limit, offset). Bitácora Paso 5 actualizada. |
 | 2026-02 | HU-07 implementado: register_salida, POST /api/v1/access/register-exit, GET /registrar-salida. Bitácora Paso 6 actualizada. |
-| 2026-02 | HU-09 implementado: GET/POST/PATCH usuarios, require_admin, /administracion-usuarios. Bitácora Paso 7 actualizada. |
-| 2026-02 | HU-02 implementado: PATCH /api/v1/personas/{id} estado; GET con estado y q; /listado-personas. Validación acceso ya rechaza inactivos. Bitácora Paso 8 actualizada. |
-| 2026-02 | HU-08 implementado: GET /api/v1/events con persona_id, documento, fecha_desde/hasta, tipo, resultado, limit/offset; GET /api/v1/events/export CSV; /historial-accesos con filtros, tabla y Exportar CSV. Bitácora Paso 9 actualizada. |
-| 2026-02 | HU-10 implementado: GET /api/v1/personas/{id} (PersonaDetail), PATCH /api/v1/personas/{id} (nombre, cargo, área, telefono, email, estado); /editar-persona?id=; enlace Editar en listado-personas. Bitácora Paso 10 actualizada. |
-| 2026-02 | HU-11 implementado: GET /api/v1/events/recientes?minutos=, GET /api/v1/events/estadisticas (total_dentro, accesos_hoy, denegaciones_hoy); /dashboard con tarjetas y tabla; refresh 30 s. Bitácora Paso 11 actualizada. |
-| 2026-02 | HU-13 implementado: PATCH /api/v1/autorizaciones/{id} revocada (motivo opcional); GET ?estado=vigente; /revocar-autorizacion con listado y botón Revocar. Bitácora Paso 12 actualizada. |
-| 2026-02 | HU-14 implementado: GET /api/v1/personas/dentro (nombre, hora entrada); /personas-dentro con lista y actualización 60 s. Bitácora Paso 13 actualizada. |
-| 2026-02 | HU-12 implementado: GET /api/v1/reportes/accesos (fecha_desde, fecha_hasta, formato csv/pdf); /reporte-accesos con selector y descarga. fpdf2 para PDF. Bitácora Paso 14 actualizada. |
 |       |                                                                               |
 |       |                                                                               |
 |       |                                                                               |
