@@ -1,6 +1,10 @@
 # Bitácora de desarrollo - SCA-EMPX
 
-Documento para **registrar el avance** del desarrollo del proyecto: check de actividades, orden de implementación y contexto. Referencia: [Orden de desarrollo y features](./orden-desarrollo-features.md), [Tareas por HU](./09-tareas-por-hu.md).
+Documento para **registrar el avance** del desarrollo del proyecto: check de actividades, orden de implementación y contexto.
+
+**Dos ejes de avance:**
+1. **Features por HU** (tabla y pasos detallados más abajo): orden según [Orden de desarrollo y features](./orden-desarrollo-features.md) y [Tareas por HU](./09-tareas-por-hu.md).
+2. **Roadmap ML (Fases 0–5)**: entrenamiento, MLFlow, Comet, MLOps, Docker y pipeline de monitoreo; ver [Plan y roadmap](./plan-roadmap.md).
 
 ---
 
@@ -34,6 +38,23 @@ Documento para **registrar el avance** del desarrollo del proyecto: check de act
 | 14   | feature/hu-12-reporte-accesos       | HU-12 | Pendiente   | —                            |
 
 *Actualizar "Estado" (Pendiente / En curso / Hecho) y "Fecha" al avanzar.*
+
+---
+
+## Roadmap ML (Fases 0–5)
+
+Estado del pipeline de monitoreo de modelos (entrenamiento, registro, MLOps, Docker). Detalle en [plan-roadmap.md](./plan-roadmap.md).
+
+| Fase | Rama / nombre        | Estado   | Fecha (última actualización) |
+|------|----------------------|----------|------------------------------|
+| 0    | feature/fase-0-modelos-implementaciones | Hecho   | 2026-03 |
+| 1    | feature/fase-1-mlflow                   | Hecho   | 2026-03 |
+| 2    | feature/fase-2-comet-ml                  | Hecho   | 2026-03 |
+| 3    | feature/fase-3-mlops                     | Hecho   | 2026-03 |
+| 4    | feature/fase-4-docker                    | Hecho   | 2026-03 |
+| 5    | feature/fase-5-pipeline-monitoreo       | Pendiente | —     |
+
+*Entregables Fase 0–4:* script de entrenamiento MNIST (loss, accuracy, F1), MLFlow y Comet, versionado y config reproducible, CI smoke test, Dockerfile y docker-compose, documentación MLOps y despliegue. *Fase 5:* pipeline end-to-end ejecutable y documentado.
 
 ---
 
@@ -209,6 +230,7 @@ Anotar aquí hitos, decisiones, bloqueos o cambios de orden con fecha.
 | 2026-02 | HU-01, HU-03, HU-04 implementados. Bitácora actualizada: Pasos 2, 3, 4 marcados Hecho; tareas con check y notas. |
 | 2026-02 | HU-06 implementado: event_service.register_entrada, GET /api/v1/events (tipo, limit, offset). Bitácora Paso 5 actualizada. |
 | 2026-02 | HU-07 implementado: register_salida, POST /api/v1/access/register-exit, GET /registrar-salida. Bitácora Paso 6 actualizada. |
+| 2026-03 | Roadmap ML: Fases 0–4 implementadas (modelos/entrenamiento, MLFlow, Comet, MLOps, Docker). Bitácora actualizada con sección Roadmap ML (Fases 0–5). |
 |       |                                                                               |
 |       |                                                                               |
 |       |                                                                               |
@@ -216,6 +238,6 @@ Anotar aquí hitos, decisiones, bloqueos o cambios de orden con fecha.
 ---
 
 **Documento:** Bitácora de desarrollo  
-**Versión:** 1.0  
-**Fecha:** 2026  
+**Versión:** 1.1  
+**Última actualización:** 2026-03  
 **Proyecto:** SCA-EMPX – STI S.A.S.

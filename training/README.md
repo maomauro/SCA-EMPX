@@ -1,6 +1,6 @@
 # Training — Fase 0 + Fase 1 (MLFlow) + Fase 2 (Comet ML) + Fase 3 (MLOps)
 
-Script de entrenamiento de un **modelo de clasificación** para cumplir la Guía de Monitoreo ML-IA y el roadmap (Fases 0 → 5).
+Script de entrenamiento de un **modelo de clasificación** para cumplir la Guía de Monitoreo ML-IA y el roadmap (Fases 0 → 5). Parte del proyecto **SCA-EMPX**; documentación general: [README.md](../README.md) e [Índice de documentación](../docs/00-indice.md).
 
 ## Modelo y dataset
 

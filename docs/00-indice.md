@@ -1,14 +1,21 @@
 # 📚 Índice de Documentación - SCA-EMPX
 
-## Bienvenido a la Documentación del Sistema
+## Bienvenido
 
-Este índice te ayudará a navegar por toda la documentación del **Sistema de Control de Acceso Físico y Registro de Ingresos/Salidas (SCA-EMPX)** desarrollado para Soluciones Tecnológicas Integrales S.A.S. (STI S.A.S.).
+Este índice es el **punto de entrada** a la documentación del **Sistema de Control de Acceso Físico y Registro de Ingresos/Salidas (SCA-EMPX)** (STI S.A.S.). Está pensado para que un **desarrollador** o el **profesor** encuentren rápido qué leer según su rol.
+
+**¿Primera vez en el proyecto?**  
+- **Desarrollador:** [Requerimientos (SRS)](./03-requerimientos-srs.md) → [Arquitectura](./04-arquitectura.md) → [URLs de acceso](./urls-acceso.md) → [Guía Git](./guia-git.md).  
+- **Profesor / evaluador:** [Plan y roadmap (Fases 0–5)](./plan-roadmap.md) → [Flujo MLOps](./mlops-flujo.md) → [Despliegue Docker](./despliegue-docker.md).  
+- **Negocio / producto:** [Contexto Empresarial](./01-contexto-empresarial.md) → [Caso de Negocio](./02-caso-de-negocio.md) → [Historias de Usuario](./06-historias-usuario.md).
 
 ---
 
-## 📋 Documentos Disponibles
+## 1. Negocio y proyecto
 
-### 1. [Contexto Empresarial](./01-contexto-empresarial.md)
+Documentos de contexto, justificación, alcance y especificación del sistema.
+
+### 1.1 [Contexto Empresarial](./01-contexto-empresarial.md)
 **Descripción**: Información sobre STI S.A.S., estructura organizacional, instalaciones y necesidad del sistema.
 
 **Contenido**:
@@ -23,7 +30,7 @@ Este índice te ayudará a navegar por toda la documentación del **Sistema de C
 
 ---
 
-### 2. [Caso de Negocio](./02-caso-de-negocio.md)
+### 1.2 [Caso de Negocio](./02-caso-de-negocio.md)
 **Descripción**: Justificación de la inversión, beneficios esperados y análisis de ROI.
 
 **Contenido**:
@@ -38,7 +45,7 @@ Este índice te ayudará a navegar por toda la documentación del **Sistema de C
 
 ---
 
-### 3. [Definición del Proyecto](./08-definicion-proyecto.md)
+### 1.3 [Definición del Proyecto](./08-definicion-proyecto.md)
 **Descripción**: Documento estructurado con objetivos, alcance y cronograma del proyecto de desarrollo.
 
 **Contenido**:
@@ -53,7 +60,7 @@ Este índice te ayudará a navegar por toda la documentación del **Sistema de C
 
 ---
 
-### 4. [Requerimientos (SRS)](./03-requerimientos-srs.md)
+### 1.4 [Requerimientos (SRS)](./03-requerimientos-srs.md)
 **Descripción**: Especificación completa de requerimientos funcionales y no funcionales.
 
 **Contenido**:
@@ -67,7 +74,7 @@ Este índice te ayudará a navegar por toda la documentación del **Sistema de C
 
 ---
 
-### 5. [Arquitectura del Sistema](./04-arquitectura.md)
+### 1.5 [Arquitectura del Sistema](./04-arquitectura.md)
 **Descripción**: Diseño arquitectónico, componentes y tecnologías del sistema.
 
 **Contenido**:
@@ -82,7 +89,7 @@ Este índice te ayudará a navegar por toda la documentación del **Sistema de C
 
 ---
 
-### 6. [Modelo de Datos](./05-modelo-datos.md)
+### 1.6 [Modelo de Datos](./05-modelo-datos.md)
 **Descripción**: Esquema completo de base de datos, tablas, relaciones y optimizaciones.
 
 **Contenido**:
@@ -96,7 +103,7 @@ Este índice te ayudará a navegar por toda la documentación del **Sistema de C
 
 ---
 
-### 7. [Historias de Usuario](./06-historias-usuario.md)
+### 1.7 [Historias de Usuario](./06-historias-usuario.md)
 **Descripción**: Backlog ágil con historias de usuario priorizadas y organizadas por épicas.
 
 **Contenido**:
@@ -110,7 +117,7 @@ Este índice te ayudará a navegar por toda la documentación del **Sistema de C
 
 ---
 
-### 8. [Procesos BPMN](./07-procesos-bpmn.md)
+### 1.8 [Procesos BPMN](./07-procesos-bpmn.md)
 **Descripción**: Flujos de negocio detallados en notación BPMN (descripción textual).
 
 **Contenido**:
@@ -125,7 +132,7 @@ Este índice te ayudará a navegar por toda la documentación del **Sistema de C
 
 ---
 
-### 9. [Tareas por HU](./09-tareas-por-hu.md)
+### 1.9 [Tareas por HU](./09-tareas-por-hu.md)
 **Descripción**: Tareas de desarrollo desglosadas por Historia de Usuario (para desarrollo y Azure DevOps).
 
 **Contenido**:
@@ -137,7 +144,36 @@ Este índice te ayudará a navegar por toda la documentación del **Sistema de C
 
 ---
 
-### 10. [Guía de Uso de Git](./guia-git.md)
+## 2. Desarrollo y operación
+
+Orden de trabajo, bitácora, URLs de la aplicación y flujo con Git.
+
+### 2.1 [Orden de desarrollo y registro de features](./orden-desarrollo-features.md)
+**Descripción**: Orden recomendado para desarrollar y registrar features (ramas Git y backlog).
+
+**Contenido**: Contexto según documentación, tabla de features (HU + rama sugerida), uso en Git y Azure DevOps.
+
+**Audiencia**: Desarrolladores, Product Owner, Scrum Master.
+
+---
+
+### 2.2 [Bitácora de desarrollo](./bitacora-desarrollo.md)
+**Descripción**: Estado de avance por feature (HUs) y por roadmap ML (Fases 0–5), checklist de actividades y trazabilidad.
+
+**Audiencia**: Equipo de proyecto, profesor.
+
+---
+
+### 2.3 [URLs de acceso](./urls-acceso.md)
+**Descripción**: Listado de URLs: páginas web, documentación de la API y endpoints REST.
+
+**Contenido**: Páginas (/, /registro, /acceso, /visitante, /configuracion), Swagger/ReDoc, API por recurso (personas, acceso, eventos, autorizaciones, usuarios).
+
+**Audiencia**: Desarrolladores, QA.
+
+---
+
+### 2.4 [Guía de Uso de Git](./guia-git.md)
 **Descripción**: Cómo usar Git en el proyecto SCA-EMPX: flujo diario, ramas, commits, sincronización con el remoto y buenas prácticas.
 
 **Contenido**:
@@ -151,106 +187,107 @@ Este índice te ayudará a navegar por toda la documentación del **Sistema de C
 
 ---
 
-### 11. [Orden de desarrollo y registro de features](./orden-desarrollo-features.md)
-**Descripción**: Confirmación del contexto según la documentación y orden recomendado para iniciar el desarrollo paso a paso y registrar features (ramas Git y backlog) de forma ordenada.
+## 3. MLOps y pipeline de monitoreo
 
-**Contenido**:
-- Contexto del proyecto y MVP según docs 06, 08 y 09
-- Tabla ordenada de features (HU + nombre de rama sugerido)
-- Cómo usar el orden en Git y en Azure DevOps
-- Prioridad MVP estricto
+Plan del roadmap ML (Fases 0–5), flujo de entrenamiento/registro/promoción, monitoreo en producción y despliegue con Docker.
 
-**Audiencia**: Desarrolladores, Product Owner, Scrum Master.
+### 3.1 [Plan y roadmap general](./plan-roadmap.md)
+**Descripción**: Plan del proyecto: contexto, estrategia de ramas, orden de fases (0 → 5), detalle de cada fase (modelos, MLFlow, Comet, MLOps, Docker, pipeline) y cumplimiento de la Guía de Monitoreo ML-IA.
 
----
+**Contenido**: Cómo usar el documento, orden Fase 0–5, anexos con tareas por fase y checklist de entrega.
 
-### 12. [URLs de acceso](./urls-acceso.md)
-**Descripción**: Listado de URLs para acceder a la aplicación: páginas web, documentación de la API y endpoints REST.
-
-**Contenido**:
-- Páginas web (validate-access, registro empleado/visitante, autorización, registrar salida)
-- Documentación OpenAPI (Swagger, ReDoc)
-- API REST por recurso (personas, access, events, autorizaciones, usuarios)
-
-**Audiencia**: Desarrolladores, QA, usuarios que prueben la API.
+**Audiencia**: Profesor, desarrolladores, equipo de proyecto.
 
 ---
 
-## 🗺️ Guía de Lectura Recomendada
+### 3.2 [Flujo MLOps](./mlops-flujo.md)
+**Descripción**: Flujo completo: entrenamiento → registro (MLFlow/Comet) → criterios de promoción → despliegue.
 
-### Para Nuevos Miembros del Equipo
-
-1. **Contexto Empresarial** - Entender la empresa y el problema
-2. **Caso de Negocio** - Entender por qué se hace el proyecto
-3. **Definición del Proyecto** - Entender objetivos, alcance y cronograma
-4. **Requerimientos (SRS)** - Entender qué se debe construir
-5. **Arquitectura** - Entender cómo se construye
-6. **Modelo de Datos** - Entender la estructura de datos
-7. **Historias de Usuario** - Entender las funcionalidades
-8. **Procesos BPMN** - Entender los flujos de negocio
-
-### Para Desarrolladores
-
-1. **Requerimientos (SRS)** - Qué construir
-2. **Arquitectura** - Cómo construir
-3. **Modelo de Datos** - Estructura de datos
-4. **Historias de Usuario** - Funcionalidades a implementar
-5. **Procesos BPMN** - Flujos a implementar
-
-### Para Product Owner / Analistas
-
-1. **Contexto Empresarial** - Contexto del negocio
-2. **Caso de Negocio** - Justificación
-3. **Requerimientos (SRS)** - Qué se necesita
-4. **Historias de Usuario** - Qué desarrollar
-5. **Procesos BPMN** - Cómo funciona el negocio
-
-### Para Directivos / Stakeholders
-
-1. **Contexto Empresarial** - Resumen ejecutivo
-2. **Caso de Negocio** - Justificación y ROI
-3. **Requerimientos (SRS)** - Resumen de funcionalidades
+**Audiencia**: Desarrolladores, DevOps, profesor.
 
 ---
 
-## 📊 Mapa de Relaciones entre Documentos
+### 3.3 [Monitoreo en producción](./mlops-monitoreo-produccion.md)
+**Descripción**: Métricas a monitorear en producción (latencia, errores, distribución de scores) y dónde registrarlas.
+
+**Audiencia**: Desarrolladores, DevOps.
+
+---
+
+### 3.4 [Despliegue con Docker](./despliegue-docker.md)
+**Descripción**: Arquitectura del despliegue, build, `docker compose up`, variables de entorno, ejecución del entrenamiento en Docker (API, MLFlow, servicio train).
+
+**Audiencia**: Desarrolladores, DevOps, profesor.
+
+---
+
+## 4. Guías de uso
+
+### 4.1 [Guía de uso de la aplicación](./guia-uso-aplicacion.md)
+**Descripción**: Cómo usar SCA-EMPX desde el navegador: instalación, menú, pantallas (registro, acceso, visitante, etc.) y flujos principales.
+
+**Audiencia**: Usuarios finales, QA, desarrolladores que prueban la UI.
+
+---
+
+## 🗺️ Guía de lectura recomendada
+
+### Para profesor / evaluador
+
+1. [Plan y roadmap](./plan-roadmap.md) — Fases 0–5, entregables y Guía ML-IA  
+2. [Flujo MLOps](./mlops-flujo.md) — Entrenamiento, registro, promoción, despliegue  
+3. [Despliegue Docker](./despliegue-docker.md) — Cómo se ejecuta todo en contenedores  
+4. [Bitácora de desarrollo](./bitacora-desarrollo.md) — Estado de avance por feature  
+
+### Para desarrollador (nuevo en el proyecto)
+
+1. [Requerimientos (SRS)](./03-requerimientos-srs.md) — Qué construir  
+2. [Arquitectura](./04-arquitectura.md) — Cómo está diseñado  
+3. [Modelo de Datos](./05-modelo-datos.md) — Estructura de datos  
+4. [URLs de acceso](./urls-acceso.md) — Páginas y API  
+5. [Guía de Git](./guia-git.md) — Ramas, commits, flujo  
+6. [Orden desarrollo y features](./orden-desarrollo-features.md) — Qué desarrollar y en qué orden  
+
+### Para negocio / producto
+
+1. [Contexto Empresarial](./01-contexto-empresarial.md) — Empresa y necesidad  
+2. [Caso de Negocio](./02-caso-de-negocio.md) — Justificación y ROI  
+3. [Requerimientos (SRS)](./03-requerimientos-srs.md) — Funcionalidades  
+4. [Historias de Usuario](./06-historias-usuario.md) — Backlog  
+5. [Procesos BPMN](./07-procesos-bpmn.md) — Flujos de negocio  
+
+### Para usuario que prueba la aplicación
+
+1. [Guía de uso de la aplicación](./guia-uso-aplicacion.md) — Pantallas y flujos desde el navegador
+
+---
+
+## 📊 Mapa de relaciones entre documentos
 
 ```
-Contexto Empresarial
-    ↓
-Caso de Negocio
-    ↓
-Definición del Proyecto
-    ↓
-Requerimientos (SRS) ──→ Arquitectura ──→ Modelo de Datos
-    ↓                           ↓
-Historias de Usuario ──────────┘
-    ↓
-Procesos BPMN
+Negocio y proyecto:
+  Contexto Empresarial → Caso de Negocio → Definición del Proyecto
+  Requerimientos (SRS) → Arquitectura → Modelo de Datos
+  Historias de Usuario → Procesos BPMN → Tareas por HU
+
+Desarrollo y operación:
+  Orden desarrollo y features → Bitácora → URLs de acceso → Guía Git
+
+MLOps y pipeline:
+  Plan y roadmap (Fases 0–5) → Flujo MLOps → Monitoreo producción → Despliegue Docker
 ```
 
 ---
 
-## 🔍 Búsqueda Rápida
+## 🔍 Búsqueda rápida
 
-### ¿Necesitas información sobre...?
+**Negocio y proyecto:** [Contexto](./01-contexto-empresarial.md) · [Caso de negocio](./02-caso-de-negocio.md) · [Definición](./08-definicion-proyecto.md) · [Requerimientos](./03-requerimientos-srs.md) · [Arquitectura](./04-arquitectura.md) · [Modelo de datos](./05-modelo-datos.md) · [Historias de usuario](./06-historias-usuario.md) · [BPMN](./07-procesos-bpmn.md) · [Tareas por HU](./09-tareas-por-hu.md)
 
-- **La empresa y el contexto**: [Contexto Empresarial](./01-contexto-empresarial.md)
-- **Por qué hacer el proyecto**: [Caso de Negocio](./02-caso-de-negocio.md)
-- **Objetivos y cronograma**: [Definición del Proyecto](./08-definicion-proyecto.md)
-- **Qué funcionalidades tiene**: [Requerimientos (SRS)](./03-requerimientos-srs.md)
-- **Cómo está diseñado**: [Arquitectura](./04-arquitectura.md)
-- **Estructura de la base de datos**: [Modelo de Datos](./05-modelo-datos.md)
-- **Qué desarrollar primero**: [Historias de Usuario](./06-historias-usuario.md)
-- **Cómo funciona el proceso**: [Procesos BPMN](./07-procesos-bpmn.md)
-- **Tareas de desarrollo por HU (para desarrollo y Azure DevOps)**: [Tareas por HU](./09-tareas-por-hu.md)
-- **Orden para desarrollar y registrar features (ramas Git / backlog)**: [Orden desarrollo y features](./orden-desarrollo-features.md)
-- **Bitácora de desarrollo (check de actividades, orden, avance)**: [Bitácora de desarrollo](./bitacora-desarrollo.md)
-- **URLs para acceder a la API y páginas (listado completo)**: [URLs de acceso](./urls-acceso.md)
-- **Uso de Git (ramas, commits, ambientes, pull, push)**: [Guía de Uso de Git](./guia-git.md)
-- **Flujo MLOps (entrenamiento, registro, promoción, despliegue)**: [Flujo MLOps](./mlops-flujo.md)
-- **Monitoreo del modelo en producción (métricas y dónde registrarlas)**: [Monitoreo en producción](./mlops-monitoreo-produccion.md)
-- **Despliegue con Docker (API, MLFlow, entrenamiento)**: [Despliegue Docker](./despliegue-docker.md)
+**Desarrollo y operación:** [Orden y features](./orden-desarrollo-features.md) · [Bitácora](./bitacora-desarrollo.md) · [URLs de acceso](./urls-acceso.md) · [Guía Git](./guia-git.md)
+
+**MLOps y pipeline:** [Plan y roadmap](./plan-roadmap.md) · [Flujo MLOps](./mlops-flujo.md) · [Monitoreo en producción](./mlops-monitoreo-produccion.md) · [Despliegue Docker](./despliegue-docker.md)
+
+**Guías:** [Uso de la aplicación](./guia-uso-aplicacion.md)
 
 ---
 

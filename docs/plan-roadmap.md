@@ -2,7 +2,8 @@
 
 **Fecha:** 1 de marzo de 2026 · **Estado:** DRAFT — Pendiente validación  
 **Rama:** `docs/plan-roadmap`  
-**Contexto:** Ejercicio educativo y aplicado — el docente solicita la implementación de **todo**: modelos/base, MLFlow, Comet ML, MLOps, Docker y pipeline de monitoreo.
+**Contexto:** Ejercicio educativo y aplicado — el docente solicita la implementación de **todo**: modelos/base, MLFlow, Comet ML, MLOps, Docker y pipeline de monitoreo.  
+**Estado de implementación de las fases (Hecho/Pendiente):** ver [Bitácora de desarrollo](./bitacora-desarrollo.md) (sección «Roadmap ML (Fases 0–5)»).
 
 ---
 
