@@ -1,32 +1,66 @@
-# Git y entornos
+# Git
 .git
-.venv
-.venv/
-.cache
-.claude
+.gitignore
 .github
-.pytest_cache
-.ruff_cache
 
 # Python
-__pycache__
-*.py[oc]
-*.egg-info
-build
-dist
-wheels
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+.cache/
 
-# Datos y artefactos (no empaquetar en imagen)
-data/
-mlruns/
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+.hypothesis/
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# CI/CD
+.gitlab-ci.yml
+azure-pipelines.yml
+
+# Docker
+docker-compose*.yml
+Dockerfile*
+.dockerignore
+
+# Database (no incluir DBs locales en imagen)
 *.db
-backend/app/db/*.db
+*.db-journal
 
-# Secrets y env
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporal
+tmp/
+temp/
+*.tmp
+
+# Environment
 .env
 .env.*
-*.log
-
-# Documentación y tests (opcional: quitar si se quieren en imagen)
-# docs/
-# backend/tests/
+!.env.example
