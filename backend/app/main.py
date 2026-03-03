@@ -15,7 +15,7 @@ except Exception:
 
 from fastapi import FastAPI  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
-from fastapi.responses import HTMLResponse  # noqa: E402
+from fastapi.responses import HTMLResponse, JSONResponse  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
 
 from backend.app.api.v1 import api_router  # noqa: E402
@@ -70,30 +70,49 @@ def _page(name: str) -> HTMLResponse:
     return HTMLResponse((FRONTEND / name).read_text(encoding="utf-8"))
 
 
+def _page_or_fallback(name: str, fallback_path: Path | None = None):
+    """Devuelve la página HTML si existe; si no (ej. en contenedor sin frontend), None."""
+    path = fallback_path or (FRONTEND / name)
+    if path.exists():
+        return HTMLResponse(path.read_text(encoding="utf-8"))
+    return None
+
+
 @app.get("/", include_in_schema=False)
 def dashboard():
-    """Retorna el dashboard principal (index.html)."""
-    return _page("index.html")
+    """Retorna el dashboard principal (index.html) o info de API si no hay frontend."""
+    response = _page_or_fallback("index.html")
+    if response is not None:
+        return response
+    return JSONResponse(
+        status_code=200,
+        content={
+            "service": "SCA-EMPX API",
+            "docs": "/docs",
+            "health": "/health",
+            "message": "Use the frontend at port 80 or open /docs for the API.",
+        },
+    )
 
 @app.get("/registro", include_in_schema=False)
 def pg_registro():
     """Retorna la página de registro facial de personas."""
-    return _page("registro.html")
+    return _page_or_fallback("registro.html") or JSONResponse(status_code=404, content={"detail": "Frontend not in this image; use port 80."})
 
 @app.get("/acceso", include_in_schema=False)
 def pg_acceso():
     """Retorna la página de control de acceso (entrada/salida)."""
-    return _page("acceso.html")
+    return _page_or_fallback("acceso.html") or JSONResponse(status_code=404, content={"detail": "Frontend not in this image; use port 80."})
 
 @app.get("/visitante", include_in_schema=False)
 def pg_visitante():
     """Retorna la página de registro de visitas externas."""
-    return _page("visitante.html")
+    return _page_or_fallback("visitante.html") or JSONResponse(status_code=404, content={"detail": "Frontend not in this image; use port 80."})
 
 @app.get("/configuracion", include_in_schema=False)
 def pg_config():
     """Retorna la página de configuración del sistema."""
-    return _page("configuracion.html")
+    return _page_or_fallback("configuracion.html") or JSONResponse(status_code=404, content={"detail": "Frontend not in this image; use port 80."})
 
 @app.get("/health", include_in_schema=False)
 def health():
