@@ -222,7 +222,15 @@
   });
 
   // ── Cámara ────────────────────────────────────────────────────────────────
+  // Los navegadores solo permiten cámara en contexto seguro: HTTPS o localhost
   async function iniciarCamara() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      const msg = location.protocol === "https:" || location.hostname === "localhost"
+        ? "Tu navegador no soporta acceso a la cámara."
+        : "La cámara solo funciona con HTTPS o en localhost. Estás en " + location.protocol + "//" + location.host;
+      mostrarMsg(msgDatos, msg, false);
+      return;
+    }
     try {
       const deviceId = localStorage.getItem("sca_camara_deviceId");
       const videoConstraints = deviceId
