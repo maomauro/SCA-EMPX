@@ -1,51 +1,142 @@
-# Fase 4 — Docker Compose: API, MLFlow y entorno de entrenamiento
-# Uso: docker compose up -d    (api + mlflow)
-#      docker compose run --rm train   (entrenamiento con acceso a MLFlow y Comet)
-
 services:
-  api:
-    build: .
-    ports:
-      - "8000:8000"
-    environment:
-      - DATABASE_URL=sqlite:///./backend/app/db/sca.db
-      - SECRET_KEY=${SECRET_KEY:-cambiar-en-produccion}
-      - DEBUG=${DEBUG:-false}
-      - MLFLOW_TRACKING_URI=http://mlflow:5000
-    volumes:
-      - api_db:/app/backend/app/db
-    depends_on:
-      - mlflow
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      args:
+        APP_VERSION: ${APP_VERSION:-latest}
+        BUILD_DATE: ${BUILD_DATE:-unknown}
+        VCS_REF: ${VCS_REF:-unknown}
+    image: ${DOCKER_REGISTRY:-docker.io}/${DOCKER_USERNAME:-user}/sca-empx-backend:${APP_VERSION:-latest}
+    container_name: sca-backend
     restart: unless-stopped
+    environment:
+      - DEBUG=${DEBUG:-false}
+      - DATABASE_URL=sqlite:///./backend/app/db/sqlite.db
+      - SECRET_KEY=${SECRET_KEY:-change-me-in-production}
+      - ALGORITHM=${ALGORITHM:-HS256}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
+      - SIMILARITY_THRESHOLD=${SIMILARITY_THRESHOLD:-0.6}
+      - MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI:-http://mlflow:5000}
+    volumes:
+      # Volumen persistente para SQLite
+      - sqlite-data:/app/backend/app/db
+      # Volumen para logs (opcional)
+      - backend-logs:/app/logs
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    networks:
+      - sca-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        APP_VERSION: ${APP_VERSION:-latest}
+        BUILD_DATE: ${BUILD_DATE:-unknown}
+        VCS_REF: ${VCS_REF:-unknown}
+    image: ${DOCKER_REGISTRY:-docker.io}/${DOCKER_USERNAME:-user}/sca-empx-frontend:${APP_VERSION:-latest}
+    container_name: sca-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - sca-network
+    healthcheck:
+      test: ["CMD", "pgrep", "nginx"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
 
   mlflow:
-    build: .
-    command: ["mlflow", "server", "--host", "0.0.0.0", "--port", "5000"]
-    ports:
-      - "5000:5000"
-    environment:
-      - MLFLOW_TRACKING_URI=http://127.0.0.1:5000
-    volumes:
-      - mlruns:/app/mlruns
+    build:
+      context: .
+      dockerfile: mlflow/Dockerfile
+      args:
+        APP_VERSION: ${APP_VERSION:-latest}
+        BUILD_DATE: ${BUILD_DATE:-unknown}
+        VCS_REF: ${VCS_REF:-unknown}
+    image: ${DOCKER_REGISTRY:-docker.io}/${DOCKER_USERNAME:-user}/sca-empx-mlflow:${APP_VERSION:-latest}
+    container_name: sca-mlflow
     restart: unless-stopped
+    environment:
+      - MLFLOW_BACKEND_STORE_URI=file:///app/mlruns
+      - MLFLOW_DEFAULT_ARTIFACT_ROOT=file:///app/mlartifacts
+    volumes:
+      # Volumen persistente para MLflow runs y artifacts
+      - mlflow-data:/app/mlruns
+      - mlflow-artifacts:/app/mlartifacts
+    ports:
+      - "${MLFLOW_PORT:-5000}:5000"
+    networks:
+      - sca-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
 
-  # Servicio para ejecutar entrenamiento bajo demanda (no se levanta con up)
-  # Ejemplo: docker compose run --rm -e COMET_API_KEY=xxx train
-  #          docker compose run --rm train --epochs 3 --config training/config_default.json
+  # Servicio de entrenamiento (no se levanta con up, solo con run)
   train:
-    build: .
-    command: ["python", "training/train_classifier.py", "--mlflow-uri", "http://mlflow:5000", "--epochs", "3"]
+    build:
+      context: .
+      dockerfile: training/Dockerfile
+      args:
+        APP_VERSION: ${APP_VERSION:-latest}
+        BUILD_DATE: ${BUILD_DATE:-unknown}
+        VCS_REF: ${VCS_REF:-unknown}
+    image: ${DOCKER_REGISTRY:-docker.io}/${DOCKER_USERNAME:-user}/sca-empx-train:${APP_VERSION:-latest}
+    container_name: sca-train
     environment:
       - MLFLOW_TRACKING_URI=http://mlflow:5000
       - COMET_API_KEY=${COMET_API_KEY:-}
+      - COMET_PROJECT_NAME=${COMET_PROJECT_NAME:-sca-empx-mnist}
     volumes:
-      - training_data:/app/data
-    profiles:
-      - train
+      # Volumen para datos de entrenamiento (MNIST)
+      - training-data:/app/data
+      # Volumen para checkpoints
+      - training-checkpoints:/app/training/checkpoints
+    networks:
+      - sca-network
     depends_on:
-      - mlflow
+      mlflow:
+        condition: service_healthy
+    profiles:
+      - training
 
 volumes:
-  api_db:
-  mlruns:
-  training_data:
+  sqlite-data:
+    driver: local
+    name: sca-sqlite-data
+  backend-logs:
+    driver: local
+    name: sca-backend-logs
+  mlflow-data:
+    driver: local
+    name: sca-mlflow-data
+  mlflow-artifacts:
+    driver: local
+    name: sca-mlflow-artifacts
+  training-data:
+    driver: local
+    name: sca-training-data
+  training-checkpoints:
+    driver: local
+    name: sca-training-checkpoints
+
+networks:
+  sca-network:
+    driver: bridge
+    name: sca-network
