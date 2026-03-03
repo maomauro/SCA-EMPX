@@ -28,12 +28,14 @@ wheels/
 *.db
 backend/app/db/*.db
 
-# Datos de entrenamiento (MNIST, etc.)
-data/
+# Docker
+*.tar
+docker-compose.override.yml
+.env.docker.local
 
-# MLFlow (runs y artefactos locales)
-mlruns/
+# Logs
+logs/
+*.log
 
-
-#Ignore vscode AI rules
-.github\instructions\codacy.instructions.md
+# Backups
+backups/
