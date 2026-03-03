@@ -1,73 +1,372 @@
-# GitLab CI/CD — Pipeline según presentación: Preparation → Build → Tests → Deploy
-# Archivo .yml para orquestar el pipeline (trigger al push).
-# Runner: usar executor Docker (Shared/Specific Runner con Docker).
-
-default:
-  image: python:3.13-slim
-  cache:
-    key: "${CI_COMMIT_REF_SLUG}-pip"
-    paths: [.pip-cache/]
-
 variables:
-  PIP_CACHE_DIR: ".pip-cache"
+  # Docker Registry
+  DOCKER_REGISTRY: docker.io
+  DOCKER_USERNAME: ${CI_DOCKER_USERNAME}  # Configurar en GitLab CI/CD Variables
+  DOCKER_PASSWORD: ${CI_DOCKER_PASSWORD}  # Configurar en GitLab CI/CD Variables
+  
+  # Nombres de imágenes
+  BACKEND_IMAGE: ${DOCKER_REGISTRY}/${DOCKER_USERNAME}/sca-empx-backend
+  FRONTEND_IMAGE: ${DOCKER_REGISTRY}/${DOCKER_USERNAME}/sca-empx-frontend
+  
+  # Versión
+  APP_VERSION: ${CI_COMMIT_SHORT_SHA}
+  
+  # Python
+  PYTHON_VERSION: "3.13"
 
 stages:
-  - preparation
-  - build
   - test
+  - build
+  - push
   - deploy
 
-# ——— Preparation: checkout, dependencias ———
-preparation:
-  stage: preparation
-  script:
-    - apt-get update -qq && apt-get install -y -qq git
-    - pip install --upgrade pip
-    - pip install -e ".[dev]"
-  artifacts:
-    paths: [.pip-cache/]
+# Template para cache de dependencias
+.python-cache:
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}-python
+    paths:
+      - .venv/
+      - .cache/
 
-# ——— Build: construir imagen Docker (empaquetar aplicación) ———
-build:
+# ============================================
+# STAGE: TEST
+# ============================================
+
+test:unit:
+  stage: test
+  image: python:${PYTHON_VERSION}-slim
+  extends: .python-cache
+  before_script:
+    # Instalar dependencias del sistema para DeepFace
+    - apt-get update && apt-get install -y --no-install-recommends
+      build-essential libglib2.0-0 libsm6 libxext6 libxrender-dev
+      libgomp1 libgl1-mesa-glx curl make
+    # Instalar uv
+    - curl -LsSf https://astral.sh/uv/install.sh | sh
+    - export PATH="/root/.cargo/bin:$PATH"
+    # Instalar dependencias
+    - uv venv
+    - source .venv/bin/activate
+    - uv pip install -r pyproject.toml
+    - uv pip install pytest pytest-cov pytest-asyncio httpx
+  script:
+    - source .venv/bin/activate
+    - pytest backend/tests/ -v --cov=backend --cov-report=xml --cov-report=term
+  coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+    paths:
+      - coverage.xml
+    expire_in: 1 week
+  only:
+    - branches
+    - merge_requests
+
+lint:python:
+  stage: test
+  image: python:${PYTHON_VERSION}-slim
+  before_script:
+    - pip install ruff
+  script:
+    - ruff check backend/ --output-format=gitlab > ruff-report.json || true
+    - ruff check backend/ --statistics
+  artifacts:
+    reports:
+      codequality: ruff-report.json
+    expire_in: 1 week
+  allow_failure: true
+  only:
+    - branches
+    - merge_requests
+
+# ============================================
+# STAGE: BUILD
+# ============================================
+
+build:backend:
   stage: build
-  image: docker:24
-  services: [docker:24-dind]
+  image: docker:24-dind
+  services:
+    - docker:24-dind
   variables:
+    DOCKER_DRIVER: overlay2
     DOCKER_TLS_CERTDIR: "/certs"
   before_script:
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker info
   script:
-    - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA -t $CI_REGISTRY_IMAGE:latest .
-    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
-    - docker push $CI_REGISTRY_IMAGE:latest
-  rules:
-    - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "develop"
-  # GitLab proporciona CI_REGISTRY_IMAGE, CI_REGISTRY_USER, CI_REGISTRY_PASSWORD en el job
-
-# ——— Tests: pytest + smoke test entrenamiento ML ———
-test:
-  stage: test
-  script:
-    - pip install --upgrade pip
-    - pip install -e ".[dev]"
-    - mkdir -p test-results
-    - pytest --junitxml=test-results/junit.xml -v --tb=short
-    - python training/train_classifier.py --epochs 1 --no-comet
+    - export BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+    - export VCS_REF=${CI_COMMIT_SHORT_SHA}
+    - |
+      docker build \
+        --build-arg APP_VERSION=${APP_VERSION} \
+        --build-arg BUILD_DATE=${BUILD_DATE} \
+        --build-arg VCS_REF=${VCS_REF} \
+        -t ${BACKEND_IMAGE}:${APP_VERSION} \
+        -t ${BACKEND_IMAGE}:latest \
+        -f backend/Dockerfile \
+        .
+    - docker save ${BACKEND_IMAGE}:${APP_VERSION} -o backend-image.tar
   artifacts:
-    when: always
-    reports:
-      junit: test-results/junit.xml
-  env:
-    PYTHONWARNINGS: "ignore::DeprecationWarning"
+    paths:
+      - backend-image.tar
+    expire_in: 1 hour
+  only:
+    - main
+    - develop
+    - tags
 
-# ——— Deploy: desplegar imagen (ejemplo; configurar según entorno) ———
-deploy:
+build:frontend:
+  stage: build
+  image: docker:24-dind
+  services:
+    - docker:24-dind
+  variables:
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: "/certs"
+  before_script:
+    - docker info
+  script:
+    - export BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+    - export VCS_REF=${CI_COMMIT_SHORT_SHA}
+    - |
+      docker build \
+        --build-arg APP_VERSION=${APP_VERSION} \
+        --build-arg BUILD_DATE=${BUILD_DATE} \
+        --build-arg VCS_REF=${VCS_REF} \
+        -t ${FRONTEND_IMAGE}:${APP_VERSION} \
+        -t ${FRONTEND_IMAGE}:latest \
+        -f frontend/Dockerfile \
+        .
+    - docker save ${FRONTEND_IMAGE}:${APP_VERSION} -o frontend-image.tar
+  artifacts:
+    paths:
+      - frontend-image.tar
+    expire_in: 1 hour
+  only:
+    - main
+    - develop
+    - tags
+
+build:mlflow:
+  stage: build
+  image: docker:24-dind
+  services:
+    - docker:24-dind
+  variables:
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: "/certs"
+  before_script:
+    - docker info
+  script:
+    - export BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+    - export VCS_REF=${CI_COMMIT_SHORT_SHA}
+    - export MLFLOW_IMAGE=${DOCKER_REGISTRY}/${DOCKER_USERNAME}/sca-empx-mlflow
+    - |
+      docker build \
+        --build-arg APP_VERSION=${APP_VERSION} \
+        --build-arg BUILD_DATE=${BUILD_DATE} \
+        --build-arg VCS_REF=${VCS_REF} \
+        -t ${MLFLOW_IMAGE}:${APP_VERSION} \
+        -t ${MLFLOW_IMAGE}:latest \
+        -f mlflow/Dockerfile \
+        .
+    - docker save ${MLFLOW_IMAGE}:${APP_VERSION} -o mlflow-image.tar
+  artifacts:
+    paths:
+      - mlflow-image.tar
+    expire_in: 1 hour
+  only:
+    - main
+    - develop
+    - tags
+
+build:training:
+  stage: build
+  image: docker:24-dind
+  services:
+    - docker:24-dind
+  variables:
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: "/certs"
+  before_script:
+    - docker info
+  script:
+    - export BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+    - export VCS_REF=${CI_COMMIT_SHORT_SHA}
+    - export TRAIN_IMAGE=${DOCKER_REGISTRY}/${DOCKER_USERNAME}/sca-empx-train
+    - |
+      docker build \
+        --build-arg APP_VERSION=${APP_VERSION} \
+        --build-arg BUILD_DATE=${BUILD_DATE} \
+        --build-arg VCS_REF=${VCS_REF} \
+        -t ${TRAIN_IMAGE}:${APP_VERSION} \
+        -t ${TRAIN_IMAGE}:latest \
+        -f training/Dockerfile \
+        .
+    - docker save ${TRAIN_IMAGE}:${APP_VERSION} -o training-image.tar
+  artifacts:
+    paths:
+      - training-image.tar
+    expire_in: 1 hour
+  only:
+    - main
+    - develop
+    - tags
+
+# ============================================
+# STAGE: PUSH
+# ============================================
+
+push:backend:
+  stage: push
+  image: docker:24-dind
+  services:
+    - docker:24-dind
+  variables:
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: "/certs"
+  dependencies:
+    - build:backend
+  before_script:
+    - docker load -i backend-image.tar
+    - echo "${DOCKER_PASSWORD}" | docker login ${DOCKER_REGISTRY} -u "${DOCKER_USERNAME}" --password-stdin
+  script:
+    - docker push ${BACKEND_IMAGE}:${APP_VERSION}
+    - docker push ${BACKEND_IMAGE}:latest
+  after_script:
+    - docker logout ${DOCKER_REGISTRY}
+  only:
+    - main
+    - develop
+    - tags
+
+push:frontend:
+  stage: push
+  image: docker:24-dind
+  services:
+    - docker:24-dind
+  variables:
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: "/certs"
+  dependencies:
+    - build:frontend
+  before_script:
+    - docker load -i frontend-image.tar
+    - echo "${DOCKER_PASSWORD}" | docker login ${DOCKER_REGISTRY} -u "${DOCKER_USERNAME}" --password-stdin
+  script:
+    - docker push ${FRONTEND_IMAGE}:${APP_VERSION}
+    - docker push ${FRONTEND_IMAGE}:latest
+  after_script:
+    - docker logout ${DOCKER_REGISTRY}
+  only:
+    - main
+    - develop
+    - tags
+
+push:mlflow:
+  stage: push
+  image: docker:24-dind
+  services:
+    - docker:24-dind
+  variables:
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: "/certs"
+  dependencies:
+    - build:mlflow
+  before_script:
+    - docker load -i mlflow-image.tar
+    - echo "${DOCKER_PASSWORD}" | docker login ${DOCKER_REGISTRY} -u "${DOCKER_USERNAME}" --password-stdin
+  script:
+    - export MLFLOW_IMAGE=${DOCKER_REGISTRY}/${DOCKER_USERNAME}/sca-empx-mlflow
+    - docker push ${MLFLOW_IMAGE}:${APP_VERSION}
+    - docker push ${MLFLOW_IMAGE}:latest
+  after_script:
+    - docker logout ${DOCKER_REGISTRY}
+  only:
+    - main
+    - develop
+    - tags
+
+push:training:
+  stage: push
+  image: docker:24-dind
+  services:
+    - docker:24-dind
+  variables:
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: "/certs"
+  dependencies:
+    - build:training
+  before_script:
+    - docker load -i training-image.tar
+    - echo "${DOCKER_PASSWORD}" | docker login ${DOCKER_REGISTRY} -u "${DOCKER_USERNAME}" --password-stdin
+  script:
+    - export TRAIN_IMAGE=${DOCKER_REGISTRY}/${DOCKER_USERNAME}/sca-empx-train
+    - docker push ${TRAIN_IMAGE}:${APP_VERSION}
+    - docker push ${TRAIN_IMAGE}:latest
+  after_script:
+    - docker logout ${DOCKER_REGISTRY}
+  only:
+    - main
+    - develop
+    - tags
+
+# ============================================
+# STAGE: DEPLOY
+# ============================================
+
+deploy:staging:
   stage: deploy
   image: alpine:latest
+  before_script:
+    - apk add --no-cache openssh-client
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan -H $STAGING_SERVER >> ~/.ssh/known_hosts
   script:
-    - echo "Deploy: imagen disponible en $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
-    - echo "Configurar deploy real (kubectl, docker pull en servidor, Azure Web App, etc.) en Variables/scripts."
-  rules:
-    - if: $CI_COMMIT_BRANCH == "main"
-      when: manual
-  # Variables de entorno (GitLab CI/CD → Variables): REGISTRY, credenciales del entorno de despliegue.
+    - |
+      ssh $STAGING_USER@$STAGING_SERVER << 'EOF'
+        cd /opt/sca-empx
+        export APP_VERSION=${APP_VERSION}
+        docker-compose pull
+        docker-compose up -d
+        docker-compose ps
+      EOF
+  environment:
+    name: staging
+    url: http://$STAGING_SERVER
+  only:
+    - develop
+  when: manual
+
+deploy:production:
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache openssh-client
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan -H $PRODUCTION_SERVER >> ~/.ssh/known_hosts
+  script:
+    - |
+      ssh $PRODUCTION_USER@$PRODUCTION_SERVER << 'EOF'
+        cd /opt/sca-empx
+        export APP_VERSION=${APP_VERSION}
+        docker-compose pull
+        docker-compose up -d
+        docker-compose ps
+      EOF
+  environment:
+    name: production
+    url: http://$PRODUCTION_SERVER
+  only:
+    - main
+    - tags
+  when: manual
