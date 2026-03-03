@@ -52,12 +52,13 @@ test:unit:
   image: ghcr.io/astral-sh/uv:${UV_VERSION}-python${PYTHON_VERSION}-${BASE_LAYER}
   extends: .python-cache
   before_script:
-    # Dependencias del sistema para tests/DeepFace (opencv, etc.)
+    # Dependencias del sistema para opencv (tests API/unit)
     - apt-get update && apt-get install -y --no-install-recommends build-essential libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1 libgl1
-    # uv ya está en la imagen; instalar proyecto + grupo dev
+    # Sin extra [ml] para ahorrar espacio en runner (torch/tensorflow/deepface); tests ML se excluyen
     - uv sync --group dev
   script:
-    - uv run pytest backend/tests/ -v --cov=backend --cov-report=xml --cov-report=term
+    # Solo tests unitarios en CI (sin [ml]); api/ml requieren torch/deepface (ver pyproject [project.optional-dependencies] ml)
+    - uv run pytest backend/tests/unit/ -v --cov=backend --cov-report=xml --cov-report=term
   coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
   artifacts:
     reports:

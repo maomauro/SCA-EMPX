@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Copiar definición de dependencias e instalar (sin dev)
 COPY pyproject.toml ./
-RUN pip install --no-cache-dir .
+RUN pip install --no-cache-dir ".[ml]"
 
 # Copiar código de la aplicación
 COPY backend/ ./backend/

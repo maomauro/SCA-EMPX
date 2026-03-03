@@ -22,9 +22,17 @@ import numpy as np
 
 from backend.app.db.database import get_db
 from backend.app.db.models import Persona, Visita, Registro
-from backend.app.ml.face_model import embedding_to_bytes
 
 router = APIRouter()
+
+
+def _embedding_to_bytes():
+    """Import perezoso para permitir CI sin extra [ml]."""
+    try:
+        from backend.app.ml.face_model import embedding_to_bytes
+        return embedding_to_bytes
+    except ImportError as e:
+        raise HTTPException(503, "ML no disponible (dependencias no instaladas)") from e
 
 
 class VisitaCreate(BaseModel):
@@ -68,6 +76,7 @@ def crear_visita(body: VisitaCreate, db: Session = Depends(get_db)):
     db.add(v)
 
     # Registrar acceso de entrada automático al iniciar la visita
+    embedding_to_bytes = _embedding_to_bytes()
     embedding_vacio = embedding_to_bytes(np.zeros(512, dtype=np.float32))
     reg = Registro(
         id_persona=body.id_persona,

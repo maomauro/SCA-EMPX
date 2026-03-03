@@ -4,11 +4,14 @@ import os
 import threading
 from pathlib import Path
 
-# Silenciar logs de TensorFlow/DeepFace ANTES de importarlos
-os.environ["TF_CPP_MIN_LOG_LEVEL"]  = "3"
+# Silenciar logs de TensorFlow/DeepFace si están instalados (opcional en CI)
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
-logging.getLogger("tensorflow").setLevel(logging.ERROR)
-logging.getLogger("tf_keras").setLevel(logging.ERROR)
+try:
+    logging.getLogger("tensorflow").setLevel(logging.ERROR)
+    logging.getLogger("tf_keras").setLevel(logging.ERROR)
+except Exception:
+    pass
 
 from fastapi import FastAPI  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
@@ -18,7 +21,11 @@ from fastapi.staticfiles import StaticFiles  # noqa: E402
 from backend.app.api.v1 import api_router  # noqa: E402
 from backend.app.api.v1.routes.ws import router as ws_router  # noqa: E402
 from backend.app.db.database import init_db  # noqa: E402
-from backend.app.ml.face_model import get_model  # noqa: E402
+
+try:
+    from backend.app.ml.face_model import get_model  # noqa: E402
+except ImportError:
+    get_model = None  # CI sin dependencias ML (extra [ml])
 
 
 
@@ -44,9 +51,10 @@ app.add_middleware(
 
 @app.on_event("startup")
 def startup():
-    '''Pre-cargar modelo ML en background para que el primer request sea rápido'''
+    """Pre-cargar modelo ML en background si está disponible."""
     init_db()
-    threading.Thread(target=get_model, daemon=True).start()
+    if get_model is not None:
+        threading.Thread(target=get_model, daemon=True).start()
 
 
 # ── Routers ───────────────────────────────────────────────────────────────────
