@@ -31,13 +31,11 @@ ENV PATH="/root/.local/bin:$PATH"
 
 WORKDIR /app
 
-# Copiar proyecto para instalar con extra [ml] (DeepFace, etc.)
-COPY pyproject.toml uv.lock* ./
-COPY backend/ ./backend/
-COPY main.py ./
+# Copiar archivos de dependencias
+COPY pyproject.toml ./
 
-# Instalar dependencias base + ML (reconocimiento facial en producción)
-RUN uv pip install --system --no-cache ".[ml]"
+# Instalar dependencias con uv
+RUN uv pip install --system --no-cache -r pyproject.toml
 
 # Stage final
 FROM python:3.13-slim
