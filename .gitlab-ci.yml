@@ -179,7 +179,7 @@ push:backend:
     - docker push ${BACKEND_IMAGE}:${APP_VERSION}
     - docker push ${BACKEND_IMAGE}:latest
   after_script:
-    - docker logout ${DOCKER_REGISTRY}
+    - docker logout ${DOCKER_REGISTRY} || true
   only:
     - main
     - develop
@@ -202,7 +202,7 @@ push:frontend:
     - docker push ${FRONTEND_IMAGE}:${APP_VERSION}
     - docker push ${FRONTEND_IMAGE}:latest
   after_script:
-    - docker logout ${DOCKER_REGISTRY}
+    - docker logout ${DOCKER_REGISTRY} || true
   only:
     - main
     - develop
