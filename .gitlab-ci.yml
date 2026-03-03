@@ -1,8 +1,17 @@
+# Variables requeridas en GitLab: CI/CD → Variables (masked/protected según necesidad)
+# - CI_DOCKER_USERNAME   (Docker Hub o registry)
+# - CI_DOCKER_PASSWORD  (masked)
+# - SSH_PRIVATE_KEY     (deploy; clave privada SSH, tipo Variable o File)
+# - STAGING_SERVER      (host para staging)
+# - STAGING_USER        (usuario SSH staging)
+# - PRODUCTION_SERVER   (host para producción)
+# - PRODUCTION_USER     (usuario SSH producción)
+
 variables:
   # Docker Registry
   DOCKER_REGISTRY: docker.io
-  DOCKER_USERNAME: ${CI_DOCKER_USERNAME}  # Configurar en GitLab CI/CD Variables
-  DOCKER_PASSWORD: ${CI_DOCKER_PASSWORD}  # Configurar en GitLab CI/CD Variables
+  DOCKER_USERNAME: ${CI_DOCKER_USERNAME}
+  DOCKER_PASSWORD: ${CI_DOCKER_PASSWORD}
   
   # Nombres de imágenes
   BACKEND_IMAGE: ${DOCKER_REGISTRY}/${DOCKER_USERNAME}/sca-empx-backend
@@ -38,17 +47,14 @@ test:unit:
   extends: .python-cache
   before_script:
     # Instalar dependencias del sistema para DeepFace
-    - apt-get update && apt-get install -y --no-install-recommends
-      build-essential libglib2.0-0 libsm6 libxext6 libxrender-dev
-      libgomp1 libgl1-mesa-glx curl make
+    - apt-get update && apt-get install -y --no-install-recommends build-essential libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1 libgl1-mesa-glx curl make
     # Instalar uv
     - curl -LsSf https://astral.sh/uv/install.sh | sh
     - export PATH="/root/.cargo/bin:$PATH"
-    # Instalar dependencias
+    # Instalar dependencias (pyproject.toml + grupo dev para pytest, etc.)
     - uv venv
     - source .venv/bin/activate
-    - uv pip install -r pyproject.toml
-    - uv pip install pytest pytest-cov pytest-asyncio httpx
+    - uv sync --group dev
   script:
     - source .venv/bin/activate
     - pytest backend/tests/ -v --cov=backend --cov-report=xml --cov-report=term
@@ -88,7 +94,7 @@ lint:python:
 
 build:backend:
   stage: build
-  image: docker:24-dind
+  image: docker:24
   services:
     - docker:24-dind
   variables:
@@ -120,7 +126,7 @@ build:backend:
 
 build:frontend:
   stage: build
-  image: docker:24-dind
+  image: docker:24
   services:
     - docker:24-dind
   variables:
@@ -156,7 +162,7 @@ build:frontend:
 
 push:backend:
   stage: push
-  image: docker:24-dind
+  image: docker:24
   services:
     - docker:24-dind
   variables:
@@ -179,7 +185,7 @@ push:backend:
 
 push:frontend:
   stage: push
-  image: docker:24-dind
+  image: docker:24
   services:
     - docker:24-dind
   variables:
@@ -216,9 +222,9 @@ deploy:staging:
     - ssh-keyscan -H $STAGING_SERVER >> ~/.ssh/known_hosts
   script:
     - |
-      ssh $STAGING_USER@$STAGING_SERVER << 'EOF'
+      ssh $STAGING_USER@$STAGING_SERVER << EOF
         cd /opt/sca-empx
-        export APP_VERSION=${APP_VERSION}
+        export APP_VERSION=$APP_VERSION
         docker-compose pull
         docker-compose up -d
         docker-compose ps
@@ -242,9 +248,9 @@ deploy:production:
     - ssh-keyscan -H $PRODUCTION_SERVER >> ~/.ssh/known_hosts
   script:
     - |
-      ssh $PRODUCTION_USER@$PRODUCTION_SERVER << 'EOF'
+      ssh $PRODUCTION_USER@$PRODUCTION_SERVER << EOF
         cd /opt/sca-empx
-        export APP_VERSION=${APP_VERSION}
+        export APP_VERSION=$APP_VERSION
         docker-compose pull
         docker-compose up -d
         docker-compose ps
