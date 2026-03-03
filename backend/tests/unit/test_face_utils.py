@@ -14,7 +14,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from backend.app.ml.face_model import (
+from backend.app.ml.face_utils import (
     EMBEDDING_DIM,
     EMBEDDING_DTYPE,
     _normalize,

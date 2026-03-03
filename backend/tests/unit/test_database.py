@@ -19,7 +19,7 @@ from sqlalchemy.orm import sessionmaker
 from backend.app.db.models import (
     Base, Area, Cargo, TipoPersona, Persona, Registro, Visita,
 )
-from backend.app.ml.face_model import embedding_to_bytes
+from backend.app.ml.face_utils import embedding_to_bytes
 import numpy as np
 
 
