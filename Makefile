@@ -44,13 +44,8 @@ init-db: ## Inicializar base de datos
 	$(PYTHON) scripts/init_db.py
 
 docker-build: ## Construir imágenes Docker
-	@echo "Building Docker images..."
-	export BUILD_DATE=$$(date -u +'%Y-%m-%dT%H:%M:%SZ') && \
-	export VCS_REF=$$(git rev-parse --short HEAD 2>/dev/null || echo "unknown") && \
-	$(DOCKER_COMPOSE) build \
-		--build-arg APP_VERSION=$(APP_VERSION) \
-		--build-arg BUILD_DATE=$$BUILD_DATE \
-		--build-arg VCS_REF=$$VCS_REF
+	@echo Building Docker images...
+	docker-compose build
 
 docker-up: ## Levantar contenedores
 	$(DOCKER_COMPOSE) up -d
@@ -70,8 +65,17 @@ docker-logs-backend: ## Ver logs del backend
 docker-logs-frontend: ## Ver logs del frontend
 	$(DOCKER_COMPOSE) logs -f frontend
 
+docker-logs-mlflow: ## Ver logs de MLflow
+	$(DOCKER_COMPOSE) logs -f mlflow
+
 docker-ps: ## Ver estado de contenedores
 	$(DOCKER_COMPOSE) ps
+
+docker-train: ## Ejecutar entrenamiento
+	$(DOCKER_COMPOSE) run --rm train
+
+docker-train-custom: ## Ejecutar entrenamiento con parámetros personalizados (ej: make docker-train-custom ARGS="--epochs 5")
+	$(DOCKER_COMPOSE) run --rm train $(ARGS)
 
 docker-clean: ## Limpiar contenedores, imágenes y volúmenes
 	$(DOCKER_COMPOSE) down -v --rmi local

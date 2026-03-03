@@ -28,6 +28,18 @@ wheels/
 *.db
 backend/app/db/*.db
 
+# Datos de entrenamiento (MNIST, etc. - ahora en volúmenes Docker)
+data/
+training/checkpoints/
+
+# MLFlow (runs y artefactos locales - ahora en volúmenes Docker)
+mlruns/
+mlartifacts/
+
+
+#Ignore vscode AI rules
+.github\instructions\codacy.instructions.md
+
 # Docker
 *.tar
 docker-compose.override.yml
