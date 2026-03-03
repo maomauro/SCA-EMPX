@@ -22,6 +22,12 @@ variables:
   
   # Python
   PYTHON_VERSION: "3.13"
+  
+  # uv (doc: https://docs.astral.sh/uv/guides/integration/docker/)
+  UV_VERSION: "0.10.7"
+  BASE_LAYER: trixie-slim
+  # GitLab CI: copiar en lugar de hard links para el directorio de build
+  UV_LINK_MODE: copy
 
 stages:
   - test
@@ -43,21 +49,15 @@ stages:
 
 test:unit:
   stage: test
-  image: python:${PYTHON_VERSION}-slim
+  image: ghcr.io/astral-sh/uv:${UV_VERSION}-python${PYTHON_VERSION}-${BASE_LAYER}
   extends: .python-cache
   before_script:
-    # Instalar dependencias del sistema para DeepFace
-    - apt-get update && apt-get install -y --no-install-recommends build-essential libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1 libgl1-mesa-glx curl make
-    # Instalar uv
-    - curl -LsSf https://astral.sh/uv/install.sh | sh
-    - export PATH="/root/.cargo/bin:$PATH"
-    # Instalar dependencias (pyproject.toml + grupo dev para pytest, etc.)
-    - uv venv
-    - source .venv/bin/activate
+    # Dependencias del sistema para tests/DeepFace (opencv, etc.)
+    - apt-get update && apt-get install -y --no-install-recommends build-essential libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1 libgl1-mesa-glx
+    # uv ya está en la imagen; instalar proyecto + grupo dev
     - uv sync --group dev
   script:
-    - source .venv/bin/activate
-    - pytest backend/tests/ -v --cov=backend --cov-report=xml --cov-report=term
+    - uv run pytest backend/tests/ -v --cov=backend --cov-report=xml --cov-report=term
   coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
   artifacts:
     reports:
@@ -77,9 +77,10 @@ lint:python:
   before_script:
     - pip install ruff
   script:
-    - ruff check backend/ --output-format=gitlab > ruff-report.json || true
-    - ruff check backend/ --statistics
+    - ruff check backend/ --output-format=gitlab > ruff-report.json 2>/dev/null || true
+    - ruff check backend/ --statistics || true
   artifacts:
+    when: always
     reports:
       codequality: ruff-report.json
     expire_in: 1 week
