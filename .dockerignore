@@ -2,6 +2,7 @@
 .git
 .gitignore
 .github
+.gitlab
 
 # Python
 __pycache__/
@@ -64,3 +65,12 @@ temp/
 .env
 .env.*
 !.env.example
+
+# MLflow y Training (no incluir en build)
+mlruns/
+mlartifacts/
+data/
+training/checkpoints/
+
+# Migration (no necesario en contenedores)
+migration/
