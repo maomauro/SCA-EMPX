@@ -76,10 +76,16 @@ def registrar_salida_endpoint(
             reason=result.reason,
         )
 
+    # Obtener el embedding para guardarlo con el registro
+    from backend.app.ml.face_model import get_embedding_from_bytes, embedding_to_bytes
+    embedding = get_embedding_from_bytes(image_bytes)
+    embedding_bytes = embedding_to_bytes(embedding) if embedding is not None else None
+    
     register_salida(
         db,
         id_persona=result.person_id,
         similarity_score=result.similarity,
+        embedding_facial=embedding_bytes,
     )
     return RegisterExitResponse(
         registered=True,

@@ -1,6 +1,4 @@
 # Docker Compose para desarrollo local con hot-reload
-version: '3.8'
-
 services:
   backend:
     build:
@@ -15,6 +13,7 @@ services:
       - ALGORITHM=HS256
       - ACCESS_TOKEN_EXPIRE_MINUTES=60
       - SIMILARITY_THRESHOLD=0.6
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
     volumes:
       # Mount código para hot-reload
       - ./backend:/app/backend
@@ -26,6 +25,8 @@ services:
     networks:
       - sca-network-dev
     command: python -m uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
+    depends_on:
+      - mlflow
 
   frontend:
     build:
@@ -43,9 +44,30 @@ services:
     networks:
       - sca-network-dev
 
+  mlflow:
+    build:
+      context: .
+      dockerfile: mlflow/Dockerfile
+    container_name: sca-mlflow-dev
+    restart: unless-stopped
+    environment:
+      - MLFLOW_BACKEND_STORE_URI=file:///app/mlruns
+      - MLFLOW_DEFAULT_ARTIFACT_ROOT=file:///app/mlartifacts
+    volumes:
+      - mlflow-data-dev:/app/mlruns
+      - mlflow-artifacts-dev:/app/mlartifacts
+    ports:
+      - "5000:5000"
+    networks:
+      - sca-network-dev
+
 volumes:
   sqlite-data-dev:
     name: sca-sqlite-data-dev
+  mlflow-data-dev:
+    name: sca-mlflow-data-dev
+  mlflow-artifacts-dev:
+    name: sca-mlflow-artifacts-dev
 
 networks:
   sca-network-dev:
