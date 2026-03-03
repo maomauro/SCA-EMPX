@@ -13,7 +13,7 @@ Rutas:
     POST /personas/{id}/registros    → Añade un embedding de registro a la galería.
 """
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
@@ -45,6 +45,17 @@ class PersonaCreate(BaseModel):
     nombres:         str
     id_tipo_persona: int
     id_cargo:        Optional[int] = None
+
+
+class PersonaUpdate(BaseModel):
+    """Schema de entrada para actualizar una persona.
+
+    Attributes:
+        activo: Estado activo/inactivo.
+        estado: Estado como string ("activo" o "inactivo").
+    """
+    activo: Optional[bool] = None
+    estado: Optional[str] = None
 
 
 class PersonaOut(BaseModel):
@@ -147,22 +158,134 @@ def crear_persona(body: PersonaCreate, db: Session = Depends(get_db)):
     return _persona_out(p)
 
 
+@router.post("/registro-completo")
+async def crear_persona_con_foto(
+    nombre_completo: str = Form(...),
+    documento: str = Form(...),
+    tipo_documento: str = Form("CC"),
+    cargo: str = Form(None),
+    area: str = Form(None),
+    foto: UploadFile = File(...),
+    db: Session = Depends(get_db),
+):
+    """Registra una nueva persona con foto en un solo paso.
+    
+    Este endpoint maneja el formulario multipart/form-data del frontend
+    y crea la persona junto con su primer embedding facial.
+    
+    Args:
+        nombre_completo: Nombre completo de la persona.
+        documento: Número de documento.
+        tipo_documento: Tipo de documento (CC, CE, PAS, NIT).
+        cargo: Cargo (opcional, para empleados).
+        area: Área (opcional, para empleados).
+        foto: Archivo de imagen con el rostro.
+        db: Sesión de base de datos.
+        
+    Returns:
+        Diccionario con los datos de la persona creada.
+        
+    Raises:
+        HTTPException: 409 si el documento ya existe.
+        HTTPException: 400 si no se detecta rostro en la foto.
+    """
+    # Verificar si ya existe
+    if db.query(Persona).filter(Persona.nro_documento == documento).first():
+        raise HTTPException(409, "Ya existe una persona con ese documento.")
+    
+    # Determinar tipo de persona (Empleado por defecto si tiene cargo)
+    tipo_persona = db.query(TipoPersona).filter(
+        TipoPersona.tipo == ("Empleado" if cargo else "Visitante")
+    ).first()
+    if not tipo_persona:
+        raise HTTPException(400, "Tipo de persona no encontrado.")
+    
+    # Buscar cargo si se especificó
+    id_cargo = None
+    if cargo:
+        from backend.app.db.models import Cargo
+        cargo_obj = db.query(Cargo).filter(Cargo.nombre == cargo).first()
+        if cargo_obj:
+            id_cargo = cargo_obj.id_cargo
+    
+    # Crear persona
+    p = Persona(
+        tipo_documento=tipo_documento,
+        nro_documento=documento,
+        nombres=nombre_completo.strip(),
+        id_tipo_persona=tipo_persona.id_tipo_persona,
+        id_cargo=id_cargo,
+    )
+    db.add(p)
+    db.commit()
+    db.refresh(p)
+    
+    # Procesar foto y crear embedding
+    img_bytes = await foto.read()
+    emb = get_embedding_from_bytes(img_bytes)
+    if emb is None:
+        # Si no se detecta rostro, eliminar la persona creada
+        db.delete(p)
+        db.commit()
+        raise HTTPException(400, "No se detectó un rostro en la foto proporcionada.")
+    
+    # Guardar embedding
+    reg = Registro(
+        id_persona=p.id_persona,
+        evento="registro",
+        tipo_acceso=None,
+        embedding_facial=embedding_to_bytes(emb),
+        similitud=None,
+    )
+    db.add(reg)
+    db.commit()
+    
+    return _persona_out(p)
+
+
 @router.get("/")
-def listar_personas(tipo: Optional[str] = None, db: Session = Depends(get_db)):
-    """Retorna la lista de personas activas, opcionalmente filtrada por tipo.
+def listar_personas(
+    tipo: Optional[str] = None,
+    estado: Optional[str] = None,
+    q: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """Retorna la lista de personas, opcionalmente filtrada.
 
     Args:
-        tipo: Nombre del tipo de persona (``'Empleado'``, ``'Visitante'``,
-              ``'Contratista'``). Si es ``None`` retorna todos los tipos.
-        db:   Sesión de base de datos.
+        tipo: Nombre del tipo de persona (``'empleado'``, ``'visitante'``, ``'contratista'``).
+        estado: Filtro de estado (``'activos'``, ``'inactivos'``, ``'todos'``). Por defecto 'activos'.
+        q: Búsqueda por nombre o documento.
+        db: Sesión de base de datos.
 
     Returns:
         Lista de diccionarios ordenada alfabéticamente por ``nombres``.
     """
-    q = db.query(Persona).filter(Persona.activo.is_(True))
+    q_obj = db.query(Persona)
+    
+    # Filtrar por estado
+    if estado == "todos":
+        pass  # No filtrar por activo
+    elif estado == "inactivos":
+        q_obj = q_obj.filter(Persona.activo.is_(False))
+    else:  # Por defecto activos
+        q_obj = q_obj.filter(Persona.activo.is_(True))
+    
+    # Filtrar por tipo
     if tipo:
-        q = q.join(TipoPersona).filter(TipoPersona.tipo == tipo)
-    return [_persona_out(p) for p in q.order_by(Persona.nombres).all()]
+        tipo_lower = tipo.lower()
+        q_obj = q_obj.join(TipoPersona).filter(
+            TipoPersona.tipo.ilike(f"%{tipo_lower}%")
+        )
+    
+    # Búsqueda por texto
+    if q:
+        q_obj = q_obj.filter(
+            (Persona.nombres.ilike(f"%{q}%")) | 
+            (Persona.nro_documento.ilike(f"%{q}%"))
+        )
+    
+    return [_persona_out(p) for p in q_obj.order_by(Persona.nombres).all()]
 
 
 @router.get("/buscar-por-cara")
@@ -228,6 +351,41 @@ def obtener_persona(id_persona: int, db: Session = Depends(get_db)):
     return _persona_out(p)
 
 
+@router.patch("/{id_persona}")
+def actualizar_persona(
+    id_persona: int,
+    body: PersonaUpdate,
+    db: Session = Depends(get_db),
+):
+    """Actualiza el estado de una persona.
+
+    Args:
+        id_persona: Identificador de la persona.
+        body: Datos a actualizar (activo o estado).
+        db: Sesión de base de datos.
+
+    Returns:
+        Diccionario con los datos actualizados de la persona.
+
+    Raises:
+        HTTPException: 404 si la persona no existe.
+    """
+    p = db.query(Persona).filter(Persona.id_persona == id_persona).first()
+    if not p:
+        raise HTTPException(404, "Persona no encontrada.")
+    
+    # Aceptar tanto activo (bool) como estado (string)
+    if body.activo is not None:
+        p.activo = body.activo
+    elif body.estado is not None:
+        p.activo = (body.estado.lower() == "activo")
+    
+    db.commit()
+    db.refresh(p)
+    
+    return _persona_out(p)
+
+
 @router.post("/{id_persona}/registros")
 def agregar_embedding_registro(
     id_persona: int,
@@ -281,6 +439,61 @@ def agregar_embedding_registro(
     db.commit()
 
     return {"ok": True, "n_embeddings": n_actuales + 1}
+
+
+@router.get("/dentro")
+def personas_dentro(db: Session = Depends(get_db)):
+    """Retorna la lista de personas que están actualmente dentro del edificio.
+    
+    Una persona está "dentro" si su último evento de acceso fue una entrada
+    y no tiene una salida posterior.
+    
+    Args:
+        db: Sesión de base de datos.
+        
+    Returns:
+        Lista de personas actualmente dentro con su último acceso.
+    """
+    from datetime import datetime, timezone, timedelta
+    from sqlalchemy import func
+    
+    # Obtener el último registro de acceso por persona
+    subq = (
+        db.query(
+            Registro.id_persona,
+            func.max(Registro.fecha).label("ultima_fecha")
+        )
+        .filter(Registro.evento == "acceso")
+        .group_by(Registro.id_persona)
+        .subquery()
+    )
+    
+    # Obtener personas cuyo último acceso fue entrada
+    registros = (
+        db.query(Registro)
+        .join(subq, 
+            (Registro.id_persona == subq.c.id_persona) & 
+            (Registro.fecha == subq.c.ultima_fecha)
+        )
+        .join(Persona, Registro.id_persona == Persona.id_persona)
+        .filter(
+            Registro.tipo_acceso == "entrada",
+            Persona.activo.is_(True)
+        )
+        .all()
+    )
+    
+    return [
+        {
+            "id_persona": r.persona.id_persona,
+            "nombre_completo": r.persona.nombres,
+            "documento": r.persona.nro_documento,
+            "tipo_documento": r.persona.tipo_documento,
+            "hora_entrada": r.fecha,
+            "similitud": r.similitud,
+        }
+        for r in registros
+    ]
 
 
 # ── Helper interno ────────────────────────────────────────────────────────────

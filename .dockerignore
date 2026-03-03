@@ -1,37 +1,8 @@
-# Git y entornos
+# Git
 .git
-.venv
-.venv/
-.cache
-.claude
-.github
-.pytest_cache
-.ruff_cache
-
-# Python
-__pycache__
-*.py[oc]
-*.egg-info
-build
-dist
-wheels
-
-# Datos y artefactos (no empaquetar en imagen)
-data/
-mlruns/
-*.db
-backend/app/db/*.db
-
-# Secrets y env
-.env
-.env.*
-*.log
-
-# Documentación y tests (opcional: quitar si se quieren en imagen)
-# docs/
-# backend/tests/
 .gitignore
 .github
+.gitlab
 
 # Python
 __pycache__/
@@ -39,6 +10,7 @@ __pycache__/
 *$py.class
 *.so
 .Python
+.venv/
 venv/
 ENV/
 env/
@@ -93,3 +65,12 @@ temp/
 .env
 .env.*
 !.env.example
+
+# MLflow y Training (no incluir en build)
+mlruns/
+mlartifacts/
+data/
+training/checkpoints/
+
+# Migration (no necesario en contenedores)
+migration/

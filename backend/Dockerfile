@@ -21,13 +21,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxext6 \
     libxrender-dev \
     libgomp1 \
-    libgl1-mesa-glx \
+    libgl1 \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Instalar uv para gestión de dependencias
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-ENV PATH="/root/.cargo/bin:$PATH"
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
+    mv /root/.local/bin/uv /usr/local/bin/uv && \
+    mv /root/.local/bin/uvx /usr/local/bin/uvx
 
 WORKDIR /app
 
@@ -47,7 +48,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxext6 \
     libxrender1 \
     libgomp1 \
-    libgl1-mesa-glx \
+    libgl1 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -69,11 +70,9 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     DEBUG=false \
     DATABASE_URL=sqlite:///./backend/app/db/sqlite.db \
-    SECRET_KEY=change-me-in-production \
     ALGORITHM=HS256 \
     ACCESS_TOKEN_EXPIRE_MINUTES=60 \
     SIMILARITY_THRESHOLD=0.6
-
 # Exponer puerto
 EXPOSE 8000
 

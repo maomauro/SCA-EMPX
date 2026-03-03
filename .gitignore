@@ -28,11 +28,13 @@ wheels/
 *.db
 backend/app/db/*.db
 
-# Datos de entrenamiento (MNIST, etc.)
+# Datos de entrenamiento (MNIST, etc. - ahora en volúmenes Docker)
 data/
+training/checkpoints/
 
-# MLFlow (runs y artefactos locales)
+# MLFlow (runs y artefactos locales - ahora en volúmenes Docker)
 mlruns/
+mlartifacts/
 
 
 #Ignore vscode AI rules
@@ -49,3 +51,6 @@ logs/
 
 # Backups
 backups/
+
+# Dockerfile deprecado
+Dockerfile.deprecated
