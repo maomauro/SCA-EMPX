@@ -14,7 +14,8 @@ LABEL maintainer="STI S.A.S." \
       vcs-ref="${VCS_REF}"
 
 # Copiar archivos estáticos
-COPY backend/app/static /usr/share/nginx/html
+# Misma interfaz que en local (frontend/src): Dashboard, Registrar persona, Acceso facial, etc.
+COPY frontend/src /usr/share/nginx/html
 
 # Copiar configuración de nginx
 COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
