@@ -14,8 +14,8 @@ LABEL maintainer="STI S.A.S." \
       vcs-ref="${VCS_REF}"
 
 # Copiar archivos estáticos
-COPY frontend/src/*.html /usr/share/nginx/html/
-COPY frontend/src/static /usr/share/nginx/html/static
+# Misma interfaz que en local (frontend/src): Dashboard, Registrar persona, Acceso facial, etc.
+COPY frontend/src /usr/share/nginx/html
 
 # Copiar configuración de nginx
 COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
@@ -23,9 +23,9 @@ COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
 # Exponer puerto
 EXPOSE 80
 
-# Health check - verificar que nginx esté corriendo
+# Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD pgrep nginx || exit 1
+    CMD wget --quiet --tries=1 --spider http://localhost/health || exit 1
 
 # Nginx se ejecuta como usuario nginx por defecto
 CMD ["nginx", "-g", "daemon off;"]

@@ -13,8 +13,12 @@ dependencies = [
     "python-jose[cryptography]>=3.3.0",
     "numpy>=1.24.0",
     "Pillow>=10.0.0",
-    "deepface>=0.0.79",
     "opencv-python-headless>=4.8.0",
+]
+# Dependencias pesadas (torch/tensorflow/deepface): opcionales para CI; en Docker/local instalar con [ml]
+[project.optional-dependencies]
+ml = [
+    "deepface>=0.0.79",
     "tf-keras>=2.0.0",
     "huggingface-hub>=1.4.1",
     "torch>=2.10.0",

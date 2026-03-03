@@ -50,9 +50,16 @@ from huggingface_hub import snapshot_download
 
 log = logging.getLogger("sca.ml")
 
-EMBEDDING_DIM   = 512
-EMBEDDING_DTYPE = np.float32
-CACHE_DIR       = Path(__file__).resolve().parents[3] / ".cache"
+from backend.app.ml.face_utils import (
+    EMBEDDING_DIM,
+    EMBEDDING_DTYPE,
+    _normalize,
+    cosine_similarity,
+    embedding_to_bytes,
+    bytes_to_embedding,
+    find_best_match,
+)
+CACHE_DIR = Path(__file__).resolve().parents[3] / ".cache"
 
 # ── Singleton del modelo ──────────────────────────────────────────────────────
 
@@ -312,104 +319,3 @@ def get_embedding_from_bytes(image_bytes: bytes) -> Optional[np.ndarray]:
 
     model = get_model()
     return model.get_embedding(arr)
-
-
-def cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
-    """Calcula la similitud coseno entre dos embeddings normalizados.
-
-    Dado que los vectores ya están normalizados a norma unitaria, la similitud
-    equivale al producto punto. El resultado se recorta al rango ``[0, 1]``
-    para evitar valores negativos por errores de punto flotante.
-
-    Args:
-        a: Embedding normalizado de 512 dimensiones.
-        b: Embedding normalizado de 512 dimensiones.
-
-    Returns:
-        Valor ``float`` en ``[0.0, 1.0]``. Valores cercanos a ``1.0`` indican
-        alta similitud (misma persona).
-    """
-    return float(np.clip(np.dot(a, b), 0.0, 1.0))
-
-
-def embedding_to_bytes(emb: np.ndarray) -> bytes:
-    """Serializa un embedding a bytes para persistir en la base de datos.
-
-    El vector se almacena como una secuencia contigua de valores ``float32``
-    en orden nativo little-endian (512 × 4 bytes = 2048 bytes totales).
-
-    Args:
-        emb: Array ``float32`` de 512 dimensiones.
-
-    Returns:
-        Objeto ``bytes`` de 2048 bytes listo para guardar en una columna
-        ``LargeBinary`` de SQLAlchemy.
-    """
-    return emb.astype(EMBEDDING_DTYPE).tobytes()
-
-
-def bytes_to_embedding(data: bytes) -> np.ndarray:
-    """Deserializa bytes de la base de datos a un array de embedding.
-
-    Args:
-        data: Bytes obtenidos de una columna ``LargeBinary`` (2048 bytes).
-
-    Returns:
-        Array ``float32`` de 512 dimensiones con copia propia en memoria
-        (no comparte buffer con ``data``).
-    """
-    return np.frombuffer(data, dtype=EMBEDDING_DTYPE).copy()
-
-
-def find_best_match(
-    query: np.ndarray,
-    candidates: list[tuple[int, np.ndarray]],
-    threshold: float,
-) -> Optional[tuple[int, float]]:
-    """Busca la persona con mayor similitud coseno respecto a un embedding.
-
-    Itera sobre todos los candidatos, calcula la similitud coseno con cada
-    uno y retorna la mejor coincidencia solo si supera el umbral mínimo.
-
-    Args:
-        query:      Embedding de consulta normalizado (512-d).
-        candidates: Lista de tuplas ``(id_persona, embedding)`` que forman
-                    la galería de referencia.
-        threshold:  Umbral mínimo de similitud coseno para aceptar el match
-                    (valor típico: 0.6–0.8).
-
-    Returns:
-        Tupla ``(id_persona, similitud)`` con la mejor coincidencia redondeada
-        a 4 decimales, o ``None`` si la lista está vacía o ningún candidato
-        supera el umbral.
-    """
-    if not candidates:
-        return None
-
-    best_id  = None
-    best_sim = -1.0
-
-    for person_id, emb in candidates:
-        sim = cosine_similarity(query, emb)
-        if sim > best_sim:
-            best_sim = sim
-            best_id  = person_id
-
-    if best_id is None or best_sim < threshold:
-        return None
-
-    return (best_id, round(best_sim, 4))
-
-
-def _normalize(v: np.ndarray) -> np.ndarray:
-    """Normaliza un vector a norma unitaria (L2).
-
-    Args:
-        v: Array numpy de cualquier dimensión.
-
-    Returns:
-        Vector escalado a norma 1. Si la norma es 0 retorna el vector
-        original sin modificar para evitar división por cero.
-    """
-    norm = np.linalg.norm(v)
-    return v / norm if norm > 0 else v

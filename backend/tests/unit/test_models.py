@@ -16,7 +16,7 @@ from sqlalchemy.exc import IntegrityError
 from backend.app.db.models import (
     Area, Cargo, Persona, Registro, TipoPersona, Visita,
 )
-from backend.app.ml.face_model import embedding_to_bytes
+from backend.app.ml.face_utils import embedding_to_bytes
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

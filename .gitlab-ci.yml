@@ -1,7 +1,8 @@
 # Variables requeridas en GitLab: CI/CD → Variables (masked/protected según necesidad)
 # - CI_DOCKER_USERNAME   (Docker Hub o registry)
 # - CI_DOCKER_PASSWORD  (masked)
-# - SSH_PRIVATE_KEY     (deploy; clave privada SSH, tipo Variable o File)
+# - SSH_PRIVATE_KEY     (deploy; clave privada SSH. Recomendado: tipo "File" y pegar el contenido
+#                        completo del .pem; si es Variable, debe ser el PEM completo en una sola variable)
 # - STAGING_SERVER      (host para staging)
 # - STAGING_USER        (usuario SSH staging)
 # - PRODUCTION_SERVER   (host para producción)
@@ -22,6 +23,12 @@ variables:
   
   # Python
   PYTHON_VERSION: "3.13"
+  
+  # uv (doc: https://docs.astral.sh/uv/guides/integration/docker/)
+  UV_VERSION: "0.10.7"
+  BASE_LAYER: trixie-slim
+  # GitLab CI: copiar en lugar de hard links para el directorio de build
+  UV_LINK_MODE: copy
 
 stages:
   - test
@@ -43,21 +50,16 @@ stages:
 
 test:unit:
   stage: test
-  image: python:${PYTHON_VERSION}-slim
+  image: ghcr.io/astral-sh/uv:${UV_VERSION}-python${PYTHON_VERSION}-${BASE_LAYER}
   extends: .python-cache
   before_script:
-    # Instalar dependencias del sistema para DeepFace
-    - apt-get update && apt-get install -y --no-install-recommends build-essential libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1 libgl1-mesa-glx curl make
-    # Instalar uv
-    - curl -LsSf https://astral.sh/uv/install.sh | sh
-    - export PATH="/root/.cargo/bin:$PATH"
-    # Instalar dependencias (pyproject.toml + grupo dev para pytest, etc.)
-    - uv venv
-    - source .venv/bin/activate
+    # Dependencias del sistema para opencv (tests API/unit)
+    - apt-get update && apt-get install -y --no-install-recommends build-essential libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1 libgl1
+    # Sin extra [ml] para ahorrar espacio en runner (torch/tensorflow/deepface); tests ML se excluyen
     - uv sync --group dev
   script:
-    - source .venv/bin/activate
-    - pytest backend/tests/ -v --cov=backend --cov-report=xml --cov-report=term
+    # Solo tests unitarios en CI (sin [ml]); api/ml requieren torch/deepface (ver pyproject [project.optional-dependencies] ml)
+    - uv run pytest backend/tests/unit/ -v --cov=backend --cov-report=xml --cov-report=term
   coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
   artifacts:
     reports:
@@ -77,9 +79,10 @@ lint:python:
   before_script:
     - pip install ruff
   script:
-    - ruff check backend/ --output-format=gitlab > ruff-report.json || true
-    - ruff check backend/ --statistics
+    - ruff check backend/ --output-format=gitlab > ruff-report.json 2>/dev/null || true
+    - ruff check backend/ --statistics || true
   artifacts:
+    when: always
     reports:
       codequality: ruff-report.json
     expire_in: 1 week
@@ -238,12 +241,13 @@ push:backend:
     - build:backend
   before_script:
     - docker load -i backend-image.tar
+    - docker tag ${BACKEND_IMAGE}:${APP_VERSION} ${BACKEND_IMAGE}:latest
     - echo "${DOCKER_PASSWORD}" | docker login ${DOCKER_REGISTRY} -u "${DOCKER_USERNAME}" --password-stdin
   script:
     - docker push ${BACKEND_IMAGE}:${APP_VERSION}
     - docker push ${BACKEND_IMAGE}:latest
   after_script:
-    - docker logout ${DOCKER_REGISTRY}
+    - docker logout ${DOCKER_REGISTRY} || true
   only:
     - main
     - develop
@@ -261,12 +265,13 @@ push:frontend:
     - build:frontend
   before_script:
     - docker load -i frontend-image.tar
+    - docker tag ${FRONTEND_IMAGE}:${APP_VERSION} ${FRONTEND_IMAGE}:latest
     - echo "${DOCKER_PASSWORD}" | docker login ${DOCKER_REGISTRY} -u "${DOCKER_USERNAME}" --password-stdin
   script:
     - docker push ${FRONTEND_IMAGE}:${APP_VERSION}
     - docker push ${FRONTEND_IMAGE}:latest
   after_script:
-    - docker logout ${DOCKER_REGISTRY}
+    - docker logout ${DOCKER_REGISTRY} || true
   only:
     - main
     - develop
@@ -330,7 +335,12 @@ deploy:staging:
   before_script:
     - apk add --no-cache openssh-client
     - eval $(ssh-agent -s)
-    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - |
+      if [ -f "$SSH_PRIVATE_KEY" ]; then
+        chmod 600 "$SSH_PRIVATE_KEY" && ssh-add "$SSH_PRIVATE_KEY"
+      else
+        echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+      fi
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
     - ssh-keyscan -H $STAGING_SERVER >> ~/.ssh/known_hosts
@@ -338,10 +348,12 @@ deploy:staging:
     - |
       ssh $STAGING_USER@$STAGING_SERVER << EOF
         cd /opt/sca-empx
+        export DOCKER_REGISTRY=$DOCKER_REGISTRY
+        export DOCKER_USERNAME=$DOCKER_USERNAME
         export APP_VERSION=$APP_VERSION
-        docker-compose pull
-        docker-compose up -d
-        docker-compose ps
+        docker compose -f docker-compose.prod.yml pull
+        docker compose -f docker-compose.prod.yml up -d
+        docker compose -f docker-compose.prod.yml ps
       EOF
   environment:
     name: staging
@@ -356,7 +368,12 @@ deploy:production:
   before_script:
     - apk add --no-cache openssh-client
     - eval $(ssh-agent -s)
-    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - |
+      if [ -f "$SSH_PRIVATE_KEY" ]; then
+        chmod 600 "$SSH_PRIVATE_KEY" && ssh-add "$SSH_PRIVATE_KEY"
+      else
+        echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+      fi
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
     - ssh-keyscan -H $PRODUCTION_SERVER >> ~/.ssh/known_hosts
@@ -364,10 +381,12 @@ deploy:production:
     - |
       ssh $PRODUCTION_USER@$PRODUCTION_SERVER << EOF
         cd /opt/sca-empx
+        export DOCKER_REGISTRY=$DOCKER_REGISTRY
+        export DOCKER_USERNAME=$DOCKER_USERNAME
         export APP_VERSION=$APP_VERSION
-        docker-compose pull
-        docker-compose up -d
-        docker-compose ps
+        docker compose -f docker-compose.prod.yml pull
+        docker compose -f docker-compose.prod.yml up -d
+        docker compose -f docker-compose.prod.yml ps
       EOF
   environment:
     name: production

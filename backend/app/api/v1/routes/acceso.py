@@ -24,10 +24,6 @@ from sqlalchemy.orm import Session
 
 from backend.app.db.database import get_db
 from backend.app.db.models import Persona, Registro, Visita
-from backend.app.ml.face_model import (
-    get_embedding_from_bytes, embedding_to_bytes, bytes_to_embedding,
-    find_best_match,
-)
 from backend.app.config.config import (
     FACE_SIMILARITY_THRESHOLD,
     FACE_HIGH_CONFIDENCE_THRESHOLD,
@@ -37,6 +33,20 @@ from backend.app.api.v1.routes.ws import manager
 
 log = logging.getLogger("sca.acceso")
 router = APIRouter()
+
+
+def _face_imports():
+    """Import perezoso de face_model para permitir CI sin extra [ml]."""
+    try:
+        from backend.app.ml.face_model import (
+            get_embedding_from_bytes,
+            embedding_to_bytes,
+            bytes_to_embedding,
+            find_best_match,
+        )
+        return get_embedding_from_bytes, embedding_to_bytes, bytes_to_embedding, find_best_match
+    except ImportError as e:
+        raise HTTPException(503, "ML no disponible (dependencias no instaladas)") from e
 
 # ── Umbral de alternancia entrada/salida ─────────────────────────────────────
 # Tiempo mínimo entre dos detecciones para considerar que es un nuevo evento.
@@ -100,6 +110,7 @@ def _get_candidatos(db: Session) -> list[tuple[int, any]]:
         Lista de tuplas ``(id_persona, embedding_array)`` lista para pasar
         a ``find_best_match``.
     """
+    _, _, bytes_to_embedding, _ = _face_imports()
     rows = (
         db.query(Registro)
         .join(Persona, Registro.id_persona == Persona.id_persona)
@@ -136,6 +147,7 @@ def validar_acceso(
     Raises:
         HTTPException: 400 si la imagen está vacía.
     """
+    get_embedding_from_bytes, embedding_to_bytes, _, find_best_match = _face_imports()
     img_bytes = foto.file.read()
     if not img_bytes:
         raise HTTPException(400, "Imagen vacía.")
@@ -150,7 +162,7 @@ def validar_acceso(
             "similitud": None,
         }
 
-    # 2. Comparar
+    # 2. Comparar (usa bytes_to_embedding dentro de _get_candidatos)
     candidatos = _get_candidatos(db)
     if not candidatos:
         return {

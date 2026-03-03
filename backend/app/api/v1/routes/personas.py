@@ -19,11 +19,21 @@ from pydantic import BaseModel
 
 from backend.app.db.database import get_db
 from backend.app.db.models import Persona, Registro, TipoPersona
-from backend.app.ml.face_model import (
-    get_embedding_from_bytes, embedding_to_bytes, bytes_to_embedding,
-    find_best_match,
-)
 from backend.app.config.config import FACE_SIMILARITY_THRESHOLD, MAX_EMBEDDINGS_PER_PERSONA
+
+
+def _face_imports():
+    """Import perezoso de face_model para permitir CI sin extra [ml]."""
+    try:
+        from backend.app.ml.face_model import (
+            get_embedding_from_bytes,
+            embedding_to_bytes,
+            bytes_to_embedding,
+            find_best_match,
+        )
+        return get_embedding_from_bytes, embedding_to_bytes, bytes_to_embedding, find_best_match
+    except ImportError as e:
+        raise HTTPException(503, "ML no disponible (dependencias no instaladas)") from e
 
 router = APIRouter()
 
@@ -316,6 +326,7 @@ def identificar_por_cara(
     Raises:
         HTTPException: 400 si no se detectó rostro en la imagen.
     """
+    get_embedding_from_bytes, _, _, find_best_match = _face_imports()
     img_bytes = foto.file.read()
     emb = get_embedding_from_bytes(img_bytes)
     if emb is None:
@@ -423,6 +434,7 @@ def agregar_embedding_registro(
     if n_actuales >= MAX_EMBEDDINGS_PER_PERSONA:
         return {"ok": False, "motivo": "limite_alcanzado", "n_embeddings": n_actuales}
 
+    get_embedding_from_bytes, embedding_to_bytes, _, _ = _face_imports()
     img_bytes = foto.file.read()
     emb = get_embedding_from_bytes(img_bytes)
     if emb is None:
@@ -508,6 +520,7 @@ def _get_candidatos(db: Session) -> list[tuple[int, any]]:
         Lista de tuplas ``(id_persona, embedding_array)`` con todos los
         embeddings de tipo ``'registro'`` de personas con ``activo=True``.
     """
+    _, _, bytes_to_embedding, _ = _face_imports()
     rows = (
         db.query(Registro)
         .join(Persona, Registro.id_persona == Persona.id_persona)
