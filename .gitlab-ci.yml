@@ -228,10 +228,12 @@ deploy:staging:
     - |
       ssh $STAGING_USER@$STAGING_SERVER << EOF
         cd /opt/sca-empx
+        export DOCKER_REGISTRY=$DOCKER_REGISTRY
+        export DOCKER_USERNAME=$DOCKER_USERNAME
         export APP_VERSION=$APP_VERSION
-        docker-compose pull
-        docker-compose up -d
-        docker-compose ps
+        docker compose -f docker-compose.prod.yml pull
+        docker compose -f docker-compose.prod.yml up -d
+        docker compose -f docker-compose.prod.yml ps
       EOF
   environment:
     name: staging
@@ -254,10 +256,12 @@ deploy:production:
     - |
       ssh $PRODUCTION_USER@$PRODUCTION_SERVER << EOF
         cd /opt/sca-empx
+        export DOCKER_REGISTRY=$DOCKER_REGISTRY
+        export DOCKER_USERNAME=$DOCKER_USERNAME
         export APP_VERSION=$APP_VERSION
-        docker-compose pull
-        docker-compose up -d
-        docker-compose ps
+        docker compose -f docker-compose.prod.yml pull
+        docker compose -f docker-compose.prod.yml up -d
+        docker compose -f docker-compose.prod.yml ps
       EOF
   environment:
     name: production
