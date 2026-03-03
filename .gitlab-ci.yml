@@ -174,6 +174,7 @@ push:backend:
     - build:backend
   before_script:
     - docker load -i backend-image.tar
+    - docker tag ${BACKEND_IMAGE}:${APP_VERSION} ${BACKEND_IMAGE}:latest
     - echo "${DOCKER_PASSWORD}" | docker login ${DOCKER_REGISTRY} -u "${DOCKER_USERNAME}" --password-stdin
   script:
     - docker push ${BACKEND_IMAGE}:${APP_VERSION}
@@ -197,6 +198,7 @@ push:frontend:
     - build:frontend
   before_script:
     - docker load -i frontend-image.tar
+    - docker tag ${FRONTEND_IMAGE}:${APP_VERSION} ${FRONTEND_IMAGE}:latest
     - echo "${DOCKER_PASSWORD}" | docker login ${DOCKER_REGISTRY} -u "${DOCKER_USERNAME}" --password-stdin
   script:
     - docker push ${FRONTEND_IMAGE}:${APP_VERSION}
