@@ -110,6 +110,7 @@ def _get_candidatos(db: Session) -> list[tuple[int, any]]:
         Lista de tuplas ``(id_persona, embedding_array)`` lista para pasar
         a ``find_best_match``.
     """
+    _, _, bytes_to_embedding, _ = _face_imports()
     rows = (
         db.query(Registro)
         .join(Persona, Registro.id_persona == Persona.id_persona)
@@ -161,7 +162,7 @@ def validar_acceso(
             "similitud": None,
         }
 
-    # 2. Comparar
+    # 2. Comparar (usa bytes_to_embedding dentro de _get_candidatos)
     candidatos = _get_candidatos(db)
     if not candidatos:
         return {
