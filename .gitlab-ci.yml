@@ -1,7 +1,8 @@
 # Variables requeridas en GitLab: CI/CD → Variables (masked/protected según necesidad)
 # - CI_DOCKER_USERNAME   (Docker Hub o registry)
 # - CI_DOCKER_PASSWORD  (masked)
-# - SSH_PRIVATE_KEY     (deploy; clave privada SSH, tipo Variable o File)
+# - SSH_PRIVATE_KEY     (deploy; clave privada SSH. Recomendado: tipo "File" y pegar el contenido
+#                        completo del .pem; si es Variable, debe ser el PEM completo en una sola variable)
 # - STAGING_SERVER      (host para staging)
 # - STAGING_USER        (usuario SSH staging)
 # - PRODUCTION_SERVER   (host para producción)
@@ -220,7 +221,12 @@ deploy:staging:
   before_script:
     - apk add --no-cache openssh-client
     - eval $(ssh-agent -s)
-    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - |
+      if [ -f "$SSH_PRIVATE_KEY" ]; then
+        chmod 600 "$SSH_PRIVATE_KEY" && ssh-add "$SSH_PRIVATE_KEY"
+      else
+        echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+      fi
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
     - ssh-keyscan -H $STAGING_SERVER >> ~/.ssh/known_hosts
@@ -248,7 +254,12 @@ deploy:production:
   before_script:
     - apk add --no-cache openssh-client
     - eval $(ssh-agent -s)
-    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - |
+      if [ -f "$SSH_PRIVATE_KEY" ]; then
+        chmod 600 "$SSH_PRIVATE_KEY" && ssh-add "$SSH_PRIVATE_KEY"
+      else
+        echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+      fi
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
     - ssh-keyscan -H $PRODUCTION_SERVER >> ~/.ssh/known_hosts
