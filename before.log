@@ -1,16 +1,0 @@
-=== TESTS BASELINE ===
-bash: pytest: command not found
-=== ENDPOINTS RESPONSE ===
-  % Total    % Received % Xferd  Average Speed  Time    Time    Time   Current
-                                 Dload  Upload  Total   Spent   Left   Speed
-  0      0   0      0   0      0      0      0                              0  0      0   0      0   0      0      0      0                              0  0      0   0      0   0      0      0      0                              0  0      0   0      0   0      0      0      0                              0
-=== DB SCHEMA ===
-Traceback (most recent call last):
-  File "<string>", line 1, in <module>
-    from backend.app.db.models import *; print('Models loaded: OK')
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\dev\SCA-EMPX\backend\app\db\models.py", line 11, in <module>
-    from sqlalchemy import (
-    ...<2 lines>...
-    )
-ModuleNotFoundError: No module named 'sqlalchemy'
