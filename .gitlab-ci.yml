@@ -53,7 +53,7 @@ test:unit:
   extends: .python-cache
   before_script:
     # Dependencias del sistema para tests/DeepFace (opencv, etc.)
-    - apt-get update && apt-get install -y --no-install-recommends build-essential libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1 libgl1-mesa-glx
+    - apt-get update && apt-get install -y --no-install-recommends build-essential libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1 libgl1
     # uv ya está en la imagen; instalar proyecto + grupo dev
     - uv sync --group dev
   script:
