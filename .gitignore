@@ -28,6 +28,18 @@ wheels/
 *.db
 backend/app/db/*.db
 
+# Docker
+*.tar
+docker-compose.override.yml
+.env.docker.local
+
+# Logs
+logs/
+*.log
+
+# Backups
+backups/
+
 # Datos de entrenamiento (MNIST, etc.)
 data/
 
